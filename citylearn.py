@@ -461,8 +461,13 @@ class CityLearn(gym.Env):
         self.net_electric_consumption_no_storage.append(np.float32(electric_demand-elec_consumption_cooling_storage-elec_consumption_dhw_storage))
         self.net_electric_consumption_no_pv_no_storage.append(np.float32(electric_demand + elec_generation - elec_consumption_cooling_storage - elec_consumption_dhw_storage))
         
+        self.aux_grid_func()
+        
         terminal = self._terminal()
         return (self._get_ob(), rewards, terminal, {})
+    
+    def aux_grid_func(self):
+        return("Auxiliary grid function has not been implemented yet.")
     
     def reset_baseline_cost(self):
         self.cost_rbc = None
@@ -524,7 +529,7 @@ class CityLearn(gym.Env):
 
                 self.state.append(np.array(s, dtype=np.float32))
                 
-            self.state = np.array(self.state)
+            self.state = np.array(self.state, dtype=object)
             
         return self._get_ob()
     
@@ -581,6 +586,7 @@ class CityLearn(gym.Env):
         
         # Compute the costs normalized by the baseline costs
         cost = {}
+        self.net_electric_consumption = np.array(self.net_electric_consumption)
         if 'ramping' in self.cost_function:
             cost['ramping'] = np.abs((self.net_electric_consumption - np.roll(self.net_electric_consumption,1))[1:]).sum()/self.cost_rbc['ramping']
             
