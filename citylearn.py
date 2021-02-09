@@ -78,13 +78,13 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
         data = json.load(json_file)
 
     data = {k:v for k,v in data.items() if k in building_ids}
-    
+
     buildings, observation_spaces, action_spaces = {},[],[]
     s_low_central_agent, s_high_central_agent, appended_states = [], [], []
     a_low_central_agent, a_high_central_agent, appended_actions = [], [], []
 #     for uid, attributes in zip(data, data.values()):
     all_data = list(zip(data, data.values()))
-    for _ in range(n_buildings + len(all_data)):
+    for _ in range(n_buildings):
         uid, attributes = random.choice(all_data)
         if uid in building_ids:
             heat_pump = HeatPump(nominal_power = attributes['Heat_Pump']['nominal_power'],
@@ -256,7 +256,7 @@ class CityLearn(gym.Env):
 
         with open(buildings_states_actions) as json_file:
             self.buildings_states_actions = json.load(json_file)
-        
+
         self.buildings_states_actions_filename = buildings_states_actions
         self.buildings_net_electricity_demand = []
         self.building_attributes = building_attributes
@@ -554,7 +554,7 @@ class CityLearn(gym.Env):
                 self.state.append(np.array(s, dtype=np.float32))
 
             self.state = np.array(self.state, dtype=object)
-            
+
 #         self.buildings_states_actions = {k:self.buildings_states_actions[self.buildings[k].buildingId] for k in self.buildings.keys()}
 
         return self._get_ob()
