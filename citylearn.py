@@ -32,10 +32,7 @@ class RBC_Agent:
         if (hour_day >= 1 and hour_day <= 8) or (hour_day >= 22 and hour_day <= 24):
             a = []
             for i in range(len(self.actions_spaces)):
-                if len(self.actions_spaces[i].sample()) == 2:
-                    a.append([0.091, 0.091])
-                else:
-                    a.append([0.091])
+                a.append([0.91]*self.actions_spaces[i].shape[0])
 
         self.action_tracker.append(a)
 
@@ -202,7 +199,7 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
                             a_high.append(1.0)
                             a_low_central_agent.append(-1.0)
                             a_high_central_agent.append(1.0)
-                    else:
+                    elif action_name == 'dhw_storage':
                         if attributes['DHW_Tank']['capacity'] > 0.000001:
                             a_low.append(max(-1.0/attributes['DHW_Tank']['capacity'], -1.0))
                             a_high.append(min(1.0/attributes['DHW_Tank']['capacity'], 1.0))
@@ -213,6 +210,11 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
                             a_high.append(1.0)
                             a_low_central_agent.append(-1.0)
                             a_high_central_agent.append(1.0)
+                    elif action_name == 'pv_curtail':
+                        a_low.append(-1.0)
+                        a_high.append(1.0)
+                        a_low_central_agent.append(-1.0)
+                        a_high_central_agent.append(1.0)
 
             building.set_state_space(np.array(s_high), np.array(s_low))
             building.set_action_space(np.array(a_high), np.array(a_low))
@@ -278,6 +280,9 @@ class CityLearn(gym.Env):
             self.n_buildings = n_buildings
 
         self.buildings, self.observation_spaces, self.action_spaces, self.observation_space, self.action_space = building_loader(data_path, building_attributes, weather_file, solar_profile, building_ids, self.buildings_states_actions, self.n_buildings)
+        
+        self.buildings_states_actions = {k:self.buildings_states_actions[self.buildings[k].buildingId] for k in self.buildings}
+        
         self.reset()
 
     def get_state_action_spaces(self):
@@ -344,6 +349,14 @@ class CityLearn(gym.Env):
                     elec_consumption_dhw_storage += building._electric_consumption_dhw_storage
                 else:
                     _electric_demand_dhw = 0
+                    
+                if self.buildings_states_actions[uid]['actions']['pv_curtail']:
+                    # solar power curtailment
+                    _solar_generation = building.get_solar_power(actions[0])
+                    actions = actions[1:]
+                else:
+                    _solar_generation = building.get_solar_power()
+                elec_generation += _solar_generation # because the default is to not curtail pv production. 
 
                 # Total heating and cooling electrical loads
                 elec_consumption_cooling_total += _electric_demand_cooling
@@ -352,10 +365,6 @@ class CityLearn(gym.Env):
                 # Electrical appliances
                 _non_shiftable_load = building.get_non_shiftable_load()
                 elec_consumption_appliances += _non_shiftable_load
-
-                # Solar generation
-                _solar_generation = building.get_solar_power()
-                elec_generation += _solar_generation
 
                 # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
                 building_electric_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load - _solar_generation, 4)
@@ -372,31 +381,34 @@ class CityLearn(gym.Env):
         else:
 
             assert len(actions) == self.n_buildings, "The length of the list of actions should match the length of the list of buildings."
+            for a, (uid, building) in zip(actions, self.buildings.items()):
 
-#             for a, (uid, building) in zip(actions, self.buildings.items()):
-            for a, building in zip(actions, self.buildings.values()):
-                uid = building.buildingId
-
-                assert sum(self.buildings_states_actions[uid]['actions'].values()) == len(a), "The number of input actions for building "+str(uid)+" must match the number of actions defined in the list of building attributes."
+                assert sum(self.buildings_states_actions[uid]['actions'].values()) == len(a), "The number of input actions for building "+str(uid)+" must match the number of actions defined in the list of building attributes." + str(self.buildings_states_actions[uid]['actions'].values()) + str(a)
 
                 if self.buildings_states_actions[uid]['actions']['cooling_storage']:
-                    # Cooling
+                    # Cooling will always be the first action available
                     _electric_demand_cooling = building.set_storage_cooling(a[0])
                     elec_consumption_cooling_storage += building._electric_consumption_cooling_storage
-
-                    if self.buildings_states_actions[uid]['actions']['dhw_storage']:
-                        # DHW
-                        _electric_demand_dhw = building.set_storage_heating(a[1])
-                        elec_consumption_dhw_storage += building._electric_consumption_dhw_storage
-
-                    else:
-                        _electric_demand_dhw = 0
-
+                    a = a[1:]
                 else:
                     _electric_demand_cooling = 0
+                    
+                if self.buildings_states_actions[uid]['actions']['dhw_storage']:
                     # DHW
                     _electric_demand_dhw = building.set_storage_heating(a[0])
                     elec_consumption_dhw_storage += building._electric_consumption_dhw_storage
+                    a = a[1:]
+                else:
+                    _electric_demand_dhw = 0
+                    
+                if self.buildings_states_actions[uid]['actions']['pv_curtail']:
+                    # Solar power
+                    _solar_generation = building.get_solar_power(a[0])
+                    elec_generation += _solar_generation
+                    a = a[1:]
+                else:
+                    _solar_generation = building.get_solar_power()
+                    elec_generation += _solar_generation
 
                 # Total heating and cooling electrical loads
                 elec_consumption_cooling_total += _electric_demand_cooling
@@ -405,10 +417,6 @@ class CityLearn(gym.Env):
                 # Electrical appliances
                 _non_shiftable_load = building.get_non_shiftable_load()
                 elec_consumption_appliances += _non_shiftable_load
-
-                # Solar generation
-                _solar_generation = building.get_solar_power()
-                elec_generation += _solar_generation
 
                 # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
                 building_electric_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load - _solar_generation, 4)
@@ -448,9 +456,9 @@ class CityLearn(gym.Env):
         else:
             # If the controllers are decentralized, we append all the states to each associated agent's list of states.
             self.state = []
-#             for uid, building in self.buildings.items():
-            for k, building in self.buildings.items():
-                uid = building.buildingId
+            for uid, building in self.buildings.items():
+#             for k, building in self.buildings.items():
+#                 uid = building.buildingId
                 s = []
                 for state_name, value in self.buildings_states_actions[uid]['states'].items():
                     if value == True:
@@ -514,8 +522,8 @@ class CityLearn(gym.Env):
 
         if self.central_agent:
             s, s_appended = [], []
-            for building in self.buildings.values():
-                uid = "Building_"+str(building.building_type)
+            for uid, building in self.buildings.items():
+#                 uid = "Building_"+str(building.building_type)
                 building.reset()
                 for state_name, value in self.buildings_states_actions[uid]['states'].items():
                     if state_name not in s_appended:
@@ -536,8 +544,8 @@ class CityLearn(gym.Env):
             self.reward_function = reward_function_ma(len(self.building_ids), self.get_building_information())
 
             self.state = []
-            for building in self.buildings.values():
-                uid = "Building_" + str(building.building_type)
+            for uid, building in self.buildings.items():
+#                 uid = "Building_" + str(building.building_type)
                 building.reset()
                 s = []
                 for state_name, value in zip(self.buildings_states_actions[uid]['states'], self.buildings_states_actions[uid]['states'].values()):

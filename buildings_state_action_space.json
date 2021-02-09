@@ -28,7 +28,7 @@
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
 "net_electricity_consumption": true},
-"actions": {"cooling_storage": true, "dhw_storage": true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true}},
 
 "Building_2": {
 "states": {
@@ -60,7 +60,7 @@
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
 "net_electricity_consumption": true},
-"actions": {"cooling_storage": true, "dhw_storage": true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":false}},
 
 "Building_3": {
 "states": {
@@ -92,7 +92,7 @@
 "cooling_storage_soc": true,
 "dhw_storage_soc": false,
 "net_electricity_consumption": true},
-"actions": {"cooling_storage": true, "dhw_storage": false}},
+"actions": {"cooling_storage": true, "dhw_storage": false, "pv_curtail":false}},
 
 "Building_4": {
 "states": {
@@ -124,7 +124,7 @@
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
 "net_electricity_consumption": true},
-"actions": {"cooling_storage": true, "dhw_storage": false}},
+"actions": {"cooling_storage": true, "dhw_storage": false, "pv_curtail":true}},
 
 "Building_5": {
 "states": {
@@ -156,7 +156,7 @@
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
 "net_electricity_consumption": true},
-"actions": {"cooling_storage": true, "dhw_storage": true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true}},
 
 "Building_6": {
 "states": {
@@ -188,7 +188,7 @@
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
 "net_electricity_consumption": true},
-"actions": {"cooling_storage": true, "dhw_storage": true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true}},
 
 "Building_7": {
 "states": {
@@ -220,7 +220,7 @@
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
 "net_electricity_consumption": true},
-"actions": {"cooling_storage": true, "dhw_storage": true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":false}},
 
 "Building_8": {
 "states": {
@@ -252,7 +252,7 @@
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
 "net_electricity_consumption": true},
-"actions": {"cooling_storage": true, "dhw_storage": true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":false}},
 
 "Building_9": {
 "states": {
@@ -284,7 +284,7 @@
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
 "net_electricity_consumption": true},
-"actions": {"cooling_storage": true, "dhw_storage": true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":false}},
  
 "Building_10": {
 "states": {
@@ -316,5 +316,5 @@
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
 "net_electricity_consumption": true},
-"actions": {"cooling_storage": true, "dhw_storage": true}}
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":false}}
 }
