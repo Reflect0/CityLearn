@@ -199,6 +199,7 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
                             a_high.append(1.0)
                             a_low_central_agent.append(-1.0)
                             a_high_central_agent.append(1.0)
+                    
                     elif action_name == 'dhw_storage':
                         if attributes['DHW_Tank']['capacity'] > 0.000001:
                             a_low.append(max(-1.0/attributes['DHW_Tank']['capacity'], -1.0))
@@ -210,11 +211,21 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
                             a_high.append(1.0)
                             a_low_central_agent.append(-1.0)
                             a_high_central_agent.append(1.0)
+                    
                     elif action_name == 'pv_curtail':
+                        # pv curtailment of apparent power, S
                         a_low.append(-1.0)
                         a_high.append(1.0)
                         a_low_central_agent.append(-1.0)
                         a_high_central_agent.append(1.0)
+                    
+                    elif action_name == 'pv_vm':
+                        # smart inverter voltage control
+                        a_low.append(-1.0)
+                        a_high.append(1.0)
+                        a_low_central_agent.append(-1.0)
+                        a_high_central_agent.append(1.0)
+                        
 
             building.set_state_space(np.array(s_high), np.array(s_low))
             building.set_action_space(np.array(a_high), np.array(a_low))
@@ -357,6 +368,12 @@ class CityLearn(gym.Env):
                 else:
                     _solar_generation = building.get_solar_power()
                 elec_generation += _solar_generation # because the default is to not curtail pv production. 
+                
+                if self.buildings_states_actions[uid]['actions']['pv_vm']:
+                    building.set_target_vm(actions[0])
+                    actions = actions[1:]
+                else:
+                    building.set_target_vm()
 
                 # Total heating and cooling electrical loads
                 elec_consumption_cooling_total += _electric_demand_cooling
@@ -409,6 +426,12 @@ class CityLearn(gym.Env):
                 else:
                     _solar_generation = building.get_solar_power()
                     elec_generation += _solar_generation
+                    
+                if self.buildings_states_actions[uid]['actions']['pv_vm']:
+                    building.set_target_vm(a[0])
+                    a = a[1:]
+                else:
+                    building.set_target_vm()
 
                 # Total heating and cooling electrical loads
                 elec_consumption_cooling_total += _electric_demand_cooling

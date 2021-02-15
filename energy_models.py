@@ -168,6 +168,10 @@ class Building:
         self.solar_power = (1 - .5 * curtailment + 0.5) * self.sim_results['solar_gen'][self.time_step] # @AKP change to make solar_power accessible, where curtailment action is applied only 1x per timestep instead of at .step() and .aux_grid_function()
         return self.solar_power
     
+    def set_target_vm(self, voltage_shift=0):
+        self.target_vm = (1 + 0.01 * voltage_shift)
+        return self.target_vm
+    
     def get_dhw_electric_demand(self):
         return self.dhw_heating_device._electrical_consumption_heating
         
