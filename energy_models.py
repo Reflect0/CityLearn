@@ -2,7 +2,7 @@ from gym import spaces
 import numpy as np
 
 class Building:  
-    def __init__(self, buildingId, dhw_storage = None, cooling_storage = None, electrical_storage = None, dhw_heating_device = None, cooling_device = None, save_memory = True):
+    def __init__(self, buildingId, hourly_timesteps, dhw_storage = None, cooling_storage = None, electrical_storage = None, dhw_heating_device = None, cooling_device = None, save_memory = True):
         """
         Args:
             buildingId (int)
@@ -67,6 +67,8 @@ class Building:
         self.dhw_storage_to_building = []
         self.dhw_heating_device_to_storage = []
         self.dhw_storage_soc = []
+        
+        self.hourly_timesteps = hourly_timesteps
         
     def set_state_space(self, high_state, low_state):
         # Setting the state space and the lower and upper bounds of each state-variable

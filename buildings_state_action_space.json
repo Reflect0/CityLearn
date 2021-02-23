@@ -27,7 +27,9 @@
 "solar_gen": true,
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
-"net_electricity_consumption": true},
+"net_electricity_consumption": true,
+"relative_voltage": true,
+"total_voltage_spread": true},
 "actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true, "pv_vm":true}},
 
 "Building_2": {
@@ -59,7 +61,9 @@
 "solar_gen": true,
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
-"net_electricity_consumption": true},
+"net_electricity_consumption": true,
+"relative_voltage": true,
+"total_voltage_spread": true},
 "actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":false, "pv_vm":false}},
 
 "Building_3": {
@@ -91,7 +95,9 @@
 "solar_gen": true,
 "cooling_storage_soc": true,
 "dhw_storage_soc": false,
-"net_electricity_consumption": true},
+"net_electricity_consumption": true,
+"relative_voltage": true,
+"total_voltage_spread": true},
 "actions": {"cooling_storage": true, "dhw_storage": false, "pv_curtail":false, "pv_vm":false}},
 
 "Building_4": {
@@ -123,7 +129,9 @@
 "solar_gen": true,
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
-"net_electricity_consumption": true},
+"net_electricity_consumption": true,
+"relative_voltage": true,
+"total_voltage_spread": true},
 "actions": {"cooling_storage": true, "dhw_storage": false, "pv_curtail":true, "pv_vm":true}},
 
 "Building_5": {
@@ -155,7 +163,9 @@
 "solar_gen": true,
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
-"net_electricity_consumption": true},
+"net_electricity_consumption": true,
+"relative_voltage": true,
+"total_voltage_spread": true},
 "actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true, "pv_vm":true}},
 
 "Building_6": {
@@ -187,7 +197,9 @@
 "solar_gen": true,
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
-"net_electricity_consumption": true},
+"net_electricity_consumption": true,
+"relative_voltage": true,
+"total_voltage_spread": true},
 "actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true, "pv_vm":true}},
 
 "Building_7": {
@@ -219,7 +231,9 @@
 "solar_gen": true,
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
-"net_electricity_consumption": true},
+"net_electricity_consumption": true,
+"relative_voltage": true,
+"total_voltage_spread": true},
 "actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":false, "pv_vm":true}},
 
 "Building_8": {
@@ -251,7 +265,9 @@
 "solar_gen": true,
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
-"net_electricity_consumption": true},
+"net_electricity_consumption": true,
+"relative_voltage": true,
+"total_voltage_spread": true},
 "actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":false, "pv_vm":false}},
 
 "Building_9": {
@@ -283,7 +299,9 @@
 "solar_gen": true,
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
-"net_electricity_consumption": true},
+"net_electricity_consumption": true,
+"relative_voltage": true,
+"total_voltage_spread": true},
 "actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":false, "pv_vm":false}},
  
 "Building_10": {
@@ -315,6 +333,8 @@
 "solar_gen": true,
 "cooling_storage_soc": true,
 "dhw_storage_soc": true,
-"net_electricity_consumption": true},
+"net_electricity_consumption": true,
+"relative_voltage": true,
+"total_voltage_spread": true},
 "actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":false, "pv_vm":false}}
 }

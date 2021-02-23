@@ -57,7 +57,7 @@ def auto_size(buildings):
         # Autosize guarantees that the cooling device device is large enough to always satisfy the maximum DHW demand
         if building.cooling_device.nominal_power == 'autosize':
 
-            building.cooling_device.nominal_power = (np.array(building.sim_results['cooling_demand'])/building.cooling_device.cop_cooling).max()
+            building.cooling_device.nominal_power = (np.array(building.sim_results['cooling_demand'])/ np.repeat(building.cooling_device.cop_cooling, building.hourly_timesteps)).max()
 
         # Defining the capacity of the storage devices as a number of times the maximum demand
         building.dhw_storage.capacity = max(building.sim_results['dhw_demand'])*building.dhw_storage.capacity
@@ -70,7 +70,8 @@ def auto_size(buildings):
             building.cooling_storage.capacity = 0.00001
 
 
-def building_loader(data_path, building_attributes, weather_file, solar_profile, building_ids, buildings_states_actions, n_buildings, save_memory = True):
+def building_loader(data_path, building_attributes, weather_file, solar_profile, building_ids, buildings_states_actions, n_buildings, hourly_timesteps, save_memory = True):
+    print(hourly_timesteps)
     with open(building_attributes) as json_file:
         data = json.load(json_file)
 
@@ -79,10 +80,9 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
     buildings, observation_spaces, action_spaces = {},[],[]
     s_low_central_agent, s_high_central_agent, appended_states = [], [], []
     a_low_central_agent, a_high_central_agent, appended_actions = [], [], []
-#     for uid, attributes in zip(data, data.values()):
     all_data = list(zip(data, data.values()))
     for _ in range(n_buildings):
-        uid, attributes = random.choice(all_data)
+        uid, attributes = random.choice(all_data) # @akp, iterate through buildings randomly to create duplicates of building types
         if uid in building_ids:
             heat_pump = HeatPump(nominal_power = attributes['Heat_Pump']['nominal_power'],
                                  eta_tech = attributes['Heat_Pump']['technical_efficiency'],
@@ -98,48 +98,48 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
             dhw_tank = EnergyStorage(capacity = attributes['DHW_Tank']['capacity'],
                                      loss_coeff = attributes['DHW_Tank']['loss_coefficient'], save_memory = save_memory)
 
-            building = Building(buildingId = uid, dhw_storage = dhw_tank, cooling_storage = chilled_water_tank, dhw_heating_device = electric_heater, cooling_device = heat_pump, save_memory = save_memory)
+            building = Building(buildingId = uid, hourly_timesteps=hourly_timesteps, dhw_storage = dhw_tank, cooling_storage = chilled_water_tank, dhw_heating_device = electric_heater, cooling_device = heat_pump, save_memory = save_memory)
 
             data_file = str(uid) + '.csv'
             simulation_data = data_path / data_file
             with open(simulation_data) as csv_file:
                 data = pd.read_csv(csv_file)
 
-            building.sim_results['cooling_demand'] = list(data['Cooling Load [kWh]'])
-            building.sim_results['dhw_demand'] = list(data['DHW Heating [kWh]'])
-            building.sim_results['non_shiftable_load'] = list(data['Equipment Electric Power [kWh]'])
-            building.sim_results['month'] = list(data['Month'])
-            building.sim_results['day'] = list(data['Day Type'])
-            building.sim_results['hour'] = list(data['Hour'])
-            building.sim_results['daylight_savings_status'] = list(data['Daylight Savings Status'])
-            building.sim_results['t_in'] = list(data['Indoor Temperature [C]'])
-            building.sim_results['avg_unmet_setpoint'] = list(data['Average Unmet Cooling Setpoint Difference [C]'])
-            building.sim_results['rh_in'] = list(data['Indoor Relative Humidity [%]'])
+            building.sim_results['cooling_demand'] = list(np.repeat(data['Cooling Load [kWh]'], hourly_timesteps))
+            building.sim_results['dhw_demand'] = list(np.repeat(data['DHW Heating [kWh]'], hourly_timesteps))
+            building.sim_results['non_shiftable_load'] = list(np.repeat(data['Equipment Electric Power [kWh]'], hourly_timesteps))
+            building.sim_results['month'] = list(np.repeat(data['Month'], hourly_timesteps))
+            building.sim_results['day'] = list(np.repeat(data['Day Type'], hourly_timesteps))
+            building.sim_results['hour'] = list(np.repeat(data['Hour'], hourly_timesteps))
+            building.sim_results['daylight_savings_status'] = list(np.repeat(data['Daylight Savings Status'], hourly_timesteps))
+            building.sim_results['t_in'] = list(np.repeat(data['Indoor Temperature [C]'], hourly_timesteps))
+            building.sim_results['avg_unmet_setpoint'] = list(np.repeat(data['Average Unmet Cooling Setpoint Difference [C]'], hourly_timesteps))
+            building.sim_results['rh_in'] = list(np.repeat(data['Indoor Relative Humidity [%]'], hourly_timesteps))
 
             with open(weather_file) as csv_file:
                 weather_data = pd.read_csv(csv_file)
 
-            building.sim_results['t_out'] = list(weather_data['Outdoor Drybulb Temperature [C]'])
-            building.sim_results['rh_out'] = list(weather_data['Outdoor Relative Humidity [%]'])
-            building.sim_results['diffuse_solar_rad'] = list(weather_data['Diffuse Solar Radiation [W/m2]'])
-            building.sim_results['direct_solar_rad'] = list(weather_data['Direct Solar Radiation [W/m2]'])
+            building.sim_results['t_out'] = list(np.repeat(weather_data['Outdoor Drybulb Temperature [C]'], hourly_timesteps))
+            building.sim_results['rh_out'] = list(np.repeat(weather_data['Outdoor Relative Humidity [%]'], hourly_timesteps))
+            building.sim_results['diffuse_solar_rad'] = list(np.repeat(weather_data['Diffuse Solar Radiation [W/m2]'], hourly_timesteps))
+            building.sim_results['direct_solar_rad'] = list(np.repeat(weather_data['Direct Solar Radiation [W/m2]'], hourly_timesteps))
 
             # Reading weather forecasts
-            building.sim_results['t_out_pred_6h'] = list(weather_data['6h Prediction Outdoor Drybulb Temperature [C]'])
-            building.sim_results['t_out_pred_12h'] = list(weather_data['12h Prediction Outdoor Drybulb Temperature [C]'])
-            building.sim_results['t_out_pred_24h'] = list(weather_data['24h Prediction Outdoor Drybulb Temperature [C]'])
+            building.sim_results['t_out_pred_6h'] = list(np.repeat(weather_data['6h Prediction Outdoor Drybulb Temperature [C]'], hourly_timesteps))
+            building.sim_results['t_out_pred_12h'] = list(np.repeat(weather_data['12h Prediction Outdoor Drybulb Temperature [C]'], hourly_timesteps))
+            building.sim_results['t_out_pred_24h'] = list(np.repeat(weather_data['24h Prediction Outdoor Drybulb Temperature [C]'], hourly_timesteps))
 
-            building.sim_results['rh_out_pred_6h'] = list(weather_data['6h Prediction Outdoor Relative Humidity [%]'])
-            building.sim_results['rh_out_pred_12h'] = list(weather_data['12h Prediction Outdoor Relative Humidity [%]'])
-            building.sim_results['rh_out_pred_24h'] = list(weather_data['24h Prediction Outdoor Relative Humidity [%]'])
+            building.sim_results['rh_out_pred_6h'] = list(np.repeat(weather_data['6h Prediction Outdoor Relative Humidity [%]'], hourly_timesteps))
+            building.sim_results['rh_out_pred_12h'] = list(np.repeat(weather_data['12h Prediction Outdoor Relative Humidity [%]'], hourly_timesteps))
+            building.sim_results['rh_out_pred_24h'] = list(np.repeat(weather_data['24h Prediction Outdoor Relative Humidity [%]'], hourly_timesteps))
 
-            building.sim_results['diffuse_solar_rad_pred_6h'] = list(weather_data['6h Prediction Diffuse Solar Radiation [W/m2]'])
-            building.sim_results['diffuse_solar_rad_pred_12h'] = list(weather_data['12h Prediction Diffuse Solar Radiation [W/m2]'])
-            building.sim_results['diffuse_solar_rad_pred_24h'] = list(weather_data['24h Prediction Diffuse Solar Radiation [W/m2]'])
+            building.sim_results['diffuse_solar_rad_pred_6h'] = list(np.repeat(weather_data['6h Prediction Diffuse Solar Radiation [W/m2]'], hourly_timesteps))
+            building.sim_results['diffuse_solar_rad_pred_12h'] = list(np.repeat(weather_data['12h Prediction Diffuse Solar Radiation [W/m2]'], hourly_timesteps))
+            building.sim_results['diffuse_solar_rad_pred_24h'] = list(np.repeat(weather_data['24h Prediction Diffuse Solar Radiation [W/m2]'], hourly_timesteps))
 
-            building.sim_results['direct_solar_rad_pred_6h'] = list(weather_data['6h Prediction Direct Solar Radiation [W/m2]'])
-            building.sim_results['direct_solar_rad_pred_12h'] = list(weather_data['12h Prediction Direct Solar Radiation [W/m2]'])
-            building.sim_results['direct_solar_rad_pred_24h'] = list(weather_data['24h Prediction Direct Solar Radiation [W/m2]'])
+            building.sim_results['direct_solar_rad_pred_6h'] = list(np.repeat(weather_data['6h Prediction Direct Solar Radiation [W/m2]'], hourly_timesteps))
+            building.sim_results['direct_solar_rad_pred_12h'] = list(np.repeat(weather_data['12h Prediction Direct Solar Radiation [W/m2]'], hourly_timesteps))
+            building.sim_results['direct_solar_rad_pred_24h'] = list(np.repeat(weather_data['24h Prediction Direct Solar Radiation [W/m2]'], hourly_timesteps))
 
             # Reading the building attributes
             building.building_type = attributes['Building_Type']
@@ -149,7 +149,7 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
             with open(solar_profile) as csv_file:
                 data = pd.read_csv(csv_file)
 
-            building.sim_results['solar_gen'] = list(attributes['Solar_Power_Installed(kW)']*data['Hourly Data: AC inverter power (W)']/1000)
+            building.sim_results['solar_gen'] = list(np.repeat(attributes['Solar_Power_Installed(kW)']*data['Hourly Data: AC inverter power (W)']/1000, hourly_timesteps))
 
             # Finding the max and min possible values of all the states, which can then be used by the RL agent to scale the states and train any function approximators more effectively
             s_low, s_high = [], []
@@ -163,6 +163,20 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
                         s_low_central_agent.append(0.)
                         s_high_central_agent.append(_net_elec_cons_upper_bound)
 
+                    elif state_name == "relative_voltage":
+                        # @akp, added relative voltage to give homes their voltage ranked against the community max/min
+                        s_low.append(0.) # the house is the lowest voltage in the community
+                        s_high.append(1.)
+                    
+                    elif state_name == "total_voltage_spread":
+                        # @akp, added total voltage spread to give a sense of the total loss incurred by the community. without the total voltage spread state "relative_voltage" is more or less meaningless. (total_voltage_spread = how much the community is penaltized, relative_voltage = what that house can do to fix the issue)
+                        s_low.append(0.) # @akp?, not sure what the typical spread in v pu would be.
+                        s_high.append(1.)
+                        
+                        # @akp?, still not sure how the central agent s.append() works...
+                        s_low_central_agent.append(0.)
+                        s_high_central_agent.append(1.)
+                    
                     elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
                         s_low.append(min(building.sim_results[state_name]))
                         s_high.append(max(building.sim_results[state_name]))
@@ -176,6 +190,7 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
                             s_low_central_agent.append(min(building.sim_results[state_name]))
                             s_high_central_agent.append(max(building.sim_results[state_name]))
                             appended_states.append(state_name)
+                    
                     else:
                         s_low.append(0.0)
                         s_high.append(1.0)
@@ -220,7 +235,7 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
                         a_high_central_agent.append(1.0)
                     
                     elif action_name == 'pv_vm':
-                        # smart inverter voltage control
+                        # smart inverter voltage control @constance?
                         a_low.append(-1.0)
                         a_high.append(1.0)
                         a_low_central_agent.append(-1.0)
@@ -262,7 +277,7 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
     return buildings, observation_spaces, action_spaces, observation_space_central_agent, action_space_central_agent
 
 class CityLearn(gym.Env):
-    def __init__(self, data_path, building_attributes, weather_file, solar_profile, building_ids, buildings_states_actions = None, simulation_period = (0,8759), cost_function = ['ramping','1-load_factor','average_daily_peak','peak_demand','net_electricity_consumption'], central_agent = False, verbose = 0, n_buildings=None):
+    def __init__(self, data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_timesteps, buildings_states_actions = None, simulation_period = (0,8759), cost_function = ['ramping','1-load_factor','average_daily_peak','peak_demand','net_electricity_consumption'], central_agent = False, verbose = 0, n_buildings=None):
 
         np.random.seed(12)
         random.seed(12)
@@ -282,6 +297,7 @@ class CityLearn(gym.Env):
         self.central_agent = central_agent
         self.loss = []
         self.verbose = verbose
+        self.hourly_timesteps = hourly_timesteps
 
         self.simulation_period = simulation_period
         self.uid = None
@@ -290,7 +306,7 @@ class CityLearn(gym.Env):
         else:
             self.n_buildings = n_buildings
 
-        self.buildings, self.observation_spaces, self.action_spaces, self.observation_space, self.action_space = building_loader(data_path, building_attributes, weather_file, solar_profile, building_ids, self.buildings_states_actions, self.n_buildings)
+        self.buildings, self.observation_spaces, self.action_spaces, self.observation_space, self.action_space = building_loader(data_path, building_attributes, weather_file, solar_profile, building_ids, self.buildings_states_actions, self.n_buildings, self.hourly_timesteps)
         
         self.buildings_states_actions = {k:self.buildings_states_actions[self.buildings[k].buildingId] for k in self.buildings}
         
@@ -370,6 +386,7 @@ class CityLearn(gym.Env):
                 elec_generation += _solar_generation # because the default is to not curtail pv production. 
                 
                 if self.buildings_states_actions[uid]['actions']['pv_vm']:
+                    # @constance look at this action for changing the smart inverter actions to P,Q
                     building.set_target_vm(actions[0])
                     actions = actions[1:]
                 else:
@@ -487,6 +504,18 @@ class CityLearn(gym.Env):
                     if value == True:
                         if state_name == 'net_electricity_consumption':
                             s.append(building.current_net_electricity_demand)
+                        elif state_name == 'relative_voltage':
+                            if self.time_step <= 1:
+                                s.append(0)
+                            else:
+                                voltage_spread = max(self.net.res_bus.vm_pu)-min(self.net.res_bus.vm_pu)
+                                s.append(voltage_spread)
+                        elif state_name == 'total_voltage_spread':
+                            if self.time_step <= 1:
+                                s.append(0.5)
+                            else:
+                                house_voltage = self.net.res_bus.vm_pu.iloc[self.net.load.loc[self.net.load['name']==uid].bus]
+                                s.append(house_voltage / voltage_spread)
                         elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
                             s.append(building.sim_results[state_name][self.time_step])
                         elif state_name == 'cooling_storage_soc':
@@ -496,7 +525,6 @@ class CityLearn(gym.Env):
 
                 self.state.append(np.array(s))
             self.state = np.array(self.state, dtype=object)
-            self.buildings_net_electricity_demand = self.get_cvr_electricity_demand() # @AKP, added to interface with cvr kW = pf * kVAR
             rewards = self.reward_function.get_rewards(self.buildings_net_electricity_demand)
             self.cumulated_reward_episode += sum(rewards)
 
@@ -575,6 +603,17 @@ class CityLearn(gym.Env):
                     if value == True:
                         if state_name == 'net_electricity_consumption':
                             s.append(building.current_net_electricity_demand)
+                        elif state_name == 'total_voltage_spread':
+                            if self.time_step == 0:
+                                s.append(0)
+                            else:
+                                voltage_spread = s.append(max(self.net.res_bus.vm_pu)-min(self.net.res_bus.vm_pu))
+                        elif state_name == 'relative_voltage':
+                            if self.time_step == 0:
+                                s.append(0.5)
+                            else:
+                                house_voltage = self.net.res_bus[self.net.res_bus['name'] == uid]
+                                s.append(house_voltage / spread)
                         elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
                             s.append(building.sim_results[state_name][self.time_step])
                         elif state_name == 'cooling_storage_soc':
