@@ -69,6 +69,36 @@ def auto_size(buildings):
         if building.cooling_storage.capacity <= 0.00001:
             building.cooling_storage.capacity = 0.00001
 
+def subhourly_lin_interp(hourly_data, subhourly_steps):
+    """ Returns a linear interpolation of a data array as a list """
+    n = len(hourly_data)
+    data = np.interp(np.linspace(0, n, n*subhourly_steps), np.arange(n), hourly_data)
+    return list(data)
+
+def subhourly_noisy_interp(hourly_data, subhourly_steps):
+    """ Returns a noisy distribution of power consumption +/- 5% standard deviation of the original power draw."""
+    n = len(hourly_data)
+    data = np.repeat(hourly_data, subhourly_steps)
+    perturbation = np.random.normal(1.0, 0.05, n*subhourly_steps)
+    data = np.multiply(data, perturbation)
+    return list(data)
+
+def subhourly_randomdraw_interp(hourly_data, subhourly_steps, dhw_pwr):
+    data = []
+    print(dhw_pwr)
+    subhourly_dhw_energy = dhw_pwr / subhourly_steps
+    for hour in hourly_data:
+        draw_times = np.random.choice(subhourly_steps, int(hour/subhourly_steps), replace=False)
+        for i in range(subhourly_steps):
+            if i in draw_times:
+                data += [subhourly_dhw_energy]
+            else:
+                data += [0]
+    return list(data)
+
+def set_dhw_draws(buildings):
+    for uid, building in buildings.items():
+        building.sim_results['dhw_demand'] = subhourly_randomdraw_interp(building.sim_results['dhw_demand'], building.hourly_timesteps, building.dhw_heating_device.nominal_power)
 
 def building_loader(data_path, building_attributes, weather_file, solar_profile, building_ids, buildings_states_actions, n_buildings, hourly_timesteps, save_memory = True):
     with open(building_attributes) as json_file:
@@ -104,41 +134,41 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
             with open(simulation_data) as csv_file:
                 data = pd.read_csv(csv_file)
 
-            building.sim_results['cooling_demand'] = list(np.repeat(data['Cooling Load [kWh]'], hourly_timesteps))
-            building.sim_results['dhw_demand'] = list(np.repeat(data['DHW Heating [kWh]'], hourly_timesteps))
-            building.sim_results['non_shiftable_load'] = list(np.repeat(data['Equipment Electric Power [kWh]'], hourly_timesteps))
+            building.sim_results['cooling_demand'] = subhourly_lin_interp(data['Cooling Load [kWh]'], hourly_timesteps)
+            building.sim_results['dhw_demand'] = list(data['DHW Heating [kWh]'])
+            building.sim_results['non_shiftable_load'] = subhourly_noisy_interp(data['Equipment Electric Power [kWh]'], hourly_timesteps)
             building.sim_results['month'] = list(np.repeat(data['Month'], hourly_timesteps))
             building.sim_results['day'] = list(np.repeat(data['Day Type'], hourly_timesteps))
             building.sim_results['hour'] = list(np.repeat(data['Hour'], hourly_timesteps))
             building.sim_results['daylight_savings_status'] = list(np.repeat(data['Daylight Savings Status'], hourly_timesteps))
-            building.sim_results['t_in'] = list(np.repeat(data['Indoor Temperature [C]'], hourly_timesteps))
-            building.sim_results['avg_unmet_setpoint'] = list(np.repeat(data['Average Unmet Cooling Setpoint Difference [C]'], hourly_timesteps))
-            building.sim_results['rh_in'] = list(np.repeat(data['Indoor Relative Humidity [%]'], hourly_timesteps))
+            building.sim_results['t_in'] = subhourly_lin_interp(data['Indoor Temperature [C]'], hourly_timesteps)
+            building.sim_results['avg_unmet_setpoint'] = subhourly_lin_interp(data['Average Unmet Cooling Setpoint Difference [C]'], hourly_timesteps)
+            building.sim_results['rh_in'] = subhourly_lin_interp(data['Indoor Relative Humidity [%]'], hourly_timesteps)
 
             with open(weather_file) as csv_file:
                 weather_data = pd.read_csv(csv_file)
 
-            building.sim_results['t_out'] = list(np.repeat(weather_data['Outdoor Drybulb Temperature [C]'], hourly_timesteps))
-            building.sim_results['rh_out'] = list(np.repeat(weather_data['Outdoor Relative Humidity [%]'], hourly_timesteps))
-            building.sim_results['diffuse_solar_rad'] = list(np.repeat(weather_data['Diffuse Solar Radiation [W/m2]'], hourly_timesteps))
-            building.sim_results['direct_solar_rad'] = list(np.repeat(weather_data['Direct Solar Radiation [W/m2]'], hourly_timesteps))
+            building.sim_results['t_out'] = subhourly_lin_interp(weather_data['Outdoor Drybulb Temperature [C]'], hourly_timesteps)
+            building.sim_results['rh_out'] = subhourly_lin_interp(weather_data['Outdoor Relative Humidity [%]'], hourly_timesteps)
+            building.sim_results['diffuse_solar_rad'] = subhourly_lin_interp(weather_data['Diffuse Solar Radiation [W/m2]'], hourly_timesteps)
+            building.sim_results['direct_solar_rad'] = subhourly_lin_interp(weather_data['Direct Solar Radiation [W/m2]'], hourly_timesteps)
 
             # Reading weather forecasts
-            building.sim_results['t_out_pred_6h'] = list(np.repeat(weather_data['6h Prediction Outdoor Drybulb Temperature [C]'], hourly_timesteps))
-            building.sim_results['t_out_pred_12h'] = list(np.repeat(weather_data['12h Prediction Outdoor Drybulb Temperature [C]'], hourly_timesteps))
-            building.sim_results['t_out_pred_24h'] = list(np.repeat(weather_data['24h Prediction Outdoor Drybulb Temperature [C]'], hourly_timesteps))
+            building.sim_results['t_out_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Outdoor Drybulb Temperature [C]'], hourly_timesteps)
+            building.sim_results['t_out_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Outdoor Drybulb Temperature [C]'], hourly_timesteps)
+            building.sim_results['t_out_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Outdoor Drybulb Temperature [C]'], hourly_timesteps)
 
-            building.sim_results['rh_out_pred_6h'] = list(np.repeat(weather_data['6h Prediction Outdoor Relative Humidity [%]'], hourly_timesteps))
-            building.sim_results['rh_out_pred_12h'] = list(np.repeat(weather_data['12h Prediction Outdoor Relative Humidity [%]'], hourly_timesteps))
-            building.sim_results['rh_out_pred_24h'] = list(np.repeat(weather_data['24h Prediction Outdoor Relative Humidity [%]'], hourly_timesteps))
+            building.sim_results['rh_out_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Outdoor Relative Humidity [%]'], hourly_timesteps)
+            building.sim_results['rh_out_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Outdoor Relative Humidity [%]'], hourly_timesteps)
+            building.sim_results['rh_out_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Outdoor Relative Humidity [%]'], hourly_timesteps)
 
-            building.sim_results['diffuse_solar_rad_pred_6h'] = list(np.repeat(weather_data['6h Prediction Diffuse Solar Radiation [W/m2]'], hourly_timesteps))
-            building.sim_results['diffuse_solar_rad_pred_12h'] = list(np.repeat(weather_data['12h Prediction Diffuse Solar Radiation [W/m2]'], hourly_timesteps))
-            building.sim_results['diffuse_solar_rad_pred_24h'] = list(np.repeat(weather_data['24h Prediction Diffuse Solar Radiation [W/m2]'], hourly_timesteps))
+            building.sim_results['diffuse_solar_rad_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Diffuse Solar Radiation [W/m2]'], hourly_timesteps)
+            building.sim_results['diffuse_solar_rad_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Diffuse Solar Radiation [W/m2]'], hourly_timesteps)
+            building.sim_results['diffuse_solar_rad_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Diffuse Solar Radiation [W/m2]'], hourly_timesteps)
 
-            building.sim_results['direct_solar_rad_pred_6h'] = list(np.repeat(weather_data['6h Prediction Direct Solar Radiation [W/m2]'], hourly_timesteps))
-            building.sim_results['direct_solar_rad_pred_12h'] = list(np.repeat(weather_data['12h Prediction Direct Solar Radiation [W/m2]'], hourly_timesteps))
-            building.sim_results['direct_solar_rad_pred_24h'] = list(np.repeat(weather_data['24h Prediction Direct Solar Radiation [W/m2]'], hourly_timesteps))
+            building.sim_results['direct_solar_rad_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Direct Solar Radiation [W/m2]'], hourly_timesteps)
+            building.sim_results['direct_solar_rad_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Direct Solar Radiation [W/m2]'], hourly_timesteps)
+            building.sim_results['direct_solar_rad_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Direct Solar Radiation [W/m2]'], hourly_timesteps)
 
             # Reading the building attributes
             building.building_type = attributes['Building_Type']
@@ -148,7 +178,7 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
             with open(solar_profile) as csv_file:
                 data = pd.read_csv(csv_file)
 
-            building.sim_results['solar_gen'] = list(np.repeat(attributes['Solar_Power_Installed(kW)']*data['Hourly Data: AC inverter power (W)']/1000, hourly_timesteps))
+            building.sim_results['solar_gen'] = subhourly_lin_interp(attributes['Solar_Power_Installed(kW)']*data['Hourly Data: AC inverter power (W)']/1000, hourly_timesteps)
 
             # Finding the max and min possible values of all the states, which can then be used by the RL agent to scale the states and train any function approximators more effectively
             s_low, s_high = [], []
@@ -156,7 +186,7 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
                 if value == True:
                     if state_name == "net_electricity_consumption":
                         # lower and upper bounds of net electricity consumption are rough estimates and may not be completely accurate. Scaling this state-variable using these bounds may result in normalized values above 1 or below 0.
-                        _net_elec_cons_upper_bound = max(np.array(building.sim_results['non_shiftable_load']) - np.array(building.sim_results['solar_gen']) + np.array(building.sim_results['dhw_demand'])/.8 + np.array(building.sim_results['cooling_demand']) + building.dhw_storage.capacity/.8 + building.cooling_storage.capacity/2)
+                        _net_elec_cons_upper_bound = max(np.array(building.sim_results['non_shiftable_load']) - np.array(building.sim_results['solar_gen']) + np.array(np.repeat(building.sim_results['dhw_demand'], hourly_timesteps))/.8 + np.array(building.sim_results['cooling_demand']) + building.dhw_storage.capacity/.8 + building.cooling_storage.capacity/2)
                         s_low.append(0.)
                         s_high.append(_net_elec_cons_upper_bound)
                         s_low_central_agent.append(0.)
@@ -272,6 +302,8 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
         building.reset()
 
     auto_size(buildings)
+    
+    set_dhw_draws(buildings) # @akp, kinda janky but until this point the dhw nominal power isn't set
 
     return buildings, observation_spaces, action_spaces, observation_space_central_agent, action_space_central_agent
 
