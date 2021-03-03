@@ -2,7 +2,7 @@ import pandapower as pp
 from pandapower import runpp
 from pandapower.plotting import simple_plotly, pf_res_plotly
 import pandapower.networks as networks
-from citylearn import CityLearn
+from citylearn import CityLearn, RBC_Agent
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,11 +10,11 @@ from pathlib import Path
 import random
 
 class GridLearn(CityLearn):
-    def __init__(self, data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_timesteps, buildings_states_actions = None, simulation_period = (0,8759), cost_function = ['ramping','1-load_factor','average_daily_peak', 'peak_demand','net_electricity_consumption'], central_agent = False, verbose = 0, n_buildings_per_bus=4):
+    def __init__(self, data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_timesteps, buildings_states_actions = None, simulation_period = (0,8759), cost_function = ['ramping','1-load_factor','average_daily_peak', 'peak_demand','net_electricity_consumption'], central_agent = False, verbose = 0, n_buildings_per_bus=4, pv_penetration=0.3):
         self.net = self.make_grid()
         n_buildings = n_buildings_per_bus * (len(self.net.bus)-1)
         super().__init__(data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_timesteps, buildings_states_actions, simulation_period, cost_function, central_agent, verbose, n_buildings)
-        self.house_nodes = self.add_houses(n_buildings_per_bus)
+        self.house_nodes = self.add_houses(n_buildings_per_bus, pv_penetration)
         # for some reason it seems like the output_writer for panda power only applies to deterministic time series
         self.output = {'p_mw_load':{'var':'p_mw', 'parent':'res_load', 'values':pd.DataFrame()},
            'q_mvar_gen':{'var':'q_mvar', 'parent':'res_gen', 'values':pd.DataFrame()},
@@ -22,13 +22,16 @@ class GridLearn(CityLearn):
            'i_ka':{'var':'i_ka', 'parent':'res_line', 'values':pd.DataFrame()},
            'p_mw_stor':{'var':'p_mw', 'parent':'res_storage', 'values':pd.DataFrame()},
            'p_mw_gen':{'var':'p_mw', 'parent':'res_gen', 'values':pd.DataFrame()}}
+        self.system_losses = []
+        self.pv_penetration = pv_penetration
+        self.n_buildings_per_bus = n_buildings_per_bus
 
     def make_grid(self):
         # make a grid that fits the buildings generated for CityLearn
         net = networks.case33bw()
         return net
 
-    def add_houses(self, n):
+    def add_houses(self, n, pv_penetration):
         houses = []
         b = 0
 
@@ -66,7 +69,7 @@ class GridLearn(CityLearn):
                 new_house_load = pp.create_load(self.net, new_house, 0, name=bid)
 
 #                 if self.buildings_states_actions[bid]['pv_curtail']:
-                if np.random.randint(2) >= 0:
+                if np.random.uniform() <= pv_penetration:
                     rated_sn_mva = np.max(np.amax(np.reshape(self.buildings[bid].sim_results['solar_gen'],(24,-1)), axis=0))
                     new_house_pv = pp.create_gen(self.net, new_house, 0.0, name=bid, sn_mva=rated_sn_mva)
                 houses += [new_house]
@@ -102,9 +105,35 @@ class GridLearn(CityLearn):
 #         pp.runopp(self.net, verbose=True) # dont use the opp since control decisions are made by the citylearn RL agent(s)
         runpp(self.net, enforce_q_lims=True)
 
+        self.calc_system_losses()
+
         # write these value to the output writer:
         for k, v in self.output.items():
             self.output[k]['values'][str(self.time_step)] = self.net[v['parent']][v['var']]
+
+    def calc_system_losses(self):
+        self.system_losses += list((self.net.res_ext_grid.p_mw + self.net.res_load.p_mw.sum() - self.net.res_gen.p_mw.sum()).values)
+
+    def get_rbc_cost(self):
+        # Running the reference rule-based controller to find the baseline cost
+        if self.cost_rbc is None:
+            env_rbc = GridLearn(self.data_path, self.building_attributes, self.weather_file, self.solar_profile, self.building_ids, hourly_timesteps=self.hourly_timesteps, buildings_states_actions = self.buildings_states_actions_filename, simulation_period = self.simulation_period, cost_function = self.cost_function, central_agent = False, n_buildings_per_bus=self.n_buildings_per_bus, pv_penetration=self.pv_penetration)
+            _, actions_spaces = env_rbc.get_state_action_spaces()
+
+            #Instantiatiing the control agent(s)
+            agent_rbc = RBC_Agent(actions_spaces)
+
+            state = env_rbc.reset()
+            done = False
+            while not done:
+                action = agent_rbc.select_action([list(env_rbc.buildings.values())[0].sim_results['hour'][env_rbc.time_step]])
+                next_state, rewards, done, _ = env_rbc.step(action)
+                state = next_state
+            self.cost_rbc = env_rbc.get_baseline_cost()
+
+    def reset(self):
+        self.system_losses = []
+        return super().reset()
 
     def plot_buses(self):
         df = self.output['vm_pu']['values']

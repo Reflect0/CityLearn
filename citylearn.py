@@ -85,7 +85,6 @@ def subhourly_noisy_interp(hourly_data, subhourly_steps):
 
 def subhourly_randomdraw_interp(hourly_data, subhourly_steps, dhw_pwr):
     data = []
-    print(dhw_pwr)
     subhourly_dhw_energy = dhw_pwr / subhourly_steps
     for hour in hourly_data:
         draw_times = np.random.choice(subhourly_steps, int(hour/subhourly_steps), replace=False)
@@ -302,7 +301,7 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
         building.reset()
 
     auto_size(buildings)
-    
+
     set_dhw_draws(buildings) # @akp, kinda janky but until this point the dhw nominal power isn't set
 
     return buildings, observation_spaces, action_spaces, observation_space_central_agent, action_space_central_agent
@@ -535,18 +534,22 @@ class CityLearn(gym.Env):
                     if value == True:
                         if state_name == 'net_electricity_consumption':
                             s.append(building.current_net_electricity_demand)
+
                         elif state_name == 'relative_voltage':
-                            if self.time_step <= 1:
-                                s.append(0)
-                            else:
-                                voltage_spread = max(self.net.res_bus.vm_pu)-min(self.net.res_bus.vm_pu)
-                                s.append(voltage_spread)
-                        elif state_name == 'total_voltage_spread':
                             if self.time_step <= 1:
                                 s.append(0.5)
                             else:
-                                house_voltage = self.net.res_bus.vm_pu.iloc[self.net.load.loc[self.net.load['name']==uid].bus]
-                                s.append(house_voltage / voltage_spread)
+                                ranked_voltage = self.net.res_bus['vm_pu'].rank(pct=True)[self.net.load.loc[self.net.load['name']==uid].bus]
+                                s.append(ranked_voltage)
+                        elif state_name == 'total_voltage_spread':
+                            if self.time_step <= 1:
+                                s.append(0)
+                            else:
+                                voltage_spread = 0
+                                for index, line in self.net.line.iterrows():
+                                    voltage_spread += abs(self.net.res_bus.loc[line.to_bus].vm_pu - self.net.res_bus.loc[line.from_bus].vm_pu)
+                                s.append(voltage_spread)
+
                         elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
                             s.append(building.sim_results[state_name][self.time_step])
                         elif state_name == 'cooling_storage_soc':
@@ -556,7 +559,8 @@ class CityLearn(gym.Env):
 
                 self.state.append(np.array(s))
             self.state = np.array(self.state, dtype=object)
-            rewards = self.reward_function.get_rewards(self.buildings_net_electricity_demand)
+            sys_losses = self.system_losses[-1] if self.time_step > 1 else 0
+            rewards = self.reward_function.get_rewards(sys_losses)
             self.cumulated_reward_episode += sum(rewards)
 
         # Control variables which are used to display the results and the behavior of the buildings at the district level.
@@ -693,11 +697,10 @@ class CityLearn(gym.Env):
     def get_buildings_net_electric_demand(self):
         return self.buildings_net_electricity_demand
 
-    def cost(self):
-
+    def get_rbc_cost(self):
         # Running the reference rule-based controller to find the baseline cost
         if self.cost_rbc is None:
-            env_rbc = CityLearn(self.data_path, self.building_attributes, self.weather_file, self.solar_profile, self.building_ids, buildings_states_actions = self.buildings_states_actions_filename, simulation_period = self.simulation_period, cost_function = self.cost_function, central_agent = False, n_buildings=self.n_buildings)
+            env_rbc = CityLearn(self.data_path, self.building_attributes, self.weather_file, self.solar_profile, self.building_ids, hourly_timesteps=self.hourly_timesteps, buildings_states_actions = self.buildings_states_actions_filename, simulation_period = self.simulation_period, cost_function = self.cost_function, central_agent = False, n_buildings=self.n_buildings)
             _, actions_spaces = env_rbc.get_state_action_spaces()
 
             #Instantiatiing the control agent(s)
@@ -711,6 +714,10 @@ class CityLearn(gym.Env):
                 state = next_state
             self.cost_rbc = env_rbc.get_baseline_cost()
 
+    def cost(self):
+
+        self.get_rbc_cost()
+
         # Compute the costs normalized by the baseline costs
         cost = {}
         self.net_electric_consumption = np.array(self.net_electric_consumption)
@@ -723,15 +730,19 @@ class CityLearn(gym.Env):
 
         # Average of all the daily peaks of the 365 day of the year. The peaks are calculated using the net energy demand of the whole district of buildings.
         if 'average_daily_peak' in self.cost_function:
-            cost['average_daily_peak'] = np.mean([self.net_electric_consumption[i:i+24].max() for i in range(0,len(self.net_electric_consumption),24)])/self.cost_rbc['average_daily_peak']
+            cost['average_daily_peak'] = np.mean([np.max(self.net_electric_consumption[i:i+24]) for i in range(0,len(self.net_electric_consumption),24)])/self.cost_rbc['average_daily_peak']
 
         # Peak demand of the district for the whole year period.
         if 'peak_demand' in self.cost_function:
-            cost['peak_demand'] = self.net_electric_consumption.max()/self.cost_rbc['peak_demand']
+            cost['peak_demand'] = np.max(self.net_electric_consumption)/self.cost_rbc['peak_demand']
 
         # Positive net electricity consumption for the whole district. It is clipped at a min. value of 0 because the objective is to minimize the energy consumed in the district, not to profit from the excess generation. (Island operation is therefore incentivized)
         if 'net_electricity_consumption' in self.cost_function:
             cost['net_electricity_consumption'] = self.net_electric_consumption.clip(min=0).sum()/self.cost_rbc['net_electricity_consumption']
+
+        # Total line losses of the network
+        if 'system_losses' in self.cost_function:
+            cost['system_losses'] = -1*np.sum(self.system_losses)/self.cost_rbc['system_losses']
 
         # Not used for the challenge
         if 'quadratic' in self.cost_function:
@@ -752,15 +763,18 @@ class CityLearn(gym.Env):
             cost['1-load_factor'] = np.mean([1 - np.mean(self.net_electric_consumption[i:i+int(8760/12)])/ np.max(self.net_electric_consumption[i:i+int(8760/12)]) for i in range(0, len(self.net_electric_consumption), int(8760/12))])
 
         if 'average_daily_peak' in self.cost_function:
-            cost['average_daily_peak'] = np.mean([self.net_electric_consumption[i:i+24].max() for i in range(0, len(self.net_electric_consumption), 24)])
+            cost['average_daily_peak'] = np.mean([np.max(self.net_electric_consumption[i:i+24]) for i in range(0, len(self.net_electric_consumption), 24)])
 
         if 'peak_demand' in self.cost_function:
-            cost['peak_demand'] = self.net_electric_consumption.max()
+            cost['peak_demand'] = np.max(self.net_electric_consumption)
 
         if 'net_electricity_consumption' in self.cost_function:
-            cost['net_electricity_consumption'] = self.net_electric_consumption.clip(min=0).sum()
+            cost['net_electricity_consumption'] = np.array(self.net_electric_consumption).clip(min=0).sum()
+
+        if 'system_losses' in self.cost_function:
+            cost['system_losses'] = -1*np.sum(self.system_losses)
 
         if 'quadratic' in self.cost_function:
-            cost['quadratic'] = (self.net_electric_consumption.clip(min=0)**2).sum()
+            cost['quadratic'] = (np.array(self.net_electric_consumption).clip(min=0)**2).sum()
 
         return cost
