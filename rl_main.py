@@ -1,7 +1,7 @@
 # Run this again after editing submodules so Colab uses the updated versions
 from citylearn import CityLearn
 from gridlearn import GridLearn
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from pathlib import Path
 from agent import RL_Agents_Coord
 import numpy as np
@@ -38,7 +38,7 @@ n_episodes = 12
 
 print("Initializing the agents...")
 # Instantiating the control agent(s)
-agents = RL_Agents_Coord(env, discount = gamma, batch_size = bs, replay_buffer_capacity = 1e5, regression_buffer_capacity = 12*8760, tau=tau, lr=lr, hidden_dim=hid, start_training=8760*3, exploration_period = 8760*3+1,  start_regression=8760, information_sharing = True, pca_compression = .95, action_scaling_coef=0.5, reward_scaling = 5., update_per_step = 1, iterations_as = 2)
+agents = RL_Agents_Coord(env, list(self.buildings.keys()), discount = gamma, batch_size = bs, replay_buffer_capacity = 1e5, regression_buffer_capacity = 12*8760, tau=tau, lr=lr, hidden_dim=hid, start_training=8760*3, exploration_period = 8760*3+1,  start_regression=8760, information_sharing = True, pca_compression = .95, action_scaling_coef=0.5, reward_scaling = 5., update_per_step = 1, iterations_as = 2)
 
 print("Starting the experiment...")
 # The number of episodes can be replaces by a stopping criterion (i.e. convergence of the average reward)

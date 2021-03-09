@@ -8,35 +8,8 @@ from gym import spaces
 from energy_models import HeatPump, ElectricHeater, EnergyStorage, Building
 from reward_function import reward_function_sa, reward_function_ma
 from pathlib import Path
+from agent import RBC_Agent
 gym.logger.set_level(40)
-
-# Reference Rule-based controller. Used as a baseline to calculate the costs in CityLearn
-# It requires, at least, the hour of the day as input state
-class RBC_Agent:
-    def __init__(self, actions_spaces):
-        self.actions_spaces = actions_spaces
-        self.reset_action_tracker()
-
-    def reset_action_tracker(self):
-        self.action_tracker = []
-
-    def select_action(self, states):
-        hour_day = states[0]
-
-        # Daytime: release stored energy
-        a = [[0.0 for _ in range(len(self.actions_spaces[i].sample()))] for i in range(len(self.actions_spaces))]
-        if hour_day >= 9 and hour_day <= 21:
-            a = [[-0.08 for _ in range(len(self.actions_spaces[i].sample()))] for i in range(len(self.actions_spaces))]
-
-        # Early nightime: store DHW and/or cooling energy
-        if (hour_day >= 1 and hour_day <= 8) or (hour_day >= 22 and hour_day <= 24):
-            a = []
-            for i in range(len(self.actions_spaces)):
-                a.append([0.91]*self.actions_spaces[i].shape[0])
-
-        self.action_tracker.append(a)
-
-        return np.array(a, dtype=object)
 
 def auto_size(buildings):
     for building in buildings.values():
@@ -84,6 +57,8 @@ def subhourly_noisy_interp(hourly_data, subhourly_steps):
     return list(data)
 
 def subhourly_randomdraw_interp(hourly_data, subhourly_steps, dhw_pwr):
+    """ Returns a randomized binary distribution where demand = power*time when water is drawn, 0 otherwise.
+    Proportion of time with demand at full power corresponds to energy consumption at the hourly interval by E+ """
     data = []
     subhourly_dhw_energy = dhw_pwr / subhourly_steps
     for hour in hourly_data:
@@ -105,7 +80,7 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
 
     data = {k:v for k,v in data.items() if k in building_ids}
 
-    buildings, observation_spaces, action_spaces = {},[],[]
+    buildings, observation_spaces, action_spaces = {},[],{}
     s_low_central_agent, s_high_central_agent, appended_states = [], [], []
     a_low_central_agent, a_high_central_agent, appended_actions = [], [], []
     all_data = list(zip(data, data.values()))
@@ -273,11 +248,11 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
             building.set_state_space(np.array(s_high), np.array(s_low))
             building.set_action_space(np.array(a_high), np.array(a_low))
 
-            observation_spaces.append(building.observation_space)
-            action_spaces.append(building.action_space)
-
             unique_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
             buildings[unique_id] = building
+
+            observation_spaces.append(building.observation_space)
+            action_spaces[unique_id] = building.action_space
 
     observation_space_central_agent = spaces.Box(low=np.float32(np.array(s_low_central_agent)), high=np.float32(np.array(s_high_central_agent)), dtype=np.float32)
     action_space_central_agent = spaces.Box(low=np.float32(np.array(a_low_central_agent)), high=np.float32(np.array(a_high_central_agent)), dtype=np.float32)
@@ -444,13 +419,14 @@ class CityLearn(gym.Env):
 
         else:
 
-            assert len(actions) == self.n_buildings, "The length of the list of actions should match the length of the list of buildings."
-            for a, (uid, building) in zip(actions, self.buildings.items()):
-
-                assert sum(self.buildings_states_actions[uid]['actions'].values()) == len(a), "The number of input actions for building "+str(uid)+" must match the number of actions defined in the list of building attributes." + str(self.buildings_states_actions[uid]['actions'].values()) + str(a)
-
+            # assert len(actions) == self.n_buildings, "The length of the list of actions should match the length of the list of buildings."
+            # for a, (uid, building) in zip(actions, self.buildings.items()):
+            for uid, a in actions.items():
+                building = self.buildings[uid]
+                # assert sum(self.buildings_states_actions[uid]['actions'].values()) == len(a), "The number of input actions for building "+str(uid)+" must match the number of actions defined in the list of building attributes." + str(self.buildings_states_actions[uid]['actions'].values()) + str(a)
                 if self.buildings_states_actions[uid]['actions']['cooling_storage']:
                     # Cooling will always be the first action available
+                    # print("setting cooling storage...")
                     _electric_demand_cooling = building.set_storage_cooling(a[0])
                     elec_consumption_cooling_storage += building._electric_consumption_cooling_storage
                     a = a[1:]
@@ -459,6 +435,7 @@ class CityLearn(gym.Env):
 
                 if self.buildings_states_actions[uid]['actions']['dhw_storage']:
                     # DHW
+                    # print("setting dhw storage...")
                     _electric_demand_dhw = building.set_storage_heating(a[0])
                     elec_consumption_dhw_storage += building._electric_consumption_dhw_storage
                     a = a[1:]
@@ -467,6 +444,7 @@ class CityLearn(gym.Env):
 
                 if self.buildings_states_actions[uid]['actions']['pv_curtail']:
                     # Solar power
+                    # print("setting pv curtailment...")
                     _solar_generation = building.get_solar_power(a[0])
                     elec_generation += _solar_generation
                     a = a[1:]
@@ -475,6 +453,7 @@ class CityLearn(gym.Env):
                     elec_generation += _solar_generation
 
                 if self.buildings_states_actions[uid]['actions']['pv_vm']:
+                    # print("setting pv voltage")
                     building.set_target_vm(a[0])
                     a = a[1:]
                 else:
@@ -498,6 +477,7 @@ class CityLearn(gym.Env):
                 # Total electricity consumption
                 electric_demand += building_electric_demand
 
+        self.aux_grid_func()
         self.next_hour()
 
         if self.central_agent:
@@ -526,7 +506,9 @@ class CityLearn(gym.Env):
         else:
             # If the controllers are decentralized, we append all the states to each associated agent's list of states.
             self.state = []
-            for uid, building in self.buildings.items():
+            # for uid, building in self.buildings.items():
+            for uid in actions.keys():
+                building = self.buildings[uid]
 #             for k, building in self.buildings.items():
 #                 uid = building.buildingId
                 s = []
@@ -573,8 +555,6 @@ class CityLearn(gym.Env):
         self.electric_generation.append(np.float32(elec_generation))
         self.net_electric_consumption_no_storage.append(np.float32(electric_demand-elec_consumption_cooling_storage-elec_consumption_dhw_storage))
         self.net_electric_consumption_no_pv_no_storage.append(np.float32(electric_demand + elec_generation - elec_consumption_cooling_storage - elec_consumption_dhw_storage))
-
-        self.aux_grid_func()
 
         terminal = self._terminal()
         return (self._get_ob(), rewards, terminal, {})
@@ -658,9 +638,7 @@ class CityLearn(gym.Env):
 
                 self.state.append(np.array(s, dtype=np.float32))
 
-            self.state = np.array(self.state, dtype=object)
-
-#         self.buildings_states_actions = {k:self.buildings_states_actions[self.buildings[k].buildingId] for k in self.buildings.keys()}
+            self.state = np.array(self.state)
 
         return self._get_ob()
 
@@ -704,7 +682,7 @@ class CityLearn(gym.Env):
             _, actions_spaces = env_rbc.get_state_action_spaces()
 
             #Instantiatiing the control agent(s)
-            agent_rbc = RBC_Agent(actions_spaces)
+            agent_rbc = RBC_Agent(self.buildings_states_actions)
 
             state = env_rbc.reset()
             done = False
