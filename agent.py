@@ -20,33 +20,82 @@ import math
 if torch.cuda.is_available():
     torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
+class Base_Agent:
+    """ A base agent for RL learning. Agent works on the community level to get
+    actions for each home energy system (HVAC, Water Heater, PV). """
+    def __init__(self, env):
+        self.env = env
+        self.action_tracker = self.reset_action_tracker()
+
+    def reset_action_tracker(self):
+        self.action_tracker = []
+
+    def get_house_action(self, states, uid):
+        """ Gets the actions on the house-level """
+        pass
+
+    def select_action(self, states):
+        """ Analogous to model.predict() in stable baselines.
+        Order of action list = [HVAC, Water Heater, PV]
+        Returns a dictionary {building unique id : [list of actions]}"""
+        pass
+
+class Do_Nothing_Agent(Base_Agent):
+    def __init__(self, env):
+        super().__init__(env)
+
+    def get_house_action(self, states, uid):
+        return [0.0 for _ in range(self.env.action_spaces[uid].shape[0])]
+
+    def select_action(self, states):
+        action_dict = {}
+        for uid in self.env.buildings.keys():
+            action_dict[uid] = self.get_house_action(states, uid)
+
+        return action_dict
+
+class Randomized_Agent(Base_Agent):
+    def __init__(self, env):
+        super().__init__(env)
+
+    def get_house_action(self, states, uid):
+        return self.env.action_spaces[uid].sample()
+
+    def select_action(self, states):
+        action_dict = {}
+        for uid in self.env.buildings.keys():
+            action_dict[uid] = self.get_house_action(states, uid)
+
+        return action_dict
+
+
 class RBC_Agent:
-    def __init__(self, actions_spaces):
-        self.actions_spaces = actions_spaces
+    def __init__(self, env):
+        self.env = env
         self.reset_action_tracker()
 
     def reset_action_tracker(self):
         self.action_tracker = []
 
     def select_action(self, states):
-        hour_day = states[2][2]
-
-        # Daytime: release stored energy
-        a = [[0.0 for _ in range(len(self.actions_spaces[i].sample()))] for i in range(len(self.actions_spaces))]
-        if hour_day >= 9 and hour_day <= 21:
-            a = [[-0.08 for _ in range(len(self.actions_spaces[i].sample()))] for i in range(len(self.actions_spaces))]
-
-        # Early nightime: store DHW and/or cooling energy
-        if (hour_day >= 1 and hour_day <= 8) or (hour_day >= 22 and hour_day <= 24):
+        hour_day = states[0][2]
+        daytime = True if hour_day >= 1 and hour_day <= 21 else False
+        action_dict = {}
+        for uid, states_actions in self.env.buildings_states_actions.items():
             a = []
-            for i in range(len(self.actions_spaces)):
-                if len(self.actions_spaces[i].sample()) == 2:
-                    a.append([0.091, 0.091])
-                else:
-                    a.append([0.091])
+            for action, enabled in states_actions['actions'].items():
+                if enabled:
+                    if action == 'cooling_storage' or action == 'dhw_storage':
+                        if daytime:
+                            a += [-.08]
+                        else:
+                            a += [0.91]
+                    else:
+                        a += [0.5]
 
-        self.action_tracker.append(a)
-        return np.array(a)
+            action_dict[uid] = a
+
+        return action_dict
 
 class PolicyNetwork(nn.Module):
     def __init__(self, num_inputs, num_actions, action_space, action_scaling_coef, hidden_dim=[400,300],
@@ -220,7 +269,7 @@ class remove_feature:
 
 
 class RL_Agents_Coord:
-    def __init__(self, env, hidden_dim=[400,300], discount=0.99, tau=5e-3, lr=3e-4, batch_size=100, replay_buffer_capacity = 1e5, regression_buffer_capacity = 3e4, start_training = None, exploration_period = None, start_regression = None, information_sharing = False, pca_compression = 1., action_scaling_coef = 1., reward_scaling = 1., update_per_step = 1, iterations_as = 2, safe_exploration = False, seed = 0):
+    def __init__(self, env, building_uids, hidden_dim=[400,300], discount=0.99, tau=5e-3, lr=3e-4, batch_size=100, replay_buffer_capacity = 1e5, regression_buffer_capacity = 3e4, start_training = None, exploration_period = None, start_regression = None, information_sharing = False, pca_compression = 1., action_scaling_coef = 1., reward_scaling = 1., update_per_step = 1, iterations_as = 2, safe_exploration = False, seed = 0):
 
         assert start_training > start_regression, 'start_training must be greater than start_regression'
 
@@ -228,11 +277,11 @@ class RL_Agents_Coord:
         #     self.buildings_states_actions = json.load(json_file)
 
         self.buildings_states_actions = env.buildings_states_actions
-        self.building_ids = list(env.buildings.keys())
+        self.building_ids = building_uids
         self.building_info = env.get_building_information()
         ospace, aspace = env.get_state_action_spaces()
         self.observation_spaces = dict(zip(env.buildings.keys(), ospace))
-        self.action_spaces = dict(zip(env.buildings.keys(), aspace))
+        self.action_spaces = env.action_spaces #dict(zip(env.buildings.keys(), aspace))
 
         self.start_training = start_training
         self.start_regression = start_regression
@@ -276,7 +325,6 @@ class RL_Agents_Coord:
 
         for uid in self.energy_size_coef:
             self.energy_size_coef[uid] = self.energy_size_coef[uid]/self.total_coef
-
 
         self.replay_buffer, self.reg_buffer, self.soft_q_net1, self.soft_q_net2, self.target_soft_q_net1, self.target_soft_q_net2, self.policy_net, self.soft_q_optimizer1, self.soft_q_optimizer2, self.policy_optimizer, self.target_entropy, self.alpha, self.log_alpha, self.alpha_optimizer, self.pca, self.encoder, self.encoder_reg, self.state_estimator, self.norm_mean, self.norm_std, self.r_norm_mean, self.r_norm_std, self.log_pi_tracker = {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
         for uid in env.buildings.keys():
@@ -396,26 +444,26 @@ class RL_Agents_Coord:
             self.log_alpha[uid] = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optimizer[uid] = optim.Adam([self.log_alpha[uid]], lr=lr)
 
-
-    def select_action(self, states, deterministic=False):
+    def select_action(self, states, _building_ids=None, deterministic=False):
 
         self.time_step += 1
         explore = self.time_step <= self.exploration_period
 
         n_iterations = self.iterations_as
 
-        action_order = np.array(range(len(self.building_ids)))
-        np.random.shuffle(action_order)
+        if not _building_ids:
+            action_order = np.array(range(len(self.building_ids)))
+            np.random.shuffle(action_order)
 
-        _building_ids = [self.building_ids[i] for i in action_order]
-        _building_ids_next = [self.building_ids[action_order[(i+1)%len(action_order)]] for i in range(len(action_order))]
-        _states = [states[i] for i in action_order]
+            _building_ids = [self.building_ids[i] for i in action_order]
+            _building_ids_next = [self.building_ids[action_order[(i+1)%len(action_order)]] for i in range(len(action_order))]
+            _states = [states[i] for i in action_order]
 
-        actions = [None for _ in range(len(self.building_ids))]
+        actions = [None for _ in range(len(_building_ids))]
 
         # Initialize coordination vars. Accumulated net electricity consumption = 0, queue = 0
         accum_net_electric_demand = 0.
-        coordination_variables = [[None, None] for _ in range(len(self.building_ids))]
+        coordination_variables = [[None, None] for _ in range(len(_building_ids))]
 
         coordination_vars = {key:np.array([0., 0.]) for key in _building_ids}
         expected_demand = {key:0. for key in _building_ids}
@@ -467,7 +515,8 @@ class RL_Agents_Coord:
                 while n < n_iterations:
                     capacity_dispatched = 0
                     for uid, uid_next, state in zip(_building_ids, _building_ids_next, _states):
-                        state_ = np.array([j for j in np.hstack(self.encoder[uid]*state) if j != None])
+                        foo = np.hstack(self.encoder[uid]*state)
+                        state_ = np.array([j for j in foo if j != None])
 
                         # Adding shared information to the state
                         if self.information_sharing:
@@ -526,12 +575,18 @@ class RL_Agents_Coord:
                     actions[action_order[k]] = act.detach().cpu().numpy()[0]
                     k += 1
 
-        return actions, np.array(coordination_variables)
+
+        action_dict = {i:[] for i in _building_ids}
+        for i in range(len(_building_ids)):
+            action_dict[_building_ids[i]] = actions[action_order[i]]
+
+        ordered_action_dict = {i:action_dict[i] for i in self.building_ids}
+        return ordered_action_dict, np.array(coordination_variables)
 
 
     def add_to_buffer(self, states, actions, rewards, next_states, done, coordination_vars, coordination_vars_next):
 
-        for (uid, o, a, r, o2, coord_vars, coord_vars_next) in zip(self.building_ids, states, actions, rewards, next_states, coordination_vars, coordination_vars_next):
+        for (uid, o, a, r, o2, coord_vars, coord_vars_next) in zip(self.building_ids, states, actions.values(), rewards, next_states, coordination_vars, coordination_vars_next):
             if self.information_sharing:
                 # Normalize all the states using periodical normalization, one-hot encoding, or -1, 1 scaling. It also removes states that are not necessary (solar radiation if there are no solar PV panels).
                 x_reg = np.hstack(np.concatenate(([j for j in np.hstack(self.encoder_reg[uid]*o) if j != None][:-1], a)))
@@ -679,3 +734,57 @@ class RL_Agents_Coord:
                         target_param.data.copy_(
                             target_param.data * (1.0 - self.tau) + param.data * self.tau
                         )
+
+class Cluster_Agents:
+    def __init__(self, env, n_clusters=6, hidden_dim=[400,300], discount=0.99, tau=5e-3, lr=3e-4, batch_size=100, replay_buffer_capacity=1e5, regression_buffer_capacity=3e4, start_training=None, exploration_period=None, start_regression=None, information_sharing=False, pca_compression=1., action_scaling_coef=1., reward_scaling=1., update_per_step=1, iterations_as=2, safe_exploration=False, seed=0):
+        self.env = env
+        self.hidden_dim = hidden_dim
+        self.discount = discount
+        self.tau = tau
+        self.lr = lr
+        self.batch_size = batch_size
+        self.replay_buffer_capacity = replay_buffer_capacity
+        self.regression_buffer_capacity = regression_buffer_capacity
+        self.start_training = start_training
+        self.exploration_period = exploration_period
+        self.start_regression = start_regression
+        self.information_sharing = information_sharing
+        self.pca_compression = pca_compression
+        self.action_scaling_coef = action_scaling_coef
+        self.reward_scaling = reward_scaling
+        self.update_per_step = update_per_step
+        self.iterations_as = iterations_as
+        self.safe_exploration = safe_exploration
+        self.seed = seed
+        self.agents = self.create_clusters(n_clusters)
+
+    def create_clusters(self, n_clusters):
+        agents = []
+
+        # group clusters by spatial diversity
+        cluster = 0
+        building_uids = [[] for _ in range(n_clusters)]
+        for i in range(len(self.env.net.load)):
+            building_uids[cluster] += [self.env.net.load.name.iloc[i]]
+            cluster = (cluster + 1) % n_clusters
+
+        for i in range(n_clusters):
+            agents += [RL_Agents_Coord(self.env, building_uids[i], hidden_dim=self.hidden_dim, discount=self.discount, tau=self.tau, lr=self.lr, batch_size=self.batch_size, replay_buffer_capacity=self.replay_buffer_capacity, regression_buffer_capacity=self.regression_buffer_capacity, start_training=self.start_training, exploration_period=self.exploration_period, start_regression=self.start_regression, information_sharing=self.information_sharing, pca_compression=self.pca_compression, action_scaling_coef=self.action_scaling_coef, reward_scaling=self.reward_scaling, update_per_step=self.update_per_step, iterations_as=self.iterations_as, safe_exploration=self.safe_exploration, seed=self.seed)]
+
+        return agents
+
+    def initialize_actions(self, state, deterministic):
+        for agent in self.agents:
+            agent.action, agent.coordination_vars = agent.select_action(state, deterministic=deterministic)
+
+    def step(self, state, is_evaluating):
+        for agent in self.agents:
+            next_state, reward, done, _ = self.env.step(agent.action)
+            next_action, coordination_vars_next = agent.select_action(next_state, deterministic=is_evaluating)
+            agent.add_to_buffer(state, agent.action, reward, next_state, done, agent.coordination_vars, coordination_vars_next)
+
+            state = next_state
+            agent.coordination_vars = coordination_vars_next
+            agent.action = next_action
+
+        return state,done

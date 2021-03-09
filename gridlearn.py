@@ -2,7 +2,8 @@ import pandapower as pp
 from pandapower import runpp
 from pandapower.plotting import simple_plotly, pf_res_plotly
 import pandapower.networks as networks
-from citylearn import CityLearn, RBC_Agent
+from citylearn import CityLearn
+from agent import RBC_Agent
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -138,7 +139,7 @@ class GridLearn(CityLearn):
             _, actions_spaces = env_rbc.get_state_action_spaces()
 
             #Instantiatiing the control agent(s)
-            agent_rbc = RBC_Agent(actions_spaces)
+            agent_rbc = RBC_Agent(self.buildings_states_actions)
 
             state = env_rbc.reset()
             done = False
