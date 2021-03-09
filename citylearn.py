@@ -320,10 +320,11 @@ class CityLearn(gym.Env):
     def get_state_action_spaces(self):
         return self.observation_spaces, self.action_spaces
 
-    def next_hour(self):
-        self.time_step = next(self.hour)
-        for building in self.buildings.values():
-            building.time_step = self.time_step
+    def next_hour(self, buildings):
+        self.time_step = self.hour[self.time_index]
+        for uid, building in self.buildings.items():
+            if uid in buildings:
+                building.time_step = self.time_step
 
     def get_building_information(self):
 
@@ -478,7 +479,7 @@ class CityLearn(gym.Env):
                 electric_demand += building_electric_demand
 
         self.aux_grid_func()
-        self.next_hour()
+        self.next_hour(actions.keys())
 
         if self.central_agent:
             s, s_appended = [], []
@@ -546,15 +547,15 @@ class CityLearn(gym.Env):
             self.cumulated_reward_episode += sum(rewards)
 
         # Control variables which are used to display the results and the behavior of the buildings at the district level.
-        self.net_electric_consumption.append(np.float32(electric_demand))
-        self.electric_consumption_dhw_storage.append(np.float32(elec_consumption_dhw_storage))
-        self.electric_consumption_cooling_storage.append(np.float32(elec_consumption_cooling_storage))
-        self.electric_consumption_dhw.append(np.float32(elec_consumption_dhw_total))
-        self.electric_consumption_cooling.append(np.float32(elec_consumption_cooling_total))
-        self.electric_consumption_appliances.append(np.float32(elec_consumption_appliances))
-        self.electric_generation.append(np.float32(elec_generation))
-        self.net_electric_consumption_no_storage.append(np.float32(electric_demand-elec_consumption_cooling_storage-elec_consumption_dhw_storage))
-        self.net_electric_consumption_no_pv_no_storage.append(np.float32(electric_demand + elec_generation - elec_consumption_cooling_storage - elec_consumption_dhw_storage))
+        self.net_electric_consumption = np.append(self.net_electric_consumption,np.float32(electric_demand))
+        self.electric_consumption_dhw_storage  = np.append(self.electric_consumption_dhw_storage,np.float32(elec_consumption_dhw_storage))
+        self.electric_consumption_cooling_storage = np.append(self.electric_consumption_cooling_storage,np.float32(elec_consumption_cooling_storage))
+        self.electric_consumption_dhw = np.append(self.electric_consumption_dhw,np.float32(elec_consumption_dhw_total))
+        self.electric_consumption_cooling = np.append(self.electric_consumption_cooling,np.float32(elec_consumption_cooling_total))
+        self.electric_consumption_appliances = np.append(self.electric_consumption_appliances,np.float32(elec_consumption_appliances))
+        self.electric_generation = np.append(self.electric_generation,np.float32(elec_generation))
+        self.net_electric_consumption_no_storage = np.append(self.net_electric_consumption_no_storage,np.float32(electric_demand-elec_consumption_cooling_storage-elec_consumption_dhw_storage))
+        self.net_electric_consumption_no_pv_no_storage = np.append(self.net_electric_consumption_no_pv_no_storage,np.float32(electric_demand + elec_generation - elec_consumption_cooling_storage - elec_consumption_dhw_storage))
 
         terminal = self._terminal()
         return (self._get_ob(), rewards, terminal, {})
@@ -571,8 +572,11 @@ class CityLearn(gym.Env):
     def reset(self):
 
         #Initialization of variables
-        self.hour = iter(np.array(range(self.simulation_period[0], self.simulation_period[1] + 1)))
-        self.next_hour()
+        all_hours = np.repeat(np.array(range(self.simulation_period[0], self.simulation_period[1] + 10)), self.hourly_timesteps)
+        print(all_hours)
+        self.hour = all_hours
+        self.time_index = 0
+        self.next_hour(self.buildings.keys())
 
         self.net_electric_consumption = []
         self.net_electric_consumption_no_storage = []

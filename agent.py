@@ -281,7 +281,7 @@ class RL_Agents_Coord:
         self.building_info = env.get_building_information()
         ospace, aspace = env.get_state_action_spaces()
         self.observation_spaces = dict(zip(env.buildings.keys(), ospace))
-        self.action_spaces = dict(zip(env.buildings.keys(), aspace))
+        self.action_spaces = env.action_spaces #dict(zip(env.buildings.keys(), aspace))
 
         self.start_training = start_training
         self.start_regression = start_regression
@@ -515,7 +515,8 @@ class RL_Agents_Coord:
                 while n < n_iterations:
                     capacity_dispatched = 0
                     for uid, uid_next, state in zip(_building_ids, _building_ids_next, _states):
-                        state_ = np.array([j for j in np.hstack(self.encoder[uid]*state) if j != None])
+                        foo = np.hstack(self.encoder[uid]*state)
+                        state_ = np.array([j for j in foo if j != None])
 
                         # Adding shared information to the state
                         if self.information_sharing:
@@ -585,7 +586,7 @@ class RL_Agents_Coord:
 
     def add_to_buffer(self, states, actions, rewards, next_states, done, coordination_vars, coordination_vars_next):
 
-        for (uid, o, a, r, o2, coord_vars, coord_vars_next) in zip(self.building_ids, states, actions, rewards, next_states, coordination_vars, coordination_vars_next):
+        for (uid, o, a, r, o2, coord_vars, coord_vars_next) in zip(self.building_ids, states, actions.values(), rewards, next_states, coordination_vars, coordination_vars_next):
             if self.information_sharing:
                 # Normalize all the states using periodical normalization, one-hot encoding, or -1, 1 scaling. It also removes states that are not necessary (solar radiation if there are no solar PV panels).
                 x_reg = np.hstack(np.concatenate(([j for j in np.hstack(self.encoder_reg[uid]*o) if j != None][:-1], a)))
@@ -784,6 +785,6 @@ class Cluster_Agents:
 
             state = next_state
             agent.coordination_vars = coordination_vars_next
-            agent.action = action_next
+            agent.action = next_action
 
         return state,done
