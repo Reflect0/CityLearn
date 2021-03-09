@@ -421,11 +421,8 @@ class CityLearn(gym.Env):
 
         else:
 
-            # assert len(actions) == self.n_buildings, "The length of the list of actions should match the length of the list of buildings."
-            # for a, (uid, building) in zip(actions, self.buildings.items()):
             for uid, a in actions.items():
                 building = self.buildings[uid]
-                # assert sum(self.buildings_states_actions[uid]['actions'].values()) == len(a), "The number of input actions for building "+str(uid)+" must match the number of actions defined in the list of building attributes." + str(self.buildings_states_actions[uid]['actions'].values()) + str(a)
                 if self.buildings_states_actions[uid]['actions']['cooling_storage']:
                     # Cooling will always be the first action available
                     # print("setting cooling storage...")
@@ -508,11 +505,8 @@ class CityLearn(gym.Env):
         else:
             # If the controllers are decentralized, we append all the states to each associated agent's list of states.
             self.state = []
-            # for uid, building in self.buildings.items():
             for uid in actions.keys():
                 building = self.buildings[uid]
-#             for k, building in self.buildings.items():
-#                 uid = building.buildingId
                 s = []
                 for state_name, value in self.buildings_states_actions[uid]['states'].items():
                     if value == True:
@@ -573,9 +567,7 @@ class CityLearn(gym.Env):
     def reset(self):
 
         #Initialization of variables
-        all_hours = np.repeat(np.array(range(self.simulation_period[0], self.simulation_period[1] + 10)), self.hourly_timesteps)
-        print(all_hours)
-        self.hour = all_hours
+        self.hour = np.repeat(np.array(range(self.simulation_period[0], self.simulation_period[1] + 10)), self.hourly_timesteps)
         self.time_index = 0
         self.next_hour(self.buildings.keys())
 
@@ -594,7 +586,6 @@ class CityLearn(gym.Env):
         if self.central_agent:
             s, s_appended = [], []
             for uid, building in self.buildings.items():
-#                 uid = "Building_"+str(building.building_type)
                 building.reset()
                 for state_name, value in self.buildings_states_actions[uid]['states'].items():
                     if state_name not in s_appended:
@@ -616,7 +607,6 @@ class CityLearn(gym.Env):
 
             self.state = []
             for uid, building in self.buildings.items():
-#                 uid = "Building_" + str(building.building_type)
                 building.reset()
                 s = []
                 for state_name, value in zip(self.buildings_states_actions[uid]['states'], self.buildings_states_actions[uid]['states'].values()):

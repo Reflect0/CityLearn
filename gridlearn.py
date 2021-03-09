@@ -12,7 +12,8 @@ import random
 
 class GridLearn(CityLearn):
     def __init__(self, data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_timesteps, buildings_states_actions = None, simulation_period = (0,8759), cost_function = ['ramping','1-load_factor','average_daily_peak', 'peak_demand','net_electricity_consumption'], central_agent = False, verbose = 0, n_buildings_per_bus=4, pv_penetration=0.3, test=False):
-        if test:
+        self.test = test
+        if self.test:
             self.net = self.make_test_grid()
         else:
             self.net = self.make_grid()
@@ -96,17 +97,21 @@ class GridLearn(CityLearn):
     # Change to citylearn.py: aux_grid_function is called at the end of .step()
     def aux_grid_func(self):
         for i in self.net.load.index:
-            current_load = 0
-            h = self.net.load.name[i]
-            current_load += self.buildings[h].get_dhw_electric_demand() * 0.001
-            current_load += self.buildings[h].get_non_shiftable_load() * 0.001
-            current_load += self.buildings[h].get_cooling_electric_demand() * 0.001
+            if self.test:
+                current_load = 0.01
+            else:
+                current_load = 0
+                h = self.net.load.name[i]
+                current_load += self.buildings[h].get_dhw_electric_demand() * 0.001
+                current_load += self.buildings[h].get_non_shiftable_load() * 0.001
+                current_load += self.buildings[h].get_cooling_electric_demand() * 0.001
+
+                # TBD const_i_percent by appliance (check PNNL reports)
+                self.net.load.at[i, 'const_i_percent'] = 2.0 * self.buildings[h].get_cooling_electric_demand() * 0.001 / current_load
+                self.net.load.at[i, 'const_i_percent'] = 3.0 * self.buildings[h].get_non_shiftable_load() * 0.001 / current_load
+                
             self.net.load.at[i, 'p_mw'] = 0.9 * current_load
             self.net.load.at[i, 'sn_mva'] = current_load
-
-            # TBD const_i_percent by appliance (check PNNL reports)
-            self.net.load.at[i, 'const_i_percent'] = 2.0 * self.buildings[h].get_cooling_electric_demand() * 0.001 / current_load
-            self.net.load.at[i, 'const_i_percent'] = 3.0 * self.buildings[h].get_non_shiftable_load() * 0.001 / current_load
 
         for j in self.net.gen.index:
             h = self.net.gen.name[j]
@@ -119,8 +124,6 @@ class GridLearn(CityLearn):
             self.net.gen.at[j, 'max_q_mvar'] = current_gen
             self.net.gen.at[j, 'vm_pu'] = self.buildings[h].target_vm
 
-#         pp.create_poly_cost(self.net, 0, "ext_grid", cp1_eur_per_mw=0, cp2_eur_per_mw2=1)
-#         pp.runopp(self.net, verbose=True) # dont use the opp since control decisions are made by the citylearn RL agent(s)
         runpp(self.net, enforce_q_lims=True)
 
         self.calc_system_losses()
