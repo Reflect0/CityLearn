@@ -91,11 +91,11 @@ class RBC_Agent:
                         else:
                             a += [0.91]
                     else:
-                        a += [0.0]
+                        a += [0.5]
 
             action_dict[uid] = a
 
-        return action_dict #np.array(a)
+        return action_dict
 
 class PolicyNetwork(nn.Module):
     def __init__(self, num_inputs, num_actions, action_space, action_scaling_coef, hidden_dim=[400,300],
