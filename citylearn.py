@@ -322,6 +322,7 @@ class CityLearn(gym.Env):
 
     def next_hour(self, buildings):
         self.time_step = self.hour[self.time_index]
+        self.time_index += 1
         for uid, building in self.buildings.items():
             if uid in buildings:
                 building.time_step = self.time_step
