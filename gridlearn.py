@@ -10,8 +10,11 @@ from pathlib import Path
 import random
 
 class GridLearn(CityLearn):
-    def __init__(self, data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_timesteps, buildings_states_actions = None, simulation_period = (0,8759), cost_function = ['ramping','1-load_factor','average_daily_peak', 'peak_demand','net_electricity_consumption'], central_agent = False, verbose = 0, n_buildings_per_bus=4, pv_penetration=0.3):
-        self.net = self.make_grid()
+    def __init__(self, data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_timesteps, buildings_states_actions = None, simulation_period = (0,8759), cost_function = ['ramping','1-load_factor','average_daily_peak', 'peak_demand','net_electricity_consumption'], central_agent = False, verbose = 0, n_buildings_per_bus=4, pv_penetration=0.3, test=False):
+        if test:
+            self.net = self.make_test_grid()
+        else:
+            self.net = self.make_grid()
         n_buildings = n_buildings_per_bus * (len(self.net.bus)-1)
         super().__init__(data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_timesteps, buildings_states_actions, simulation_period, cost_function, central_agent, verbose, n_buildings)
         self.house_nodes = self.add_houses(n_buildings_per_bus, pv_penetration)
@@ -25,6 +28,19 @@ class GridLearn(CityLearn):
         self.system_losses = []
         self.pv_penetration = pv_penetration
         self.n_buildings_per_bus = n_buildings_per_bus
+
+    def make_test_grid(self):
+        net = pp.create_empty_network(name="single bus network")
+
+        ex_grid = pp.create_bus(net, name=0, vn_kv=12.66, geodata=(0,0))
+        pp.create_ext_grid(net, ex_grid, vm_pu=1.02, va_degree=50)
+
+        bus1 = pp.create_bus(net, name=1, vn_kv=12.66, geodata=(0,1))
+        load1 = pp.create_load(net, 1, p_mw=0)
+
+        main_line = pp.create_line(net, ex_grid, bus1, 0.5, std_type="N2XS(FL)2Y 1x300 RM/35 64/110 kV") # arbitrary line
+
+        return net
 
     def make_grid(self):
         # make a grid that fits the buildings generated for CityLearn
@@ -40,6 +56,7 @@ class GridLearn(CityLearn):
         load_nodes = self.net.load['bus']
         res_voltage_nodes = self.net.bus['name'][self.net.bus['vn_kv'] == 12.66]
         res_load_nodes = set(load_nodes) & set(res_voltage_nodes)
+        print(set(load_nodes), set(res_voltage_nodes), res_load_nodes)
 
         # add a residential distribution feeder type to the PandaPower network
         # Assume for now ~250A per home on "94-AL1/15-ST1A 0.4" lines rated @ 350A
