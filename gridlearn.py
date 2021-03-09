@@ -58,7 +58,6 @@ class GridLearn(CityLearn):
         load_nodes = self.net.load['bus']
         res_voltage_nodes = self.net.bus['name'][self.net.bus['vn_kv'] == 12.66]
         res_load_nodes = set(load_nodes) & set(res_voltage_nodes)
-        print(set(load_nodes), set(res_voltage_nodes), res_load_nodes)
 
         # add a residential distribution feeder type to the PandaPower network
         # Assume for now ~250A per home on "94-AL1/15-ST1A 0.4" lines rated @ 350A
@@ -109,7 +108,7 @@ class GridLearn(CityLearn):
                 # TBD const_i_percent by appliance (check PNNL reports)
                 self.net.load.at[i, 'const_i_percent'] = 2.0 * self.buildings[h].get_cooling_electric_demand() * 0.001 / current_load
                 self.net.load.at[i, 'const_i_percent'] = 3.0 * self.buildings[h].get_non_shiftable_load() * 0.001 / current_load
-                
+
             self.net.load.at[i, 'p_mw'] = 0.9 * current_load
             self.net.load.at[i, 'sn_mva'] = current_load
 

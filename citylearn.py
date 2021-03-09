@@ -62,7 +62,7 @@ def subhourly_randomdraw_interp(hourly_data, subhourly_steps, dhw_pwr):
     data = []
     subhourly_dhw_energy = dhw_pwr / subhourly_steps
     for hour in hourly_data:
-        draw_times = np.random.choice(subhourly_steps, int(hour/subhourly_steps), replace=False)
+        draw_times = np.random.choice(subhourly_steps, int(hour/subhourly_dhw_energy), replace=False)
         for i in range(subhourly_steps):
             if i in draw_times:
                 data += [subhourly_dhw_energy]
