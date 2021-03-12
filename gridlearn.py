@@ -203,7 +203,7 @@ class GridLearn(CityLearn):
                     quad = axes[0]
 
                 f = dfs[i].loc[south_list].transpose().plot(ax=quad, figsize=(10,6), color=plt.cm.Spectral(np.linspace(0, 1, len(dfs[i]))))
-                f.set_xlabel("Time (Hour)")
+                f.set_xlabel(f"Timestep ({60/self.hourly_timesteps} minutes)")
                 f.set_ylabel(y[i])
                 f.set_title(f"South, {title}")
                 quad.legend().set_visible(False)
@@ -215,7 +215,7 @@ class GridLearn(CityLearn):
                     quad = axes[1]
 
                 g = dfs[i].loc[north_list].transpose().plot(ax=quad, figsize=(10,6), color=plt.cm.Spectral(np.linspace(1, 0, len(dfs[i]))))
-                g.set_xlabel("Time (Hour)")
+                g.set_xlabel(f"Time ({60/self.hourly_timesteps} minutes)")
                 g.set_ylabel(y[i])
                 g.set_title(f"North, {title}")
                 quad.legend().set_visible(False)

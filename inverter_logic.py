@@ -19,17 +19,18 @@ solar_profile = data_path / 'solar_generation_1kW.csv'
 building_state_actions = 'buildings_state_action_space.json'
 building_ids = ["Building_1"]
 objective_function = ['ramping','1-load_factor','average_daily_peak','peak_demand','net_electricity_consumption']
-hourly_steps = 6
+hourly_steps = 2
 print("Initializing the grid...")
-my_grid = GridLearn(data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_steps, simulation_period=(0,24), buildings_states_actions = building_state_actions, cost_function = objective_function, verbose=1, n_buildings_per_bus=1, pv_penetration=1, test=True)
+my_grid = GridLearn(data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_steps, buildings_states_actions = building_state_actions, cost_function = objective_function, verbose=1, n_buildings_per_bus=1, pv_penetration=1, test=True)
 
 # Simulation without energy storage
 state = my_grid.reset()
 done = False
 
-# agent = Do_Nothing_Agent(my_grid)
-agent = RBC_Agent(my_grid)
-for ts in range(24*hourly_steps):
+agent = Do_Nothing_Agent(my_grid)
+# agent = RBC_Agent(my_grid)
+for ts in range(96):
+    print(ts, my_grid.time_step)
     action = agent.select_action(state)
     state, rewards, done, _ = my_grid.step(action)
 

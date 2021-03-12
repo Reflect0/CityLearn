@@ -567,7 +567,7 @@ class CityLearn(gym.Env):
     def reset(self):
 
         #Initialization of variables
-        self.hour = np.repeat(np.array(range(self.simulation_period[0], self.simulation_period[1] + 10)), self.hourly_timesteps)
+        self.hour = np.array(range(self.simulation_period[0], self.simulation_period[1] * self.hourly_timesteps + 1))
         self.time_index = 0
         self.next_hour(self.buildings.keys())
 
