@@ -60,7 +60,7 @@ def subhourly_randomdraw_interp(hourly_data, subhourly_steps, dhw_pwr):
     """ Returns a randomized binary distribution where demand = power*time when water is drawn, 0 otherwise.
     Proportion of time with demand at full power corresponds to energy consumption at the hourly interval by E+ """
     data = []
-    subhourly_dhw_energy = dhw_pwr / subhourly_steps
+    subhourly_dhw_energy = max(0.01, dhw_pwr / subhourly_steps)
     for hour in hourly_data:
         draw_times = np.random.choice(subhourly_steps, int(hour/subhourly_dhw_energy), replace=False)
         for i in range(subhourly_steps):
@@ -517,7 +517,7 @@ class CityLearn(gym.Env):
                             if self.time_step <= 1:
                                 s.append(0.5)
                             else:
-                                ranked_voltage = self.net.res_bus['vm_pu'].rank(pct=True)[self.net.load.loc[self.net.load['name']==uid].bus]
+                                ranked_voltage = self.net.res_bus['vm_pu'].rank(pct=True)[self.net.load.loc[self.net.load['name']==uid].bus].iat[0]
                                 s.append(ranked_voltage)
                         elif state_name == 'total_voltage_spread':
                             if self.time_step <= 1:
@@ -677,7 +677,7 @@ class CityLearn(gym.Env):
             _, actions_spaces = env_rbc.get_state_action_spaces()
 
             #Instantiatiing the control agent(s)
-            agent_rbc = RBC_Agent(self.buildings_states_actions)
+            agent_rbc = RBC_Agent(env_rbc)
 
             state = env_rbc.reset()
             done = False

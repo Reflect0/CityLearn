@@ -141,7 +141,7 @@ class GridLearn(CityLearn):
             _, actions_spaces = env_rbc.get_state_action_spaces()
 
             #Instantiatiing the control agent(s)
-            agent_rbc = RBC_Agent(self.buildings_states_actions)
+            agent_rbc = RBC_Agent(env_rbc)
 
             state = env_rbc.reset()
             done = False

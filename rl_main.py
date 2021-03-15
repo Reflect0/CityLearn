@@ -25,7 +25,7 @@ objective_function = ['ramping','1-load_factor','average_daily_peak','peak_deman
 print("Initializing the grid...")
 # Contain the lower and upper bounds of the states and actions, to be provided to the agent to normalize the variables between 0 and 1.
 # Can be obtained using observations_spaces[i].low or .high
-env = GridLearn(data_path, building_attributes, weather_file, solar_profile, building_id, 6, buildings_states_actions = building_state_actions, cost_function = objective_function, verbose=1, n_buildings_per_bus=1)
+env = GridLearn(data_path, building_attributes, weather_file, solar_profile, building_id, 6, buildings_states_actions = building_state_actions, simulation_period=(0,25), cost_function = objective_function, verbose=1, n_buildings_per_bus=1)
 
 # Hyperparameters
 bs = 256
@@ -38,7 +38,10 @@ n_episodes = 12
 
 print("Initializing the agents...")
 # Instantiating the control agent(s)
-agents = RL_Agents_Coord(env, list(self.buildings.keys()), discount = gamma, batch_size = bs, replay_buffer_capacity = 1e5, regression_buffer_capacity = 12*8760, tau=tau, lr=lr, hidden_dim=hid, start_training=8760*3, exploration_period = 8760*3+1,  start_regression=8760, information_sharing = True, pca_compression = .95, action_scaling_coef=0.5, reward_scaling = 5., update_per_step = 1, iterations_as = 2)
+n_clusters = 2
+# for n in range(n_clusters):
+#     clusters
+agents = RL_Agents_Coord(env, list(env.buildings.keys()), discount = gamma, batch_size = bs, replay_buffer_capacity = 1e5, regression_buffer_capacity = 12*8760, tau=tau, lr=lr, hidden_dim=hid, start_training=8760*3, exploration_period = 8760*3+1,  start_regression=8760, information_sharing = True, pca_compression = .95, action_scaling_coef=0.5, reward_scaling = 5., update_per_step = 1, iterations_as = 2)
 
 print("Starting the experiment...")
 # The number of episodes can be replaces by a stopping criterion (i.e. convergence of the average reward)
@@ -57,6 +60,7 @@ for e in range(n_episodes):
         agents.add_to_buffer(state, action, reward, next_state, done, coordination_vars, coordination_vars_next)
 
         state = next_state
+        print("state", state)
         coordination_vars = coordination_vars_next
         action = action_next
 

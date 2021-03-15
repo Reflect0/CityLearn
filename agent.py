@@ -78,7 +78,8 @@ class RBC_Agent:
         self.action_tracker = []
 
     def select_action(self, states):
-        hour_day = states[0][2]
+        # print(states)
+        hour_day = states[0]
         daytime = True if hour_day >= 1 and hour_day <= 21 else False
         action_dict = {}
         for uid, states_actions in self.env.buildings_states_actions.items():
