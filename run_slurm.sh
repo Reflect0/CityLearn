@@ -10,5 +10,5 @@
 
 module purge
 source /curc/sw/anaconda3/2019.07/bin/activate
-conda activate cities
+conda activate city
 python -u rl_main.py
