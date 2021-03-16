@@ -25,7 +25,7 @@ objective_function = ['ramping','1-load_factor','average_daily_peak','peak_deman
 print("Initializing the grid...")
 # Contain the lower and upper bounds of the states and actions, to be provided to the agent to normalize the variables between 0 and 1.
 # Can be obtained using observations_spaces[i].low or .high
-env = GridLearn(data_path, building_attributes, weather_file, solar_profile, building_id, 6, buildings_states_actions = building_state_actions, cost_function = objective_function, verbose=1, n_buildings_per_bus=1)
+env = GridLearn(data_path, building_attributes, weather_file, solar_profile, building_id, 6, buildings_states_actions = building_state_actions, simulation_period=(0,2000) cost_function = objective_function, verbose=1, n_buildings_per_bus=1)
 
 # Hyperparameters
 bs = 256
@@ -60,7 +60,6 @@ for e in range(n_episodes):
         agents.add_to_buffer(state, action, reward, next_state, done, coordination_vars, coordination_vars_next)
 
         state = next_state
-        print("state", state)
         coordination_vars = coordination_vars_next
         action = action_next
 
