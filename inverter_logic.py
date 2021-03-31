@@ -30,7 +30,6 @@ done = False
 agent = Do_Nothing_Agent(my_grid)
 # agent = RBC_Agent(my_grid)
 for ts in range(96):
-    print(ts, my_grid.time_step)
     action = agent.select_action(state)
     state, rewards, done, _ = my_grid.step(action)
 

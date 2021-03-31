@@ -282,7 +282,7 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
     return buildings, observation_spaces, action_spaces, observation_space_central_agent, action_space_central_agent
 
 class CityLearn(gym.Env):
-    def __init__(self, data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_timesteps, buildings_states_actions = None, simulation_period = (0,8759), cost_function = ['ramping','1-load_factor','average_daily_peak','peak_demand','net_electricity_consumption'], central_agent = False, verbose = 0, n_buildings=None):
+    def __init__(self, data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_timesteps, buildings_states_actions = None, simulation_period = (0,8759), cost_function = ['ramping','1-load_factor','average_daily_peak','peak_demand','net_electricity_consumption', 'voltage_dev'], central_agent = False, verbose = 0, n_buildings=None):
 
         np.random.seed(12)
         random.seed(12)
@@ -538,7 +538,8 @@ class CityLearn(gym.Env):
                 self.state.append(np.array(s))
             self.state = np.array(self.state, dtype=object)
             sys_losses = self.system_losses[-1] if self.time_step > 1 else 0
-            rewards = self.reward_function.get_rewards(sys_losses)
+            voltage_dev = self.voltage_dev[-1] if self.time_step > 1 else 0
+            rewards = self.reward_function.get_rewards(voltage_dev, sys_losses)
             self.cumulated_reward_episode += sum(rewards)
 
         # Control variables which are used to display the results and the behavior of the buildings at the district level.
@@ -603,7 +604,7 @@ class CityLearn(gym.Env):
                                 s.append(0.0)
             self.state = np.array(s)
         else:
-            self.reward_function = reward_function_ma(len(self.building_ids), self.get_building_information())
+            self.reward_function = reward_function_ma(self.n_buildings, self.get_building_information())
 
             self.state = []
             for uid, building in self.buildings.items():
@@ -717,6 +718,10 @@ class CityLearn(gym.Env):
         if 'system_losses' in self.cost_function:
             cost['system_losses'] = -1*np.sum(self.system_losses)/self.cost_rbc['system_losses']
 
+        # Total line losses of the network
+        if 'voltage_dev' in self.cost_function:
+            cost['voltage_dev'] = -1*np.sum(self.voltage_dev)/self.cost_rbc['voltage_dev']
+
         # Not used for the challenge
         if 'quadratic' in self.cost_function:
             cost['quadratic'] = (self.net_electric_consumption.clip(min=0)**2).sum()/self.cost_rbc['quadratic']
@@ -746,6 +751,9 @@ class CityLearn(gym.Env):
 
         if 'system_losses' in self.cost_function:
             cost['system_losses'] = -1*np.sum(self.system_losses)
+
+        if 'voltage_dev' in self.cost_function:
+            cost['voltage_dev'] = -1*np.sum(self.voltage_dev)
 
         if 'quadratic' in self.cost_function:
             cost['quadratic'] = (np.array(self.net_electric_consumption).clip(min=0)**2).sum()

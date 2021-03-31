@@ -28,6 +28,7 @@ class GridLearn(CityLearn):
            'p_mw_stor':{'var':'p_mw', 'parent':'res_storage', 'values':pd.DataFrame()},
            'p_mw_gen':{'var':'p_mw', 'parent':'res_gen', 'values':pd.DataFrame()}}
         self.system_losses = []
+        self.voltage_dev = []
         self.pv_penetration = pv_penetration
         self.n_buildings_per_bus = n_buildings_per_bus
 
@@ -126,6 +127,7 @@ class GridLearn(CityLearn):
         runpp(self.net, enforce_q_lims=True)
 
         self.calc_system_losses()
+        self.calc_voltage_dev()
 
         # write these value to the output writer:
         for k, v in self.output.items():
@@ -133,6 +135,9 @@ class GridLearn(CityLearn):
 
     def calc_system_losses(self):
         self.system_losses += list((self.net.res_ext_grid.p_mw + self.net.res_load.p_mw.sum() - self.net.res_gen.p_mw.sum()).values)
+
+    def calc_voltage_dev(self):
+        self.voltage_dev += list(abs((self.net.res_bus['vm_pu']-1)/0.05))
 
     def get_rbc_cost(self):
         # Running the reference rule-based controller to find the baseline cost
@@ -153,6 +158,7 @@ class GridLearn(CityLearn):
 
     def reset(self):
         self.system_losses = []
+        self.voltage_dev = []
         return super().reset()
 
     def plot_buses(self):

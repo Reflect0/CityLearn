@@ -1,9 +1,9 @@
 # Run this again after editing submodules so Colab uses the updated versions
 from citylearn import CityLearn
 from gridlearn import GridLearn
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from pathlib import Path
-from agent import RL_Agents_Coord
+from agent import RL_Agents_Coord, Cluster_Agents
 import numpy as np
 import csv
 import time
@@ -20,12 +20,14 @@ weather_file = data_path / 'weather_data.csv'
 solar_profile = data_path / 'solar_generation_1kW.csv'
 building_state_actions = 'buildings_state_action_space.json'
 building_id = ["Building_1","Building_2","Building_3","Building_4","Building_5","Building_6","Building_7","Building_8","Building_9"]
-objective_function = ['ramping','1-load_factor','average_daily_peak','peak_demand','net_electricity_consumption','quadratic','system_losses']
+objective_function = ['ramping','1-load_factor','average_daily_peak','peak_demand','net_electricity_consumption','quadratic','voltage_dev']
+
+ep_period = 8760
 
 print("Initializing the grid...")
 # Contain the lower and upper bounds of the states and actions, to be provided to the agent to normalize the variables between 0 and 1.
 # Can be obtained using observations_spaces[i].low or .high
-env = GridLearn(data_path, building_attributes, weather_file, solar_profile, building_id, 6, buildings_states_actions = building_state_actions, simulation_period=(0,1460) cost_function = objective_function, verbose=1, n_buildings_per_bus=1)
+env = GridLearn(data_path, building_attributes, weather_file, solar_profile, building_id, 6, buildings_states_actions = building_state_actions, simulation_period = (0,ep_period), cost_function = objective_function, verbose=1, n_buildings_per_bus=1)
 
 # Hyperparameters
 bs = 256
@@ -34,14 +36,12 @@ gamma = 0.99
 lr = 0.0003
 hid = [256,256]
 
-n_episodes = 12
+n_episodes = 4
 
 print("Initializing the agents...")
 # Instantiating the control agent(s)
-n_clusters = 2
-# for n in range(n_clusters):
-#     clusters
-agents = RL_Agents_Coord(env, list(env.buildings.keys()), discount = gamma, batch_size = bs, replay_buffer_capacity = 1e5, regression_buffer_capacity = 12*8760, tau=tau, lr=lr, hidden_dim=hid, start_training=8760*3, exploration_period = 8760*3+1,  start_regression=8760, information_sharing = True, pca_compression = .95, action_scaling_coef=0.5, reward_scaling = 5., update_per_step = 1, iterations_as = 2)
+agents = RL_Agents_Coord(env, list(env.buildings.keys()), discount = gamma, batch_size = bs, replay_buffer_capacity = 1e5, regression_buffer_capacity = 12*ep_period, tau=tau, lr=lr, hidden_dim=hid, start_training=ep_period*(n_episodes-1), exploration_period = ep_period*(n_episodes)+1,  start_regression=ep_period, information_sharing = True, pca_compression = .95, action_scaling_coef=0.5, reward_scaling = 5., update_per_step = 1, iterations_as = 2)
+# agents = Cluster_Agents(env, 1, discount = gamma, batch_size = bs, replay_buffer_capacity = 1e5, regression_buffer_capacity = 12*8760, tau=tau, lr=lr, hidden_dim=hid, start_training=8760*3, exploration_period = 8760*3+1,  start_regression=8760, information_sharing = True, pca_compression = .95, action_scaling_coef=0.5, reward_scaling = 5., update_per_step = 1, iterations_as = 2)
 
 print("Starting the experiment...")
 # The number of episodes can be replaces by a stopping criterion (i.e. convergence of the average reward)

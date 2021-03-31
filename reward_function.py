@@ -26,8 +26,8 @@ class reward_function_ma:
     #     electricity_demand = np.array(electricity_demand)
     #
     #     return list(np.sign(electricity_demand)*0.01*(np.array(np.abs(electricity_demand))**2 * max(0, total_electricity_demand)))
-    def get_rewards(self, system_losses):
-        return system_losses * np.ones(self.n_agents)
+    def get_rewards(self, voltage_dev, sys_losses):
+        return np.sum(voltage_dev) * np.ones(self.n_agents)
 
 # Reward function for the single-agent (centralized) agent
 def reward_function_sa(electricity_demand):

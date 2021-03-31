@@ -277,6 +277,7 @@ class RL_Agents_Coord:
         # with open(buildings_states_actions) as json_file:
         #     self.buildings_states_actions = json.load(json_file)
 
+        self.env = env
         self.buildings_states_actions = env.buildings_states_actions
         self.building_ids = building_uids
         self.building_info = env.get_building_information()
@@ -447,7 +448,7 @@ class RL_Agents_Coord:
 
     def select_action(self, states, _building_ids=None, deterministic=False):
 
-        self.time_step += 1
+        self.time_step += 1/self.env.hourly_timesteps
         explore = self.time_step <= self.exploration_period
 
         n_iterations = self.iterations_as
@@ -586,8 +587,8 @@ class RL_Agents_Coord:
 
 
     def add_to_buffer(self, states, actions, rewards, next_states, done, coordination_vars, coordination_vars_next):
-
-        for (uid, o, a, r, o2, coord_vars, coord_vars_next) in zip(self.building_ids, states, actions.values(), rewards, next_states, coordination_vars, coordination_vars_next):
+        zipped = zip(self.building_ids, states, list(actions.values()), rewards, next_states, coordination_vars, coordination_vars_next)
+        for (uid, o, a, r, o2, coord_vars, coord_vars_next) in zipped:
             if self.information_sharing:
                 # Normalize all the states using periodical normalization, one-hot encoding, or -1, 1 scaling. It also removes states that are not necessary (solar radiation if there are no solar PV panels).
                 x_reg = np.hstack(np.concatenate(([j for j in np.hstack(self.encoder_reg[uid]*o) if j != None][:-1], a)))
@@ -628,6 +629,7 @@ class RL_Agents_Coord:
 
         if self.time_step >= self.start_training and self.batch_size <= len(self.replay_buffer[self.building_ids[0]]):
             for uid in self.building_ids:
+                print("normalization...")
                 # This code only runs once. Once the random exploration phase is over, we normalize all the states and rewards to make them have mean=0 and std=1, and apply PCA. We push the normalized compressed values back into the buffer, replacing the old buffer.
                 if self.pca_flag[uid] == 0:
                     X = np.array([j[0] for j in self.replay_buffer[uid].buffer])
