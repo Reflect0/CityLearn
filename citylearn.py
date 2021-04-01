@@ -171,12 +171,14 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
                         s_low.append(0.) # the house is the lowest voltage in the community
                         s_high.append(1.)
 
+                        s_low_central_agent.append(0.)
+                        s_high_central_agent.append(1.)
+
                     elif state_name == "total_voltage_spread":
                         # @akp, added total voltage spread to give a sense of the total loss incurred by the community. without the total voltage spread state "relative_voltage" is more or less meaningless. (total_voltage_spread = how much the community is penaltized, relative_voltage = what that house can do to fix the issue)
                         s_low.append(0.) # @akp?, not sure what the typical spread in v pu would be.
                         s_high.append(1.)
 
-                        # @akp?, still not sure how the central agent s.append() works...
                         s_low_central_agent.append(0.)
                         s_high_central_agent.append(1.)
 
@@ -477,7 +479,7 @@ class CityLearn(gym.Env):
                 electric_demand += building_electric_demand
 
         self.aux_grid_func()
-        self.next_hour(actions.keys())
+        self.next_hour(actions.keys() if type(actions)==dict else self.buildings.keys())
 
         if self.central_agent:
             s, s_appended = [], []
@@ -491,6 +493,22 @@ class CityLearn(gym.Env):
                                 s.append(building.sim_results[state_name][self.time_step])
                             elif state_name == 'net_electricity_consumption':
                                 s.append(building.current_net_electricity_demand)
+
+                            elif state_name == 'relative_voltage':
+                                if self.time_step <= 1:
+                                    s.append(0.5)
+                                else:
+                                    ranked_voltage = self.net.res_bus['vm_pu'].rank(pct=True)[self.net.load.loc[self.net.load['name']==uid].bus].iat[0]
+                                    s.append(ranked_voltage)
+                            elif state_name == 'total_voltage_spread':
+                                    if self.time_step <= 1:
+                                        s.append(0)
+                                    else:
+                                        voltage_spread = 0
+                                        for index, line in self.net.line.iterrows():
+                                            voltage_spread += abs(self.net.res_bus.loc[line.to_bus].vm_pu - self.net.res_bus.loc[line.from_bus].vm_pu)
+                                        s.append(voltage_spread)
+                                        
                             elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
                                 s.append(building.sim_results[state_name][self.time_step])
                                 s_appended.append(state_name)
@@ -595,6 +613,17 @@ class CityLearn(gym.Env):
                                 s.append(building.sim_results[state_name][self.time_step])
                             elif state_name == 'net_electricity_consumption':
                                 s.append(building.current_net_electricity_demand)
+                            elif state_name == 'total_voltage_spread':
+                                if self.time_step == 0:
+                                    s.append(0)
+                                else:
+                                    voltage_spread = s.append(max(self.net.res_bus.vm_pu)-min(self.net.res_bus.vm_pu))
+                            elif state_name == 'relative_voltage':
+                                if self.time_step == 0:
+                                    s.append(0.5)
+                                else:
+                                    house_voltage = self.net.res_bus[self.net.res_bus['name'] == uid]
+                                    s.append(house_voltage / spread)
                             elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
                                 s.append(building.sim_results[state_name][self.time_step])
                                 s_appended.append(state_name)
