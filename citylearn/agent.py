@@ -78,7 +78,6 @@ class RBC_Agent:
         self.action_tracker = []
 
     def select_action(self, states):
-        # print(states)
         hour_day = states[0]
         daytime = True if hour_day >= 1 and hour_day <= 21 else False
         action_dict = {}
@@ -410,10 +409,11 @@ class RL_Agents_Coord:
 
 
             # PCA will reduce the number of dimensions of the state space to 2/3 of its the original size
+            len_obs = len([j for j in np.hstack(self.encoder[uid]*np.ones(len(self.observation_spaces[uid].low))) if j != None])
             if self.information_sharing:
-                state_dim = int((pca_compression)*(2 + len([j for j in np.hstack(self.encoder[uid]*np.ones(len(self.observation_spaces[uid].low))) if j != None])))
+                state_dim = int(pca_compression*(2 + len_obs))
             else:
-                state_dim = int((pca_compression)*(len([j for j in np.hstack(self.encoder[uid]*np.ones(len(self.observation_spaces[uid].low))) if j != None])))
+                state_dim = int(pca_compression*len_obs)
 
             action_dim = self.action_spaces[uid].shape[0]
             self.alpha[uid] = 0.2
@@ -449,7 +449,7 @@ class RL_Agents_Coord:
     def select_action(self, states, _building_ids=None, deterministic=False):
 
         self.time_step += 1
-        print(self.time_step)
+        # print(self.time_step)
         explore = self.time_step <= self.exploration_period
 
         n_iterations = self.iterations_as
@@ -631,9 +631,9 @@ class RL_Agents_Coord:
 
         if self.time_step >= self.start_training and self.batch_size <= len(self.replay_buffer[self.building_ids[0]]):
             for uid in self.building_ids:
-                print("normalization...")
                 # This code only runs once. Once the random exploration phase is over, we normalize all the states and rewards to make them have mean=0 and std=1, and apply PCA. We push the normalized compressed values back into the buffer, replacing the old buffer.
                 if self.pca_flag[uid] == 0:
+                    # print("normalizing...")
                     X = np.array([j[0] for j in self.replay_buffer[uid].buffer])
                     self.norm_mean[uid] = np.mean(X, axis=0)
                     self.norm_std[uid] = np.std(X, axis=0) + 1e-5
@@ -643,6 +643,7 @@ class RL_Agents_Coord:
                     self.r_norm_mean[uid] = np.mean(R)
                     self.r_norm_std[uid] = np.std(R)/self.reward_scaling + 1e-5
 
+                    # print(X.shape)
                     self.pca[uid].fit(X)
                     new_buffer = []
                     for s, a, r, s2, dones in self.replay_buffer[uid].buffer:
@@ -777,10 +778,6 @@ class Cluster_Agents:
             agents += [RL_Agents_Coord(self.env, building_uids[i], hidden_dim=self.hidden_dim, discount=self.discount, tau=self.tau, lr=self.lr, batch_size=self.batch_size, replay_buffer_capacity=self.replay_buffer_capacity, regression_buffer_capacity=self.regression_buffer_capacity, start_training=self.start_training, exploration_period=self.exploration_period, start_regression=self.start_regression, information_sharing=self.information_sharing, pca_compression=self.pca_compression, action_scaling_coef=self.action_scaling_coef, reward_scaling=self.reward_scaling, update_per_step=self.update_per_step, iterations_as=self.iterations_as, safe_exploration=self.safe_exploration, seed=self.seed)]
 
         return agents
-
-    def initialize_actions(self, state, deterministic):
-        for agent in self.agents:
-            agent.action, agent.coordination_vars = agent.select_action(state, deterministic=deterministic)
 
     def step(self, state, is_evaluating):
         for agent in self.agents:

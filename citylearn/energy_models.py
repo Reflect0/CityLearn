@@ -2,7 +2,7 @@ from gym import spaces
 import numpy as np
 
 class Building:
-    def __init__(self, buildingId, dhw_storage = None, cooling_storage = None, electrical_storage = None, dhw_heating_device = None, cooling_device = None, save_memory = True):
+    def __init__(self, buildingId, hourly_timesteps, dhw_storage = None, cooling_storage = None, electrical_storage = None, dhw_heating_device = None, cooling_device = None, save_memory = True):
         """
         Args:
             buildingId (int)
@@ -70,6 +70,8 @@ class Building:
 
         self.electrical_storage_electric_consumption = []
         self.electrical_storage_soc = []
+
+        self.hourly_timesteps = hourly_timesteps
 
     def set_state_space(self, high_state, low_state):
         # Setting the state space and the lower and upper bounds of each state-variable
@@ -191,8 +193,16 @@ class Building:
     def get_non_shiftable_load(self):
         return self.sim_results['non_shiftable_load'][self.time_step]
 
-    def get_solar_power(self):
-        return self.sim_results['solar_gen'][self.time_step]
+    def get_solar_power(self, curtailment=-1):
+         self.solar_power = (1 - .5 * curtailment + 0.5) * self.sim_results['solar_gen'][self.time_step] # @AKP change to make solar_power accessible, where curtailment action is applied only 1x per timestep instead of at .step() and .aux_grid_function()
+         return self.solar_power
+
+    def set_target_vm(self, voltage_shift=0):
+        self.target_vm = (1 + 0.01 * voltage_shift)
+        return self.target_vm
+
+    # def get_solar_power(self):
+    #     return self.sim_results['solar_gen'][self.time_step]
 
     def get_dhw_electric_demand(self):
         return self.dhw_heating_device._electrical_consumption_heating
@@ -538,7 +548,7 @@ class ElectricHeater:
         self.heat_supply = []
 
 class EnergyStorage:
-    def __init__(self, capacity = None, max_power_output = None, max_power_charging = None, efficiency = 1, loss_coef = 0, save_memory = True):
+    def __init__(self, capacity = None, max_power_output = None, max_power_charging = None, efficiency = 1, loss_coeff = 0, save_memory = True):
         """
         Generic energy storage class. It can be used as a chilled water storage tank or a DHW storage tank
         Args:
@@ -546,14 +556,14 @@ class EnergyStorage:
             max_power_output (float): Maximum amount of power that the storage unit can output (kW)
             max_power_charging (float): Maximum amount of power that the storage unit can use to charge (kW)
             efficiency (float): Efficiency factor of charging and discharging the storage unit (from 0 to 1)
-            loss_coef (float): Loss coefficient used to calculate the amount of energy lost every hour (from 0 to 1)
+            loss_coeff (float): Loss coefficient used to calculate the amount of energy lost every hour (from 0 to 1)
         """
 
         self.capacity = capacity
         self.max_power_output = max_power_output
         self.max_power_charging = max_power_charging
         self.efficiency = efficiency**0.5
-        self.loss_coef = loss_coef
+        self.loss_coeff = loss_coeff
         self.soc = []
         self._soc = 0 # State of Charge
         self.energy_balance = []
@@ -576,7 +586,7 @@ class EnergyStorage:
         """
 
         #The initial State Of Charge (SOC) is the previous SOC minus the energy losses
-        soc_init = self._soc*(1-self.loss_coef)
+        soc_init = self._soc*(1-self.loss_coeff)
 
         #Charging
         if energy >= 0:
@@ -618,23 +628,23 @@ class EnergyStorage:
 
 
 class Battery:
-    def __init__(self, capacity, nominal_power = None, capacity_loss_coef = None, power_efficiency_curve = None, capacity_power_curve = None, efficiency = None, loss_coef = 0, save_memory = True):
+    def __init__(self, capacity, nominal_power = None, capacity_loss_coeff = None, power_efficiency_curve = None, capacity_power_curve = None, efficiency = None, loss_coeff = 0, save_memory = True):
         """
         Generic energy storage class. It can be used as a chilled water storage tank or a DHW storage tank
         Args:
             capacity (float): Maximum amount of energy that the storage unit is able to store (kWh)
             max_power_charging (float): Maximum amount of power that the storage unit can use to charge (kW)
             efficiency (float): Efficiency factor of charging and discharging the storage unit (from 0 to 1)
-            loss_coef (float): Loss coefficient used to calculate the amount of energy lost every hour (from 0 to 1)
+            loss_coeff (float): Loss coefficient used to calculate the amount of energy lost every hour (from 0 to 1)
             power_efficiency_curve (float): Charging/Discharging efficiency as a function of the power released or consumed
             capacity_power_curve (float): Max. power of the battery as a function of its current state of charge
-            capacity_loss_coef (float): Battery degradation. Storage capacity lost in each charge and discharge cycle (as a fraction of the total capacity)
+            capacity_loss_coeff (float): Battery degradation. Storage capacity lost in each charge and discharge cycle (as a fraction of the total capacity)
         """
 
         self.capacity = capacity
         self.c0 = capacity
         self.nominal_power = nominal_power
-        self.capacity_loss_coef = capacity_loss_coef
+        self.capacity_loss_coeff = capacity_loss_coeff
 
         if power_efficiency_curve is not None:
             self.power_efficiency_curve = np.array(power_efficiency_curve).T
@@ -647,7 +657,7 @@ class Battery:
             self.capacity_power_curve = capacity_power_curve
 
         self.efficiency = efficiency**0.5
-        self.loss_coef = loss_coef
+        self.loss_coeff = loss_coeff
         self.max_power = None
         self._eff = []
         self._energy = []
@@ -674,7 +684,7 @@ class Battery:
         """
 
         #The initial State Of Charge (SOC) is the previous SOC minus the energy losses
-        soc_init = self._soc*(1-self.loss_coef)
+        soc_init = self._soc*(1-self.loss_coeff)
         if self.capacity_power_curve is not None:
             soc_normalized = soc_init/self.capacity
             # Calculating the maximum power rate at which the battery can be charged or discharged
@@ -728,7 +738,7 @@ class Battery:
             self._energy_balance = (self._soc - soc_init)*self.efficiency
 
         # Calculating the degradation of the battery: new max. capacity of the battery after charge/discharge
-        self.capacity -= self.capacity_loss_coef*self.c0*np.abs(self._energy_balance)/(2*self.capacity)
+        self.capacity -= self.capacity_loss_coeff*self.c0*np.abs(self._energy_balance)/(2*self.capacity)
 
         if self.save_memory == False:
             self.energy_balance.append(np.float32(self._energy_balance))
