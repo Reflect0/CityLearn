@@ -92,7 +92,7 @@
                "File_Name_Solar_Profile": "solar_generation_1kW.csv",
 			   "Building_Type": 5,
 			   "Climate_Zone": 1,
-               "Solar_Power_Installed(kW)":20, 
+               "Solar_Power_Installed(kW)":20,
                "Heat_Pump":{"nominal_power":"autosize", "technical_efficiency":0.22, "t_target_heating":45 ,"t_target_cooling":8},
                "Electric_Water_Heater":{"nominal_power":"autosize", "efficiency":0.9},
                "Chilled_Water_Tank":{"capacity":3, "loss_coefficient":0.006},

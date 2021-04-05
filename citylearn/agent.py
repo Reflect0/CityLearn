@@ -589,7 +589,7 @@ class RL_Agents_Coord:
 
     def add_to_buffer(self, states, actions, rewards, next_states, done, coordination_vars, coordination_vars_next):
         zipped = zip(self.building_ids, states, list(actions.values()), rewards, next_states, coordination_vars, coordination_vars_next)
-        
+
         for (uid, o, a, r, o2, coord_vars, coord_vars_next) in zipped:
             if self.information_sharing:
                 # Normalize all the states using periodical normalization, one-hot encoding, or -1, 1 scaling. It also removes states that are not necessary (solar radiation if there are no solar PV panels).

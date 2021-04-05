@@ -3,4 +3,6 @@
 *.egg-info
 .python-version
 *.pyc
-.ipynb_checkpoints
+citylearn/data/Climate_Zone_1/.ipynb_checkpoints
+citylearn/data/Climate_Zone_2/.ipynb_checkpoints
+citylearn/data/Climate_Zone_5/.ipynb_checkpoints*
