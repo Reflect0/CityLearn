@@ -239,7 +239,7 @@ def building_loader(data_path, building_attributes, weather_file, solar_profile,
                         a_low_central_agent.append(-1.0)
                         a_high_central_agent.append(1.0)
 
-                    elif action_name == 'pv_vm':
+                    elif action_name == 'pv_phi':
                         # smart inverter voltage control @constance?
                         a_low.append(-1.0)
                         a_high.append(1.0)
@@ -394,12 +394,11 @@ class CityLearn(gym.Env):
                     _solar_generation = building.get_solar_power()
                 elec_generation += _solar_generation # because the default is to not curtail pv production.
 
-                if self.buildings_states_actions[uid]['actions']['pv_vm']:
-                    # @constance look at this action for changing the smart inverter actions to P,Q
-                    building.set_target_vm(actions[0])
+                if self.buildings_states_actions[uid]['actions']['pv_phi']:
+                    building.set_phase_lag(actions[0])
                     actions = actions[1:]
                 else:
-                    building.set_target_vm()
+                    building.set_phase_lag()
 
                 # Total heating and cooling electrical loads
                 elec_consumption_cooling_total += _electric_demand_cooling

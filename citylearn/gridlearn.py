@@ -89,8 +89,7 @@ class GridLearn(CityLearn):
 
 #                 if self.buildings_states_actions[bid]['pv_curtail']:
                 if np.random.uniform() <= pv_penetration:
-                    rated_sn_mva = np.max(np.amax(np.reshape(self.buildings[bid].sim_results['solar_gen'],(24,-1)), axis=0))
-                    new_house_pv = pp.create_gen(self.net, new_house, 0.0, name=bid, sn_mva=rated_sn_mva)
+                    new_house_pv = pp.create_sgen(self.net, new_house, 0.0, name=bid)
                 houses += [new_house]
         return houses
 
@@ -113,16 +112,12 @@ class GridLearn(CityLearn):
             self.net.load.at[i, 'p_mw'] = 0.9 * current_load
             self.net.load.at[i, 'sn_mva'] = current_load
 
-        for j in self.net.gen.index:
-            h = self.net.gen.name[j]
+        for j in self.net.sgen.index:
+            h = self.net.sgen.name[j]
             current_gen = self.buildings[h].solar_power * 0.001
-            self.net.gen.at[j, 'p_mw'] = 0.9 * current_gen
-            self.net.gen.at[j, 'sn_mva'] = current_gen
-            self.net.gen.at[j, 'min_p_mw'] = 0 #-1 * current_gen
-            self.net.gen.at[j, 'max_p_mw'] = current_gen
-            self.net.gen.at[j, 'min_q_mvar'] = -1 * current_gen
-            self.net.gen.at[j, 'max_q_mvar'] = current_gen
-            self.net.gen.at[j, 'vm_pu'] = self.buildings[h].target_vm
+            phi = self.buildings[h].v_lag
+            self.net.sgen.at[j,'p_mw'] = current_gen*np.cos(phi)
+            self.net.sgen.at[j,'q_mvar'] = current_gen*np.sin(phi)
 
         runpp(self.net, enforce_q_lims=True)
 
