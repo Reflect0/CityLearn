@@ -452,12 +452,12 @@ class CityLearn(gym.Env):
                     _solar_generation = building.get_solar_power()
                     elec_generation += _solar_generation
 
-                if self.buildings_states_actions[uid]['actions']['pv_vm']:
+                if self.buildings_states_actions[uid]['actions']['pv_phi']:
                     # print("setting pv voltage")
-                    building.set_target_vm(a[0])
+                    building.set_phase_lag(a[0])
                     a = a[1:]
                 else:
-                    building.set_target_vm()
+                    building.set_phase_lag()
 
                 # Total heating and cooling electrical loads
                 elec_consumption_cooling_total += _electric_demand_cooling
