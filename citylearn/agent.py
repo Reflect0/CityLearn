@@ -446,7 +446,7 @@ class RL_Agents_Coord:
             self.log_alpha[uid] = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optimizer[uid] = optim.Adam([self.log_alpha[uid]], lr=lr)
 
-    def select_action(self, states, _building_ids=None, deterministic=False):
+    def select_action(self, states, deterministic=False):
 
         self.time_step += 1
         # print(self.time_step)
@@ -454,13 +454,14 @@ class RL_Agents_Coord:
 
         n_iterations = self.iterations_as
 
-        if not _building_ids:
-            action_order = np.array(range(len(self.building_ids)))
-            np.random.shuffle(action_order)
+        # action_order = np.array(range(len(self.building_ids)))
+        # np.random.shuffle(action_order)
+        action_order = np.arange(len(states))
 
-            _building_ids = [self.building_ids[i] for i in action_order]
-            _building_ids_next = [self.building_ids[action_order[(i+1)%len(action_order)]] for i in range(len(action_order))]
-            _states = [states[i] for i in action_order]
+        _building_ids = [self.building_ids[i] for i in action_order]
+        _building_ids_next = [self.building_ids[action_order[(i+1)%len(action_order)]] for i in range(len(action_order))]
+
+        _states = [states[i] for i in action_order]
 
         actions = [None for _ in range(len(_building_ids))]
 
@@ -591,9 +592,14 @@ class RL_Agents_Coord:
         zipped = zip(self.building_ids, states, list(actions.values()), rewards, next_states, coordination_vars, coordination_vars_next)
 
         for (uid, o, a, r, o2, coord_vars, coord_vars_next) in zipped:
+            print(len(o2))
             if self.information_sharing:
                 # Normalize all the states using periodical normalization, one-hot encoding, or -1, 1 scaling. It also removes states that are not necessary (solar radiation if there are no solar PV panels).
-                x_reg = np.hstack(np.concatenate(([j for j in np.hstack(self.encoder_reg[uid]*o) if j != None][:-1], a)))
+                try:
+                    x_reg = np.hstack(np.concatenate(([j for j in np.hstack(self.encoder_reg[uid]*o) if j != None][:-1], a)))
+                except:
+                    print(uid)
+                    sys.exit(1)
                 y_reg = [j for j in np.hstack(self.encoder_reg[uid]*o2) if j != None][-1]
 
                 # Push inputs and targets to the regression buffer. The targets are the net electricity consumption.
@@ -763,6 +769,7 @@ class Cluster_Agents:
         self.safe_exploration = safe_exploration
         self.seed = seed
         self.agents = self.create_clusters(n_clusters)
+        self.n_clusters = n_clusters
 
     def create_clusters(self, n_clusters):
         agents = []
@@ -773,20 +780,33 @@ class Cluster_Agents:
         for i in range(len(self.env.net.load)):
             building_uids[cluster] += [self.env.net.load.name.iloc[i]]
             cluster = (cluster + 1) % n_clusters
+        print(building_uids)
 
         for i in range(n_clusters):
             agents += [RL_Agents_Coord(self.env, building_uids[i], hidden_dim=self.hidden_dim, discount=self.discount, tau=self.tau, lr=self.lr, batch_size=self.batch_size, replay_buffer_capacity=self.replay_buffer_capacity, regression_buffer_capacity=self.regression_buffer_capacity, start_training=self.start_training, exploration_period=self.exploration_period, start_regression=self.start_regression, information_sharing=self.information_sharing, pca_compression=self.pca_compression, action_scaling_coef=self.action_scaling_coef, reward_scaling=self.reward_scaling, update_per_step=self.update_per_step, iterations_as=self.iterations_as, safe_exploration=self.safe_exploration, seed=self.seed)]
 
         return agents
 
-    def step(self, state, is_evaluating):
+    def reset(self):
+        state = self.env.reset()
         for agent in self.agents:
+            agent.action, agent.coordination_vars = agent.select_action(state, deterministic=False)
+
+        return [[state[:16]],[state[16:]]]
+
+    def step(self, state, is_evaluating):
+        # for agent in self.agents:
+        for cluster in range(self.n_clusters):
+            agent = self.agents[cluster]
             next_state, reward, done, _ = self.env.step(agent.action)
-            next_action, coordination_vars_next = agent.select_action(next_state, deterministic=is_evaluating)
-            agent.add_to_buffer(state, agent.action, reward, next_state, done, agent.coordination_vars, coordination_vars_next)
+            next_state = [[next_state[:16]],[next_state[16:]]]
+            action_next, coordination_vars_next = agent.select_action(state[cluster], deterministic=is_evaluating)
+
+            agent.add_to_buffer(state[cluster], agent.action, reward, next_state[cluster], done, agent.coordination_vars, coordination_vars_next)
 
             state = next_state
+            agent.action = action_next
             agent.coordination_vars = coordination_vars_next
-            agent.action = next_action
 
-        return state,done
+        self.env.building_ids
+        return state, done

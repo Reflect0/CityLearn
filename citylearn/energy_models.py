@@ -1,8 +1,44 @@
 from gym import spaces
 import numpy as np
+import random
+import os
+import string
+import json
+import pandas as pd
+import pandapower as pp
+from pandapower import runpp
+import gym
 
-class Building:
-    def __init__(self, buildingId, hourly_timesteps, dhw_storage = None, cooling_storage = None, electrical_storage = None, dhw_heating_device = None, cooling_device = None, save_memory = True):
+def subhourly_lin_interp(hourly_data, subhourly_steps):
+    """ Returns a linear interpolation of a data array as a list """
+    n = len(hourly_data)
+    data = np.interp(np.linspace(0, n, n*subhourly_steps), np.arange(n), hourly_data)
+    return list(data)
+
+def subhourly_noisy_interp(hourly_data, subhourly_steps):
+    """ Returns a noisy distribution of power consumption +/- 5% standard deviation of the original power draw."""
+    n = len(hourly_data)
+    data = np.repeat(hourly_data, subhourly_steps)
+    perturbation = np.random.normal(1.0, 0.05, n*subhourly_steps)
+    data = np.multiply(data, perturbation)
+    return list(data)
+
+def subhourly_randomdraw_interp(hourly_data, subhourly_steps, dhw_pwr):
+    """ Returns a randomized binary distribution where demand = power*time when water is drawn, 0 otherwise.
+    Proportion of time with demand at full power corresponds to energy consumption at the hourly interval by E+ """
+    data = []
+    subhourly_dhw_energy = max(0.01, dhw_pwr / subhourly_steps)
+    for hour in hourly_data:
+        draw_times = np.random.choice(subhourly_steps, int(hour/subhourly_dhw_energy), replace=False)
+        for i in range(subhourly_steps):
+            if i in draw_times:
+                data += [subhourly_dhw_energy]
+            else:
+                data += [0]
+    return list(data)
+
+class Building(gym.Env):
+    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, grid, save_memory = True, building_ids=None):
         """
         Args:
             buildingId (int)
@@ -12,74 +48,342 @@ class Building:
             dhw_heating_device (ElectricHeater or HeatPump)
             cooling_device (HeatPump)
         """
-
-        # Building attributes
-        self.building_type = None
-        self.climate_zone = None
-        self.solar_power_capacity = None
-
-        self.buildingId = buildingId
-        self.dhw_storage = dhw_storage
-        self.cooling_storage = cooling_storage
-        self.electrical_storage = electrical_storage
-        self.dhw_heating_device = dhw_heating_device
-        self.cooling_device = cooling_device
-        self.observation_space = None
-        self.action_space = None
-        self.time_step = 0
-        self.sim_results = {}
-        self.save_memory = save_memory
-
-        if self.dhw_storage is not None:
-            self.dhw_storage.reset()
-        if self.cooling_storage is not None:
-            self.cooling_storage.reset()
-        if self.electrical_storage is not None:
-            self.electrical_storage.reset()
-        if self.dhw_heating_device is not None:
-            self.dhw_heating_device.reset()
-        if self.cooling_device is not None:
-            self.cooling_device.reset()
-
-        self._electric_consumption_cooling_storage = 0.0
-        self._electric_consumption_dhw_storage = 0.0
-
-        self.cooling_demand_building = []
-        self.dhw_demand_building = []
-        self.electric_consumption_appliances = []
-        self.electric_generation = []
-
-        self.electric_consumption_cooling = []
-        self.electric_consumption_cooling_storage = []
-        self.electric_consumption_dhw = []
-        self.electric_consumption_dhw_storage = []
-
-        self.net_electric_consumption = []
-        self.net_electric_consumption_no_storage = []
-        self.net_electric_consumption_no_pv_no_storage = []
-
-        self.cooling_device_to_building = []
-        self.cooling_storage_to_building = []
-        self.cooling_device_to_storage = []
-        self.cooling_storage_soc = []
-
-        self.dhw_heating_device_to_building = []
-        self.dhw_storage_to_building = []
-        self.dhw_heating_device_to_storage = []
-        self.dhw_storage_soc = []
-
-        self.electrical_storage_electric_consumption = []
-        self.electrical_storage_soc = []
-
+        weather_file = os.path.join(data_path, "weather_data.csv")
+        solar_file = os.path.join(data_path, "solar_generation_1kW.csv")
         self.hourly_timesteps = hourly_timesteps
 
-    def set_state_space(self, high_state, low_state):
-        # Setting the state space and the lower and upper bounds of each state-variable
-        self.observation_space = spaces.Box(low=low_state, high=high_state, dtype=np.float32)
+        # create a Unique Building ID
+        self.buildingId = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
-    def set_action_space(self, max_action, min_action):
+        with open(buildings_states_actions_file) as json_file:
+            buildings_states_actions = json.load(json_file)
+
+        if not building_ids:
+            building_ids = list(buildings_states_actions.keys())
+        self.uid = random.choice(building_ids)
+
+        # create all the systems that go in the house
+        attributes_file = os.path.join(data_path, "building_attributes.json")
+        attributes = self.set_attributes(attributes_file)
+        save_memory = True
+
+        # not sure i need these...
+        self.save_memory = save_memory
+        self.create_systems(attributes)
+
+        # get observation and action spaces for the RL agent
+        self.enabled_states = buildings_states_actions[self.uid]['states']
+        self.enabled_actions = buildings_states_actions[self.uid]['actions']
+
+        # get e-plus load calcs
+        sim_file = os.path.join(data_path, f"Building_{self.building_type}.csv")
+        self.sim_results = self.load_sim_results(sim_file)
+
+        weather_res = self.load_weather_results(weather_file)
+        self.sim_results.update(weather_res)
+
+        solar_res = self.load_solar_results(solar_file, attributes)
+        self.sim_results.update(solar_res)
+
+        self.set_dhw_cop()
+        self.set_cooling_cop()
+        self.autosize_equipment()
+        self.set_dhw_draws()
+
+        self.observation_space = self.get_state_space()
+        self.action_space = self.get_action_space(attributes)
+        # reset/initialize the home to timestep = 0
+        self.grid = self.add_grid(grid)
+        self.time_step = 0
+        self.reset()
+
+    def add_grid(self, grid):
+        self.load_index = pp.create_load(grid.net, grid.next_load_bus, 0, name=self.buildingId)
+        self.gen_index = pp.create_sgen(grid.net, grid.next_load_bus, 0, name=self.buildingId)
+        grid.next_load_bus = (grid.next_load_bus + 1) % (32)
+        return grid
+
+    def set_attributes(self, file):
+        with open(file) as json_file:
+            data = json.load(json_file)
+        self.building_type = data[self.uid]['Building_Type']
+        self.climate_zone = data[self.uid]['Climate_Zone']
+        return data[self.uid]
+
+    def create_systems(self, attributes):
+        # create all the subcomponents of the building
+        self.cooling_device = HeatPump(nominal_power = attributes['Heat_Pump']['nominal_power'],
+                             eta_tech = attributes['Heat_Pump']['technical_efficiency'],
+                             t_target_heating = attributes['Heat_Pump']['t_target_heating'],
+                             t_target_cooling = attributes['Heat_Pump']['t_target_cooling'], save_memory = self.save_memory)
+
+        self.dhw_heating_device = ElectricHeater(nominal_power = attributes['Electric_Water_Heater']['nominal_power'],
+                                         efficiency = attributes['Electric_Water_Heater']['efficiency'], save_memory = self.save_memory)
+
+        self.cooling_storage = EnergyStorage(capacity = attributes['Chilled_Water_Tank']['capacity'],
+                                           loss_coeff = attributes['Chilled_Water_Tank']['loss_coefficient'], save_memory = self.save_memory)
+
+        self.dhw_storage = EnergyStorage(capacity = attributes['DHW_Tank']['capacity'],
+                                 loss_coeff = attributes['DHW_Tank']['loss_coefficient'], save_memory = self.save_memory)
+
+        self.electrical_storage = None
+
+        self.solar_power_capacity = attributes['Solar_Power_Installed(kW)']
+        return
+
+    def load_sim_results(self, sim_file):
+        with open(sim_file) as csv_file:
+            data = pd.read_csv(csv_file)
+
+        res = {}
+        res['cooling_demand'] = subhourly_lin_interp(data['Cooling Load [kWh]'], self.hourly_timesteps)
+        res['dhw_demand'] = list(data['DHW Heating [kWh]'])
+        res['non_shiftable_load'] = subhourly_noisy_interp(data['Equipment Electric Power [kWh]'], self.hourly_timesteps)
+        res['month'] = list(np.repeat(data['Month'], self.hourly_timesteps))
+        res['day'] = list(np.repeat(data['Day Type'], self.hourly_timesteps))
+        res['hour'] = list(np.repeat(data['Hour'], self.hourly_timesteps))
+        res['daylight_savings_status'] = list(np.repeat(data['Daylight Savings Status'], self.hourly_timesteps))
+        res['t_in'] = subhourly_lin_interp(data['Indoor Temperature [C]'], self.hourly_timesteps)
+        res['avg_unmet_setpoint'] = subhourly_lin_interp(data['Average Unmet Cooling Setpoint Difference [C]'], self.hourly_timesteps)
+        res['rh_in'] = subhourly_lin_interp(data['Indoor Relative Humidity [%]'], self.hourly_timesteps)
+        return res
+
+    def load_weather_results(self, weather_file):
+        with open(weather_file) as csv_file:
+            weather_data = pd.read_csv(csv_file)
+
+        res = {}
+        res['t_out'] = subhourly_lin_interp(weather_data['Outdoor Drybulb Temperature [C]'], self.hourly_timesteps)
+        res['rh_out'] = subhourly_lin_interp(weather_data['Outdoor Relative Humidity [%]'], self.hourly_timesteps)
+        res['diffuse_solar_rad'] = subhourly_lin_interp(weather_data['Diffuse Solar Radiation [W/m2]'], self.hourly_timesteps)
+        res['direct_solar_rad'] = subhourly_lin_interp(weather_data['Direct Solar Radiation [W/m2]'], self.hourly_timesteps)
+
+        res['t_out_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Outdoor Drybulb Temperature [C]'], self.hourly_timesteps)
+        res['t_out_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Outdoor Drybulb Temperature [C]'], self.hourly_timesteps)
+        res['t_out_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Outdoor Drybulb Temperature [C]'], self.hourly_timesteps)
+
+        res['rh_out_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Outdoor Relative Humidity [%]'], self.hourly_timesteps)
+        res['rh_out_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Outdoor Relative Humidity [%]'], self.hourly_timesteps)
+        res['rh_out_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Outdoor Relative Humidity [%]'], self.hourly_timesteps)
+
+        res['diffuse_solar_rad_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Diffuse Solar Radiation [W/m2]'], self.hourly_timesteps)
+        res['diffuse_solar_rad_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Diffuse Solar Radiation [W/m2]'], self.hourly_timesteps)
+        res['diffuse_solar_rad_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Diffuse Solar Radiation [W/m2]'], self.hourly_timesteps)
+
+        res['direct_solar_rad_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Direct Solar Radiation [W/m2]'], self.hourly_timesteps)
+        res['direct_solar_rad_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Direct Solar Radiation [W/m2]'], self.hourly_timesteps)
+        res['direct_solar_rad_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Direct Solar Radiation [W/m2]'], self.hourly_timesteps)
+        return res
+
+    def load_solar_results(self, solar_file, attributes):
+        with open(solar_file) as csv_file:
+            data = pd.read_csv(csv_file)
+
+        res = {}
+        res['solar_gen'] = subhourly_lin_interp(attributes['Solar_Power_Installed(kW)']*data['Hourly Data: AC inverter power (W)']/1000, self.hourly_timesteps)
+        return res
+
+    def get_reward(self, obs): # dummy cost function
+        return self.current_net_electricity_demand
+        # return reward
+
+    def get_obs(self):
+        s = []
+        for state_name, value in self.enabled_states.items():
+            if value == True:
+                if state_name == "net_electricity_consumption":
+                    s.append(self.current_net_electricity_demand)
+
+                elif state_name == "absolute_voltage":
+                    if self.time_step <= 1:
+                        s.append(1.0)
+                    else:
+                        # s.append(self.grid.net.res_bus['vm_pu'][self.grid.net.load.loc[self.grid.net.load['name']==self.uid].bus])
+                        s.append(1)
+                elif state_name == "relative_voltage":
+                    if self.time_step <= 1:
+                        s.append(0.5)
+                    else:
+                        # ranked_voltage = self.grid.net.res_bus['vm_pu'].rank(pct=True)[self.grid.net.load.loc[self.grid.net.load['name']==self.uid].bus]
+                        ranked_voltage = 1
+                        s.append(ranked_voltage)
+
+                elif state_name == "total_voltage_spread":
+                    if self.time_step <= 1:
+                        s.append(0)
+                    else:
+                        voltage_spread = 0
+                        for index, line in self.grid.net.line.iterrows():
+                            voltage_spread += abs(self.grid.net.res_bus.loc[line.to_bus].vm_pu - self.grid.net.res_bus.loc[line.from_bus].vm_pu)
+                        s.append(voltage_spread)
+
+                elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
+                    s.append(self.sim_results[state_name][self.time_step])
+
+                elif state_name in ['t_in', 'avg_unmet_setpoint', 'rh_in', 'non_shiftable_load', 'solar_gen']:
+                    s.append(self.sim_results[state_name][self.time_step])
+
+                else: # if state_name = cooling_storage_soc,
+                    if state_name == 'cooling_storage_soc':
+                        s.append(self.cooling_storage._soc/self.cooling_storage.capacity)
+                    elif state_name == 'dhw_storage_soc':
+                        s.append(self.dhw_storage._soc/self.dhw_storage.capacity)
+        return np.array(s)
+
+    def step(self, a):
+
+        # take an action
+        if self.enabled_actions['cooling_storage']:
+            _electric_demand_cooling = self.set_storage_cooling(a[0])
+            a = a[1:]
+        else:
+            _electric_demand_cooling = 0
+
+        if self.enabled_actions['dhw_storage']:
+            _electric_demand_dhw = self.set_storage_heating(a[0])
+            a = a[1:]
+        else:
+            _electric_demand_dhw = 0
+
+        if self.enabled_actions['pv_curtail']:
+            _solar_generation = self.get_solar_power(a[0])
+            a = a[1:]
+        else:
+            _solar_generation = self.get_solar_power()
+
+        if self.enabled_actions['pv_phi']:
+            phi = self.set_phase_lag(a[0])
+            a = a[1:]
+        else:
+            phi = self.set_phase_lag()
+
+        # Electrical appliances
+        _non_shiftable_load = self.get_non_shiftable_load()
+
+        # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
+        # print(_solar_generation, phi, _non_shiftable_load, _electric_demand_dhw, _electric_demand_cooling)
+        self.current_net_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load - _solar_generation, 4)
+
+        # Assign the load in MW (from KW in CityLearn)
+        self.grid.net.load.at[self.load_index, 'p_mw'] = 0.9 * self.current_net_electricity_demand * 0.001
+        self.grid.net.load.at[self.load_index, 'sn_mva'] = self.current_net_electricity_demand * 0.001
+
+        self.grid.net.sgen.at[self.gen_index, 'p_mw'] = _solar_generation * np.cos(phi) * 0.001
+        self.grid.net.sgen.at[self.gen_index, 'q_mvar'] = _solar_generation * np.sin(phi) * 0.001
+
+        runpp(self.grid.net, enforce_q_lims=True)
+        # self.grid.calc_system_losses()
+        # self.grid.calc_voltage_dev()
+
+        obs = self.get_obs()
+        reward = self.get_reward(obs)
+        done = False
+        info = {}
+        self.time_step += 1
+        return obs, reward, done, info
+
+    def set_dhw_draws(self):
+        self.sim_results['dhw_demand'] = subhourly_randomdraw_interp(self.sim_results['dhw_demand'], self.hourly_timesteps, self.dhw_heating_device.nominal_power)
+
+    def autosize_equipment(self):
+        # Autosize guarantees that the DHW device is large enough to always satisfy the maximum DHW demand
+        if self.dhw_heating_device.nominal_power == 'autosize':
+
+            # If the DHW device is a HeatPump
+            if isinstance(self.dhw_heating_device, HeatPump):
+
+                #We assume that the heat pump is always large enough to meet the highest heating or cooling demand of the building
+                self.dhw_heating_device.nominal_power = np.array(self.sim_results['dhw_demand']/self.dhw_heating_device.cop_heating).max()
+
+                # If the device is an electric heater
+            elif isinstance(self.dhw_heating_device, ElectricHeater):
+                    self.dhw_heating_device.nominal_power = (np.array(self.sim_results['dhw_demand'])/self.dhw_heating_device.efficiency).max()
+
+        # Autosize guarantees that the cooling device device is large enough to always satisfy the maximum DHW demand
+        if self.cooling_device.nominal_power == 'autosize':
+
+            self.cooling_device.nominal_power = (np.array(self.sim_results['cooling_demand'])/ self.cooling_device.cop_cooling).max()
+
+        # Defining the capacity of the storage devices as a number of times the maximum demand
+        self.dhw_storage.capacity = max(self.sim_results['dhw_demand'])*self.dhw_storage.capacity
+        self.cooling_storage.capacity = max(self.sim_results['cooling_demand'])*self.cooling_storage.capacity
+
+        # Done in order to avoid dividing by 0 if the capacity is 0
+        if self.dhw_storage.capacity <= 0.00001:
+            self.dhw_storage.capacity = 0.00001
+        if self.cooling_storage.capacity <= 0.00001:
+            self.cooling_storage.capacity = 0.00001
+
+    def get_state_space(self):
+        # Finding the max and min possible values of all the states, which can then be used by the RL agent to scale the states and train any function approximators more effectively
+        s_low, s_high = [], []
+        for state_name, value in self.enabled_states.items():
+            if value == True:
+                if state_name == "net_electricity_consumption":
+                    # lower and upper bounds of net electricity consumption are rough estimates and may not be completely accurate. Scaling this state-variable using these bounds may result in normalized values above 1 or below 0.
+                    _net_elec_cons_upper_bound = max(np.array(self.sim_results['non_shiftable_load']) - np.array(self.sim_results['solar_gen']) + np.array(self.sim_results['dhw_demand'])/.8 + np.array(self.sim_results['cooling_demand']) + self.dhw_storage.capacity/.8 + self.cooling_storage.capacity/2)
+                    s_low.append(0.)
+                    s_high.append(_net_elec_cons_upper_bound)
+
+                elif state_name == "absolute_voltage":
+                    s_low.append(0.94)
+                    s_high.append(1.06)
+
+                elif state_name == "relative_voltage":
+                    # @akp, added relative voltage to give homes their voltage ranked against the community max/min
+                    s_low.append(0.) # the house is the lowest voltage in the community
+                    s_high.append(1.)
+
+                elif state_name == "total_voltage_spread":
+                    # @akp, added total voltage spread to give a sense of the total loss incurred by the community. without the total voltage spread state "relative_voltage" is more or less meaningless. (total_voltage_spread = how much the community is penaltized, relative_voltage = what that house can do to fix the issue)
+                    s_low.append(0.) # @akp?, not sure what the typical spread in v pu would be.
+                    s_high.append(1.)
+
+                elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
+                    s_low.append(min(self.sim_results[state_name]))
+                    s_high.append(max(self.sim_results[state_name]))
+
+                else: # 'cooling_storage_soc' and 'dhw_storage_soc'
+                    s_low.append(0.0)
+                    s_high.append(1.0)
+
+        return spaces.Box(low=np.array(s_low), high=np.array(s_high), dtype=np.float32)
+
+    def get_action_space(self, attributes):
         # Setting the action space and the lower and upper bounds of each action-variable
-        self.action_space = spaces.Box(low=min_action, high=max_action, dtype=np.float32)
+        '''The energy storage (tank) capacity indicates how many times bigger the tank is compared to the maximum hourly energy demand of the building (cooling or DHW respectively), which sets a lower bound for the action of 1/tank_capacity, as the energy storage device can't provide the building with more energy than it will ever need for a given hour. The heat pump is sized using approximately the maximum hourly energy demand of the building (after accounting for the COP, see function autosize). Therefore, we make the fair assumption that the action also has an upper bound equal to 1/tank_capacity. This boundaries should speed up the learning process of the agents and make them more stable rather than if we just set them to -1 and 1. I.e. if Chilled_Water_Tank.Capacity is 3 (3 times the max. hourly demand of the building in the entire year), its actions will be bounded between -1/3 and 1/3'''
+        a_low, a_high = [], []
+        for action_name, value in self.enabled_actions.items():
+            if value == True:
+                if action_name =='cooling_storage':
+
+                    # Avoid division by 0
+                    if attributes['Chilled_Water_Tank']['capacity'] > 0.000001:
+                        a_low.append(max(-1.0/attributes['Chilled_Water_Tank']['capacity'], -1.0))
+                        a_high.append(min(1.0/attributes['Chilled_Water_Tank']['capacity'], 1.0))
+                    else:
+                        a_low.append(-1.0)
+                        a_high.append(1.0)
+
+                elif action_name == 'dhw_storage':
+                    if attributes['DHW_Tank']['capacity'] > 0.000001:
+                        a_low.append(max(-1.0/attributes['DHW_Tank']['capacity'], -1.0))
+                        a_high.append(min(1.0/attributes['DHW_Tank']['capacity'], 1.0))
+                    else:
+                        a_low.append(-1.0)
+                        a_high.append(1.0)
+
+                elif action_name == 'pv_curtail':
+                    # pv curtailment of apparent power, S
+                    a_low.append(-1.0)
+                    a_high.append(1.0)
+
+                elif action_name == 'pv_phi':
+                    # smart inverter voltage control @constance?
+                    a_low.append(-1.0)
+                    a_high.append(1.0)
+
+        return spaces.Box(low=np.array(a_low), high=np.array(a_high), dtype=np.float32)
 
     def set_storage_electrical(self, action):
         """
@@ -103,7 +407,6 @@ class Building:
         self.electrical_storage.time_step += 1
 
         return electrical_energy_balance
-
 
     def set_storage_heating(self, action):
         """
@@ -147,7 +450,6 @@ class Building:
 
         return elec_demand_heating
 
-
     def set_storage_cooling(self, action):
         """
             Args:
@@ -189,35 +491,41 @@ class Building:
 
         return elec_demand_cooling
 
-
     def get_non_shiftable_load(self):
         return self.sim_results['non_shiftable_load'][self.time_step]
 
     def get_solar_power(self, curtailment=-1):
-         self.solar_power = (1 - .5 * curtailment + 0.5) * self.sim_results['solar_gen'][self.time_step] # @AKP change to make solar_power accessible, where curtailment action is applied only 1x per timestep instead of at .step() and .aux_grid_function()
+         self.solar_power = (1 - .5 * curtailment + 0.5) * self.sim_results['solar_gen'][self.time_step]
          return self.solar_power
 
-    #def set_target_vm(self, voltage_shift=0):
-    #    self.target_vm = (1 + 0.01 * voltage_shift)
-    #    return self.target_vm
-    
     def set_phase_lag(self,phi=-1):
         # mapping to that -1 is 0 and 1 in np.pi/2
         phi = (phi+1)*np.pi/4
         self.v_lag = phi
         return self.v_lag
 
-    # def get_solar_power(self):
-    #     return self.sim_results['solar_gen'][self.time_step]
+    def set_dhw_cop(self):
+        # If the DHW device is a HeatPump
+        if isinstance(self.dhw_heating_device, HeatPump):
+            # Calculating COPs of the heat pumps for every hour
+            self.dhw_heating_device.cop_heating = self.dhw_heating_device.eta_tech*(self.dhw_heating_device.t_target_heating + 273.15)/(self.dhw_heating_device.t_target_heating - self.sim_results['t_out'])
+            self.dhw_heating_device.cop_heating[self.dhw_heating_device.cop_heating < 0] = 20.0
+            self.dhw_heating_device.cop_heating[self.dhw_heating_device.cop_heating > 20] = 20.0
+            self.dhw_heating_device.cop_heating = self.dhw_heating_device.cop_heating.to_numpy()
 
     def get_dhw_electric_demand(self):
         return self.dhw_heating_device._electrical_consumption_heating
+
+    def set_cooling_cop(self):
+        self.cooling_device.cop_cooling = self.cooling_device.eta_tech*(np.add(self.cooling_device.t_target_cooling,273.15))/np.subtract(self.sim_results['t_out'],self.cooling_device.t_target_cooling)
+        self.cooling_device.cop_cooling[self.cooling_device.cop_cooling < 0] = 20.0
+        self.cooling_device.cop_cooling[self.cooling_device.cop_cooling > 20] = 20.0
 
     def get_cooling_electric_demand(self):
         return self.cooling_device._electrical_consumption_cooling
 
     def reset(self):
-
+        
         self.current_net_electricity_demand = self.sim_results['non_shiftable_load'][self.time_step] - self.sim_results['solar_gen'][self.time_step]
 
         if self.dhw_storage is not None:
@@ -325,7 +633,6 @@ class Building:
 
             self.electrical_storage_electric_consumption = np.array(self.electrical_storage_electric_consumption)
             self.electrical_storage_soc = np.array(self.electrical_storage_soc)
-
 
 class HeatPump:
     def __init__(self, nominal_power = None, eta_tech = None, t_target_heating = None, t_target_cooling = None, save_memory = True):
@@ -631,7 +938,6 @@ class EnergyStorage:
         self.energy_balance = [] #Positive for energy entering the storage
         self._energy_balance = 0
         self.time_step = 0
-
 
 class Battery:
     def __init__(self, capacity, nominal_power = None, capacity_loss_coeff = None, power_efficiency_curve = None, capacity_power_curve = None, efficiency = None, loss_coeff = 0, save_memory = True):

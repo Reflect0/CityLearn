@@ -11,36 +11,37 @@ from pathlib import Path
 from citylearn.agent import RBC_Agent
 gym.logger.set_level(40)
 
-def auto_size(buildings):
-    for building in buildings.values():
 
-        # Autosize guarantees that the DHW device is large enough to always satisfy the maximum DHW demand
-        if building.dhw_heating_device.nominal_power == 'autosize':
-
-            # If the DHW device is a HeatPump
-            if isinstance(building.dhw_heating_device, HeatPump):
-
-                #We assume that the heat pump is always large enough to meet the highest heating or cooling demand of the building
-                building.dhw_heating_device.nominal_power = np.array(building.sim_results['dhw_demand']/building.dhw_heating_device.cop_heating).max()
-
-            # If the device is an electric heater
-            elif isinstance(building.dhw_heating_device, ElectricHeater):
-                building.dhw_heating_device.nominal_power = (np.array(building.sim_results['dhw_demand'])/building.dhw_heating_device.efficiency).max()
-
-        # Autosize guarantees that the cooling device device is large enough to always satisfy the maximum DHW demand
-        if building.cooling_device.nominal_power == 'autosize':
-
-            building.cooling_device.nominal_power = (np.array(building.sim_results['cooling_demand'])/ np.repeat(building.cooling_device.cop_cooling, building.hourly_timesteps)).max()
-
-        # Defining the capacity of the storage devices as a number of times the maximum demand
-        building.dhw_storage.capacity = max(building.sim_results['dhw_demand'])*building.dhw_storage.capacity
-        building.cooling_storage.capacity = max(building.sim_results['cooling_demand'])*building.cooling_storage.capacity
-
-        # Done in order to avoid dividing by 0 if the capacity is 0
-        if building.dhw_storage.capacity <= 0.00001:
-            building.dhw_storage.capacity = 0.00001
-        if building.cooling_storage.capacity <= 0.00001:
-            building.cooling_storage.capacity = 0.00001
+# def auto_size(buildings): # DEPRICATED
+#     for building in buildings.values():
+#
+#         # Autosize guarantees that the DHW device is large enough to always satisfy the maximum DHW demand
+#         if building.dhw_heating_device.nominal_power == 'autosize':
+#
+#             # If the DHW device is a HeatPump
+#             if isinstance(building.dhw_heating_device, HeatPump):
+#
+#                 #We assume that the heat pump is always large enough to meet the highest heating or cooling demand of the building
+#                 building.dhw_heating_device.nominal_power = np.array(building.sim_results['dhw_demand']/building.dhw_heating_device.cop_heating).max()
+#
+#             # If the device is an electric heater
+#             elif isinstance(building.dhw_heating_device, ElectricHeater):
+#                 building.dhw_heating_device.nominal_power = (np.array(building.sim_results['dhw_demand'])/building.dhw_heating_device.efficiency).max()
+#
+#         # Autosize guarantees that the cooling device device is large enough to always satisfy the maximum DHW demand
+#         if building.cooling_device.nominal_power == 'autosize':
+#
+#             building.cooling_device.nominal_power = (np.array(building.sim_results['cooling_demand'])/ np.repeat(building.cooling_device.cop_cooling, building.hourly_timesteps)).max()
+#
+#         # Defining the capacity of the storage devices as a number of times the maximum demand
+#         building.dhw_storage.capacity = max(building.sim_results['dhw_demand'])*building.dhw_storage.capacity
+#         building.cooling_storage.capacity = max(building.sim_results['cooling_demand'])*building.cooling_storage.capacity
+#
+#         # Done in order to avoid dividing by 0 if the capacity is 0
+#         if building.dhw_storage.capacity <= 0.00001:
+#             building.dhw_storage.capacity = 0.00001
+#         if building.cooling_storage.capacity <= 0.00001:
+#             building.cooling_storage.capacity = 0.00001
 
 def subhourly_lin_interp(hourly_data, subhourly_steps):
     """ Returns a linear interpolation of a data array as a list """
@@ -70,9 +71,87 @@ def subhourly_randomdraw_interp(hourly_data, subhourly_steps, dhw_pwr):
                 data += [0]
     return list(data)
 
-def set_dhw_draws(buildings):
-    for uid, building in buildings.items():
-        building.sim_results['dhw_demand'] = subhourly_randomdraw_interp(building.sim_results['dhw_demand'], building.hourly_timesteps, building.dhw_heating_device.nominal_power)
+# def set_dhw_draws(buildings): # DEPRICATED
+#     for uid, building in buildings.items():
+#         building.sim_results['dhw_demand'] = subhourly_randomdraw_interp(building.sim_results['dhw_demand'], building.hourly_timesteps, building.dhw_heating_device.nominal_power)
+
+def single_building_loader(data_path, building_attributes, weather_file, solar_profile, building_ids, buildings_states_actions_file, n_buildings, hourly_timesteps, save_memory = True, building_type=None):
+    with open(building_attributes) as json_file:
+        data = json.load(json_file)
+
+    with open(buildings_states_actions_file) as json_file:
+        buildings_states_actions = json.load(json_file)
+
+    if not building_type:
+        uid = random.sample(list(data),1)[0]
+    attributes = data[uid]
+
+    # unique_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+    building = Building(buildingId=unique_id, hourly_timesteps=hourly_timesteps, dhw_storage=dhw_tank, cooling_storage = chilled_water_tank, dhw_heating_device = electric_heater, cooling_device = heat_pump, save_memory = save_memory)
+
+    # set the EnergyPlus simulation results
+    data_file = str(uid) + '.csv'
+    simulation_data = data_path / data_file
+    with open(simulation_data) as csv_file:
+        data = pd.read_csv(csv_file)
+
+    building.sim_res['cooling_demand'] = subhourly_lin_interp(data['Cooling Load [kWh]'], hourly_timesteps)
+    building.sim_res['dhw_demand'] = list(data['DHW Heating [kWh]'])
+    building.sim_res['non_shiftable_load'] = subhourly_noisy_interp(data['Equipment Electric Power [kWh]'], hourly_timesteps)
+    building.sim_res['month'] = list(np.repeat(data['Month'], hourly_timesteps))
+    building.sim_res['day'] = list(np.repeat(data['Day Type'], hourly_timesteps))
+    building.sim_res['hour'] = list(np.repeat(data['Hour'], hourly_timesteps))
+    building.sim_res['daylight_savings_status'] = list(np.repeat(data['Daylight Savings Status'], hourly_timesteps))
+    building.sim_res['t_in'] = subhourly_lin_interp(data['Indoor Temperature [C]'], hourly_timesteps)
+    building.sim_res['avg_unmet_setpoint'] = subhourly_lin_interp(data['Average Unmet Cooling Setpoint Difference [C]'], hourly_timesteps)
+    building.sim_res['rh_in'] = subhourly_lin_interp(data['Indoor Relative Humidity [%]'], hourly_timesteps)
+
+    with open(weather_file) as csv_file:
+        weather_data = pd.read_csv(csv_file)
+
+    building.sim_results['t_out'] = subhourly_lin_interp(weather_data['Outdoor Drybulb Temperature [C]'], hourly_timesteps)
+    building.sim_results['rh_out'] = subhourly_lin_interp(weather_data['Outdoor Relative Humidity [%]'], hourly_timesteps)
+    building.sim_results['diffuse_solar_rad'] = subhourly_lin_interp(weather_data['Diffuse Solar Radiation [W/m2]'], hourly_timesteps)
+    building.sim_results['direct_solar_rad'] = subhourly_lin_interp(weather_data['Direct Solar Radiation [W/m2]'], hourly_timesteps)
+
+    # Reading weather forecasts
+    building.sim_results['t_out_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Outdoor Drybulb Temperature [C]'], hourly_timesteps)
+    building.sim_results['t_out_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Outdoor Drybulb Temperature [C]'], hourly_timesteps)
+    building.sim_results['t_out_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Outdoor Drybulb Temperature [C]'], hourly_timesteps)
+
+    building.sim_results['rh_out_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Outdoor Relative Humidity [%]'], hourly_timesteps)
+    building.sim_results['rh_out_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Outdoor Relative Humidity [%]'], hourly_timesteps)
+    building.sim_results['rh_out_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Outdoor Relative Humidity [%]'], hourly_timesteps)
+
+    building.sim_results['diffuse_solar_rad_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Diffuse Solar Radiation [W/m2]'], hourly_timesteps)
+    building.sim_results['diffuse_solar_rad_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Diffuse Solar Radiation [W/m2]'], hourly_timesteps)
+    building.sim_results['diffuse_solar_rad_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Diffuse Solar Radiation [W/m2]'], hourly_timesteps)
+
+    building.sim_results['direct_solar_rad_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Direct Solar Radiation [W/m2]'], hourly_timesteps)
+    building.sim_results['direct_solar_rad_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Direct Solar Radiation [W/m2]'], hourly_timesteps)
+    building.sim_results['direct_solar_rad_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Direct Solar Radiation [W/m2]'], hourly_timesteps)
+
+    # Reading the building attributes
+
+
+    with open(solar_profile) as csv_file:
+        data = pd.read_csv(csv_file)
+
+    building.sim_results['solar_gen'] = subhourly_lin_interp(attributes['Solar_Power_Installed(kW)']*data['Hourly Data: AC inverter power (W)']/1000, hourly_timesteps)
+
+    building.set_state_space()
+    building.set_action_space()
+
+    building.set_dhw_cop(weather_data)
+    building.set_cooling_cop(weather_data)
+
+    building.reset()
+
+    building.autosize_equipment()
+    building.set_dhw_draws()
+
+    return building
+
 
 def building_loader(data_path, building_attributes, weather_file, solar_profile, building_ids, buildings_states_actions, n_buildings, hourly_timesteps, save_memory = True):
     with open(building_attributes) as json_file:
@@ -530,12 +609,20 @@ class CityLearn(gym.Env):
                         if state_name == 'net_electricity_consumption':
                             s.append(building.current_net_electricity_demand)
 
-                        elif state_name == 'relative_voltage':
+                        elif state_name == 'absolute_voltage': # @akp
+                            if self.time_step <= 1:
+                                s.append(0.0)
+                            else:
+                                abs_voltage = self.net.res_bus['vm_pu'][self.net.load.loc[self.net.load['name']==uid].bus].iat[0]
+                                s.append(abs_voltage)
+
+                        elif state_name == 'relative_voltage': # 1-nHouses ordered voltage
                             if self.time_step <= 1:
                                 s.append(0.5)
                             else:
                                 ranked_voltage = self.net.res_bus['vm_pu'].rank(pct=True)[self.net.load.loc[self.net.load['name']==uid].bus].iat[0]
                                 s.append(ranked_voltage)
+
                         elif state_name == 'total_voltage_spread':
                             if self.time_step <= 1:
                                 s.append(0)

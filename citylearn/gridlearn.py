@@ -10,27 +10,11 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import random
 
-class GridLearn(CityLearn):
-    def __init__(self, data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_timesteps, buildings_states_actions = None, simulation_period = (0,8759), cost_function = ['ramping','1-load_factor','average_daily_peak', 'peak_demand','net_electricity_consumption'], central_agent = False, verbose = 0, n_buildings_per_bus=4, pv_penetration=0.3, test=False):
-        self.test = test
-        if self.test:
-            self.net = self.make_test_grid()
-        else:
-            self.net = self.make_grid()
-        n_buildings = n_buildings_per_bus * (len(self.net.bus)-1)
-        super().__init__(data_path, building_attributes, weather_file, solar_profile, building_ids, hourly_timesteps, buildings_states_actions, simulation_period, cost_function, central_agent, verbose, n_buildings)
-        self.house_nodes = self.add_houses(n_buildings_per_bus, pv_penetration)
-        # for some reason it seems like the output_writer for panda power only applies to deterministic time series
-        self.output = {'p_mw_load':{'var':'p_mw', 'parent':'res_load', 'values':pd.DataFrame()},
-           'q_mvar_gen':{'var':'q_mvar', 'parent':'res_gen', 'values':pd.DataFrame()},
-           'vm_pu':{'var':'vm_pu', 'parent':'res_bus', 'values':pd.DataFrame()},
-           'i_ka':{'var':'i_ka', 'parent':'res_line', 'values':pd.DataFrame()},
-           'p_mw_stor':{'var':'p_mw', 'parent':'res_storage', 'values':pd.DataFrame()},
-           'p_mw_gen':{'var':'p_mw', 'parent':'res_gen', 'values':pd.DataFrame()}}
-        self.system_losses = []
-        self.voltage_dev = []
-        self.pv_penetration = pv_penetration
-        self.n_buildings_per_bus = n_buildings_per_bus
+class GridLearn: # not a super class of the CityLearn environment
+    def __init__(self):
+        self.name = "test"
+        self.net = self.make_grid()
+        self.next_load_bus = 1
 
     def make_test_grid(self):
         net = pp.create_empty_network(name="single bus network")
@@ -48,6 +32,15 @@ class GridLearn(CityLearn):
     def make_grid(self):
         # make a grid that fits the buildings generated for CityLearn
         net = networks.case33bw()
+
+        # clear the grid of old load values
+        load_nodes = net.load['bus']
+        res_voltage_nodes = net.bus['name'][net.bus['vn_kv'] == 12.66]
+        res_load_nodes = set(load_nodes) & set(res_voltage_nodes)
+
+        for node in res_load_nodes:
+            # remove the existing arbitrary load
+            net.load.drop(net.load[net.load.bus == node].index, inplace=True)
         return net
 
     def add_houses(self, n, pv_penetration):
@@ -79,54 +72,19 @@ class GridLearn(CityLearn):
 
             # add n houses at each of these nodes
             for i in range(n):
-                bid = all_buildings[b] # get a building in the order they were initialized
-                b += 1
-                new_x = existing_x + np.cos(2 * np.pi/n * i) * delta_x
-                new_y = existing_y + np.sin(2 * np.pi/n * i) * delta_y
-                new_house = pp.create_bus(self.net, name=bid, vn_kv=12.66, max_vm_pu=1.2, min_vm_pu=0.8, zone=1, geodata=(new_x, new_y))
-                new_feeder = pp.create_line(self.net, new_house, existing_node, 0.5, "94-AL1/15-ST1A 0.4", max_loading_percent=100)
-                new_house_load = pp.create_load(self.net, new_house, 0, name=bid)
-
+                # bid = all_buildings[b] # get a building in the order they were initialized
+                # b += 1
+                # new_x = existing_x + np.cos(2 * np.pi/n * i) * delta_x
+                # new_y = existing_y + np.sin(2 * np.pi/n * i) * delta_y
+                # new_house = pp.create_bus(self.net, name=bid, vn_kv=12.66, max_vm_pu=1.2, min_vm_pu=0.8, zone=1, geodata=(new_x, new_y))
+                # new_feeder = pp.create_line(self.net, new_house, existing_node, 0.5, "94-AL1/15-ST1A 0.4", max_loading_percent=100)
+                # new_house_load = pp.create_load(self.net, new_house, 0, name=bid)
+                new_house_load = pp.create_load(self.net, existing_node, 0, name=bid) # create a load at the existing bus
 #                 if self.buildings_states_actions[bid]['pv_curtail']:
                 if np.random.uniform() <= pv_penetration:
-                    new_house_pv = pp.create_sgen(self.net, new_house, 0.0, name=bid)
-                houses += [new_house]
-        return houses
-
-    # Change to citylearn.py: aux_grid_function is called at the end of .step()
-    def aux_grid_func(self):
-        for i in self.net.load.index:
-            if self.test:
-                current_load = 0.01
-            else:
-                current_load = 0
-                h = self.net.load.name[i]
-                current_load += self.buildings[h].get_dhw_electric_demand() * 0.001
-                current_load += self.buildings[h].get_non_shiftable_load() * 0.001
-                current_load += self.buildings[h].get_cooling_electric_demand() * 0.001
-
-                # TBD const_i_percent by appliance (check PNNL reports)
-                self.net.load.at[i, 'const_i_percent'] = 2.0 * self.buildings[h].get_cooling_electric_demand() * 0.001 / current_load
-                self.net.load.at[i, 'const_i_percent'] = 3.0 * self.buildings[h].get_non_shiftable_load() * 0.001 / current_load
-
-            self.net.load.at[i, 'p_mw'] = 0.9 * current_load
-            self.net.load.at[i, 'sn_mva'] = current_load
-
-        for j in self.net.sgen.index:
-            h = self.net.sgen.name[j]
-            current_gen = self.buildings[h].solar_power * 0.001
-            phi = self.buildings[h].v_lag
-            self.net.sgen.at[j,'p_mw'] = current_gen*np.cos(phi)
-            self.net.sgen.at[j,'q_mvar'] = current_gen*np.sin(phi)
-
-        runpp(self.net, enforce_q_lims=True)
-
-        self.calc_system_losses()
-        self.calc_voltage_dev()
-
-        # write these value to the output writer:
-        for k, v in self.output.items():
-            self.output[k]['values'][str(self.time_step)] = self.net[v['parent']][v['var']]
+                    new_house_pv = pp.create_sgen(self.net, existing_node, 0, name=bid) # create a generator at the existing bus
+                # houses += [new_house]
+        return
 
     def calc_system_losses(self):
         self.system_losses += list((self.net.res_ext_grid.p_mw + self.net.res_load.p_mw.sum() - self.net.res_gen.p_mw.sum()).values)
