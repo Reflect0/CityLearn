@@ -3,31 +3,38 @@ from pandapower import runpp
 from pandapower.plotting import simple_plotly, pf_res_plotly
 import pandapower.networks as networks
 from citylearn import CityLearn
+from citylearn import Building
 from citylearn import RBC_Agent
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 import random
+from pettingzoo import ParallelEnv
 
-class GridLearn: # not a super class of the CityLearn environment
-    def __init__(self):
+class GridLearn(ParallelEnv): # not a super class of the CityLearn environment
+    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=3):
+        self.nclusters = nclusters
+        self.data_path = data_path
+        self.climate_zone = climate_zone
+        self.buildings_states_actions_file = buildings_states_actions_file
+        print(self.buildings_states_actions_file)
+        self.hourly_timesteps = hourly_timesteps
+        self.save_memory = save_memory
+        self.building_ids = building_ids
+
         self.name = "test"
         self.net = self.make_grid()
-        self.next_load_bus = 1
 
-    def make_test_grid(self):
-        net = pp.create_empty_network(name="single bus network")
+        self.buildings = self.add_houses(1,0.3)
+        self.agents = list(self.buildings.keys())
+        self.possible_agents = self.agents[:]
 
-        ex_grid = pp.create_bus(net, name=0, vn_kv=12.66, geodata=(0,0))
-        pp.create_ext_grid(net, ex_grid, vm_pu=1.02, va_degree=50)
+        self.observation_spaces = {k:v.observation_space for k,v in self.buildings.items()}
+        self.action_spaces = {k:v.action_space for k,v in self.buildings.items()}
 
-        bus1 = pp.create_bus(net, name=1, vn_kv=12.66, geodata=(0,1))
-        load1 = pp.create_load(net, 1, p_mw=0)
-
-        main_line = pp.create_line(net, ex_grid, bus1, 0.5, std_type="N2XS(FL)2Y 1x300 RM/35 64/110 kV") # arbitrary line
-
-        return net
+        self.metadata = {'render.modes': [], 'name':"my_env"}
+        self.ts = 0
 
     def make_grid(self):
         # make a grid that fits the buildings generated for CityLearn
@@ -49,42 +56,29 @@ class GridLearn: # not a super class of the CityLearn environment
 
         # find nodes in the network with residential voltage levels and load infrastructure
         # get the node indexes by their assigned names
-        load_nodes = self.net.load['bus']
-        res_voltage_nodes = self.net.bus['name'][self.net.bus['vn_kv'] == 12.66]
-        res_load_nodes = set(load_nodes) & set(res_voltage_nodes)
+        # load_nodes = self.net.load['bus']
+        ext_grid_nodes = set(self.net.ext_grid['bus'])
+        res_voltage_nodes = set(self.net.bus['name'][self.net.bus['vn_kv'] == 12.66])
+        res_load_nodes = res_voltage_nodes - ext_grid_nodes
+        # print(res_load_nodes)
 
-        # add a residential distribution feeder type to the PandaPower network
-        # Assume for now ~250A per home on "94-AL1/15-ST1A 0.4" lines rated @ 350A
-
-        # for geometric placement of nodes
-        delta_x = 0.2
-        delta_y = 0.2
-
-        all_buildings = list(self.buildings.keys())
-
+        buildings = {}
         for existing_node in res_load_nodes:
             # remove the existing arbitrary load
             self.net.load.drop(self.net.load[self.net.load.bus == existing_node].index, inplace=True)
 
-            # get geodata of this load
-            existing_x = self.net.bus_geodata['x'][existing_node]
-            existing_y = self.net.bus_geodata['y'][existing_node]
-
             # add n houses at each of these nodes
             for i in range(n):
-                # bid = all_buildings[b] # get a building in the order they were initialized
-                # b += 1
-                # new_x = existing_x + np.cos(2 * np.pi/n * i) * delta_x
-                # new_y = existing_y + np.sin(2 * np.pi/n * i) * delta_y
-                # new_house = pp.create_bus(self.net, name=bid, vn_kv=12.66, max_vm_pu=1.2, min_vm_pu=0.8, zone=1, geodata=(new_x, new_y))
-                # new_feeder = pp.create_line(self.net, new_house, existing_node, 0.5, "94-AL1/15-ST1A 0.4", max_loading_percent=100)
-                # new_house_load = pp.create_load(self.net, new_house, 0, name=bid)
-                new_house_load = pp.create_load(self.net, existing_node, 0, name=bid) # create a load at the existing bus
-#                 if self.buildings_states_actions[bid]['pv_curtail']:
+                # bid = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
+                bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, self.save_memory, self.building_ids)
+                bldg.assign_bus(existing_node)
+                bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
                 if np.random.uniform() <= pv_penetration:
-                    new_house_pv = pp.create_sgen(self.net, existing_node, 0, name=bid) # create a generator at the existing bus
-                # houses += [new_house]
-        return
+                    bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
+                else:
+                    bldg.gen_index = -1
+                buildings[bldg.buildingId] = bldg
+        return buildings
 
     def calc_system_losses(self):
         self.system_losses += list((self.net.res_ext_grid.p_mw + self.net.res_load.p_mw.sum() - self.net.res_gen.p_mw.sum()).values)
@@ -112,7 +106,59 @@ class GridLearn: # not a super class of the CityLearn environment
     def reset(self):
         self.system_losses = []
         self.voltage_dev = []
-        return super().reset()
+        return {k:v.reset(self.net) for k,v in self.buildings.items()}
+
+    def state(self):
+        # results = self.net.load.merge(self.net.res_bus, left_on='bus', right_index=True)
+        # obs = results.set_index('name')['vm_pu'].to_dict()
+        # obs = {k: np.array([v]) for k,v in obs.items()}
+        # self.obs = obs
+        obs = {k:np.array(v.get_obs(self.net)) for k,v in self.buildings.items()}
+        return obs
+
+    def get_reward(self):
+        rewards = {k: v.get_reward(self.net) for k,v in self.buildings.items()}
+        return rewards
+
+    def get_done(self):
+        dones = {agent: False for agent in self.agents}
+        return dones
+
+    def get_info(self):
+        infos = {agent: {} for agent in self.agents}
+        return infos
+
+    def step(self, action_dict):
+        # update the buildings
+        # if self.ts > 0:
+        #     self.agents = self.possible_agents[(self.ts%self.nclusters)::2]
+
+        for agent in self.agents:
+            self.buildings[agent].step(action_dict[agent])
+
+        # update the grid based on updated buildings
+        self.update_grid()
+
+        # run the grid power flow
+        runpp(self.net, enforce_q_lims=True)
+        self.ts += 1
+
+        obs = self.state()
+        key = list(obs.keys())[0]
+        print(obs[key], obs[key].shape)
+        return obs, self.get_reward(), self.get_done(), self.get_info()
+
+    def update_grid(self):
+        for agent, bldg in self.buildings.items():
+            # Assign the load in MW (from KW in CityLearn)
+            self.net.load.at[bldg.load_index, 'p_mw'] = 0.9 * bldg.current_net_electricity_demand * 0.001
+            self.net.load.at[bldg.load_index, 'sn_mva'] = bldg.current_net_electricity_demand * 0.001
+
+            if bldg.gen_index > -1:
+                self.net.sgen.at[bldg.gen_index, 'p_mw'] = bldg.solar_generation * np.cos(bldg.phi) * 0.001
+                self.net.sgen.at[bldg.gen_index, 'q_mvar'] = bldg.solar_generation * np.sin(bldg.phi) * 0.001
+
+    # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
     def plot_buses(self):
         df = self.output['vm_pu']['values']

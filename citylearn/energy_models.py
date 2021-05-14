@@ -37,7 +37,7 @@ def subhourly_randomdraw_interp(hourly_data, subhourly_steps, dhw_pwr):
                 data += [0]
     return list(data)
 
-class Building(gym.Env):
+class Building:
     def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, grid, save_memory = True, building_ids=None):
         """
         Args:
@@ -93,15 +93,19 @@ class Building(gym.Env):
         self.observation_space = self.get_state_space()
         self.action_space = self.get_action_space(attributes)
         # reset/initialize the home to timestep = 0
-        self.grid = self.add_grid(grid)
+        # self.grid = self.add_grid(grid)
         self.time_step = 0
-        self.reset()
+        # self.reset()
 
-    def add_grid(self, grid):
-        self.load_index = pp.create_load(grid.net, grid.next_load_bus, 0, name=self.buildingId)
-        self.gen_index = pp.create_sgen(grid.net, grid.next_load_bus, 0, name=self.buildingId)
-        grid.next_load_bus = (grid.next_load_bus + 1) % (32)
-        return grid
+    # def add_grid(self, grid):
+    #     self.house_bus = grid.next_load_bus + 1
+    #     self.load_index = pp.create_load(grid.net, self.house_bus, 0, name=self.buildingId)
+    #     self.gen_index = pp.create_sgen(grid.net, self.house_bus, 0, name=self.buildingId)
+    #     grid.next_load_bus = (grid.next_load_bus + 1) % (32)
+    #     return grid
+
+    def assign_bus(self, bus):
+        self.bus = bus
 
     def set_attributes(self, file):
         with open(file) as json_file:
@@ -183,11 +187,11 @@ class Building(gym.Env):
         res['solar_gen'] = subhourly_lin_interp(attributes['Solar_Power_Installed(kW)']*data['Hourly Data: AC inverter power (W)']/1000, self.hourly_timesteps)
         return res
 
-    def get_reward(self, obs): # dummy cost function
-        return self.current_net_electricity_demand
-        # return reward
+    def get_reward(self, grid): # dummy cost function
+        reward = (grid.res_bus.loc[self.bus]['vm_pu']-1)**2
+        return reward
 
-    def get_obs(self):
+    def get_obs(self, grid):
         s = []
         for state_name, value in self.enabled_states.items():
             if value == True:
@@ -213,8 +217,8 @@ class Building(gym.Env):
                         s.append(0)
                     else:
                         voltage_spread = 0
-                        for index, line in self.grid.net.line.iterrows():
-                            voltage_spread += abs(self.grid.net.res_bus.loc[line.to_bus].vm_pu - self.grid.net.res_bus.loc[line.from_bus].vm_pu)
+                        for index, line in grid.line.iterrows():
+                            voltage_spread += abs(grid.res_bus.loc[line.to_bus].vm_pu - grid.res_bus.loc[line.from_bus].vm_pu)
                         s.append(voltage_spread)
 
                 elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
@@ -231,7 +235,7 @@ class Building(gym.Env):
         return np.array(s)
 
     def step(self, a):
-
+        # a = a[0]
         # take an action
         if self.enabled_actions['cooling_storage']:
             _electric_demand_cooling = self.set_storage_cooling(a[0])
@@ -246,41 +250,30 @@ class Building(gym.Env):
             _electric_demand_dhw = 0
 
         if self.enabled_actions['pv_curtail']:
-            _solar_generation = self.get_solar_power(a[0])
+            self.solar_generation = self.get_solar_power(a[0])
             a = a[1:]
         else:
-            _solar_generation = self.get_solar_power()
+            self.solar_generation = self.get_solar_power()
 
         if self.enabled_actions['pv_phi']:
-            phi = self.set_phase_lag(a[0])
+            self.phi = self.set_phase_lag(a[0])
             a = a[1:]
         else:
-            phi = self.set_phase_lag()
+            self.phi = self.set_phase_lag()
 
         # Electrical appliances
         _non_shiftable_load = self.get_non_shiftable_load()
 
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         # print(_solar_generation, phi, _non_shiftable_load, _electric_demand_dhw, _electric_demand_cooling)
-        self.current_net_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load - _solar_generation, 4)
+        self.current_net_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load - self.solar_generation, 4)
 
-        # Assign the load in MW (from KW in CityLearn)
-        self.grid.net.load.at[self.load_index, 'p_mw'] = 0.9 * self.current_net_electricity_demand * 0.001
-        self.grid.net.load.at[self.load_index, 'sn_mva'] = self.current_net_electricity_demand * 0.001
-
-        self.grid.net.sgen.at[self.gen_index, 'p_mw'] = _solar_generation * np.cos(phi) * 0.001
-        self.grid.net.sgen.at[self.gen_index, 'q_mvar'] = _solar_generation * np.sin(phi) * 0.001
-
-        runpp(self.grid.net, enforce_q_lims=True)
-        # self.grid.calc_system_losses()
-        # self.grid.calc_voltage_dev()
-
-        obs = self.get_obs()
-        reward = self.get_reward(obs)
-        done = False
-        info = {}
+        # obs = self.get_obs()
+        # reward = self.get_reward(obs)
+        # done = False
+        # info = {}
         self.time_step += 1
-        return obs, reward, done, info
+        return
 
     def set_dhw_draws(self):
         self.sim_results['dhw_demand'] = subhourly_randomdraw_interp(self.sim_results['dhw_demand'], self.hourly_timesteps, self.dhw_heating_device.nominal_power)
@@ -466,7 +459,8 @@ class Building(gym.Env):
         cooling_power_avail = self.cooling_device.get_max_cooling_power() - self.sim_results['cooling_demand'][self.time_step]
 
         # The storage device is charged (action > 0) or discharged (action < 0) taking into account the max power available and that the storage device cannot be discharged by an amount of energy greater than the energy demand of the building.
-        cooling_energy_balance = self.cooling_storage.charge(max(-self.sim_results['cooling_demand'][self.time_step], min(cooling_power_avail, action*self.cooling_storage.capacity)))
+        charge_arg = max(-self.sim_results['cooling_demand'][self.time_step], min(cooling_power_avail, action*self.cooling_storage.capacity))
+        cooling_energy_balance = self.cooling_storage.charge(charge_arg)
 
         if self.save_memory == False:
             self.cooling_device_to_storage.append(max(0, cooling_energy_balance))
@@ -524,8 +518,12 @@ class Building(gym.Env):
     def get_cooling_electric_demand(self):
         return self.cooling_device._electrical_consumption_cooling
 
-    def reset(self):
-        
+    def reset_timestep(self):
+        self.time_step = 0
+        return self.reset()
+
+    def reset(self, net):
+
         self.current_net_electricity_demand = self.sim_results['non_shiftable_load'][self.time_step] - self.sim_results['solar_gen'][self.time_step]
 
         if self.dhw_storage is not None:
@@ -570,6 +568,7 @@ class Building(gym.Env):
 
         self.electrical_storage_electric_consumption = []
         self.electrical_storage_soc = []
+        return self.get_obs(net)
 
     def terminate(self):
 

@@ -77,25 +77,21 @@ class RBC_Agent:
     def reset_action_tracker(self):
         self.action_tracker = []
 
-    def select_action(self, states):
-        hour_day = states[0]
+    def predict(self, obs):
+        hour_day = obs[0]
         daytime = True if hour_day >= 1 and hour_day <= 21 else False
-        action_dict = {}
-        for uid, states_actions in self.env.buildings_states_actions.items():
-            a = []
-            for action, enabled in states_actions['actions'].items():
-                if enabled:
-                    if action == 'cooling_storage' or action == 'dhw_storage':
-                        if daytime:
-                            a += [-.08]
-                        else:
-                            a += [0.91]
+        a = []
+        for action, enabled in self.env.enabled_actions.items():
+            if enabled:
+                if action == 'cooling_storage' or action == 'dhw_storage':
+                    if daytime:
+                        a += [-.08]
                     else:
-                        a += [0.5]
+                        a += [0.91]
+                else:
+                    a += [0.0]
 
-            action_dict[uid] = a
-
-        return action_dict
+        return [a] # casting this as a list of list matches the predict function in Stable Baselines.
 
 class PolicyNetwork(nn.Module):
     def __init__(self, num_inputs, num_actions, action_space, action_scaling_coef, hidden_dim=[400,300],
