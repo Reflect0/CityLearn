@@ -17,8 +17,8 @@ import json
 import time
 import math
 
-if torch.cuda.is_available():
-    torch.set_default_tensor_type(torch.cuda.FloatTensor)
+# if torch.cuda.is_available():
+#     torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
 class Base_Agent:
     """ A base agent for RL learning. Agent works on the community level to get
