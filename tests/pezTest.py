@@ -59,4 +59,4 @@ if __name__=="__main__":
             print(f"step {_}")
     # multiprocessing pool hangs but I'm not sure where to close it
     print('learning done')
-    sys.exit(1)
+    env.close()
