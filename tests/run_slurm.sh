@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=1  #Allocate whatever you need here
 #SBATCH --output=run.out
 #SBATCH --job-name=test
-#SBATCH --time=0-01:00:00
+#SBATCH --time=1-00:00:00
 #SBATCH --mail-user=aipi0122@colorado.edu
 #SBATCH --mail-type=ALL
 

@@ -22,7 +22,7 @@ if __name__=="__main__":
         "data_path":data_path,
         "climate_zone":climate_zone,
         "buildings_states_actions_file":buildings_states_actions,
-        "hourly_timesteps":2
+        "hourly_timesteps":4
     }
 
     env = GridLearn(**config)
@@ -53,10 +53,13 @@ if __name__=="__main__":
         models += [PPO(MlpPolicy, env, verbose=1, gamma=0.999, n_steps=1, ent_coef=0.01, learning_rate=0.00025, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95, n_epochs=4, clip_range=0.2, clip_range_vf=1)]
 
     print("training models...")
-    for _ in range(10): # timesteps
-        for model in models:
-            model.learn(1)
-            print(f"step {_}")
+    for ts in range(10):
+        for _ in range(1000): # timesteps
+            for model in models:
+                model.learn(1, reset_num_timesteps=False)
+                print(f"step {_}")
+        for i in range(len(models)):
+            model.save(f"model_{i}")
     # multiprocessing pool hangs but I'm not sure where to close it
     print('learning done')
     env.close()
