@@ -13,7 +13,7 @@ import random
 from pettingzoo import ParallelEnv
 
 class GridLearn(ParallelEnv): # not a super class of the CityLearn environment
-    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=3):
+    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=3, randomseed=2):
         self.nclusters = nclusters
         self.data_path = data_path
         self.climate_zone = climate_zone
@@ -22,6 +22,8 @@ class GridLearn(ParallelEnv): # not a super class of the CityLearn environment
         self.hourly_timesteps = hourly_timesteps
         self.save_memory = save_memory
         self.building_ids = building_ids
+        random.seed(randomseed)
+        np.random.seed(randomseed)
 
         self.name = "test"
         self.net = self.make_grid()
