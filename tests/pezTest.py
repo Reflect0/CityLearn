@@ -50,7 +50,7 @@ if __name__=="__main__":
     print("making models...")
     models = []
     for _ in range(3):
-        models += [PPO(MlpPolicy, env, verbose=2, gamma=0.999, n_steps=1, ent_coef=0.01, learning_rate=0.00025, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95, n_epochs=4, clip_range=0.2, clip_range_vf=1)]
+        models += [PPO(MlpPolicy, env, verbose=1, gamma=0.999, n_steps=1, ent_coef=0.01, learning_rate=0.00025, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95, n_epochs=4, clip_range=0.2, clip_range_vf=1)]
 
     print("training models...")
     for _ in range(10): # timesteps
