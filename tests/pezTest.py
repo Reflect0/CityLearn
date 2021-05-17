@@ -28,10 +28,10 @@ if __name__=="__main__":
     env = GridLearn(**config)
     # parallel_api_test(env)
 
-    try:
-        multiprocessing.set_start_method("fork")
-    except:
-        pass
+#    try:
+#        multiprocessing.set_start_method("fork")
+#    except:
+#        pass
 
     print("shaping obs and action spaces...")
     env = ss.pad_observations_v0(env)
