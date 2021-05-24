@@ -30,7 +30,7 @@ class GridLearn: # not a super class of the CityLearn environment
         self.name = "test"
         self.net = self.make_grid()
 
-        self.buildings = self.add_houses(1,0.3)
+        self.buildings = self.add_houses(5,0.3)
         self.agents = list(self.buildings.keys())
         self.possible_agents = self.agents[:]
         self.clusters = self.set_clusters()
@@ -69,7 +69,7 @@ class GridLearn: # not a super class of the CityLearn environment
         # print(res_load_nodes)
 
         buildings = {}
-        for existing_node in list(res_load_nodes)[:4]:
+        for existing_node in list(res_load_nodes):
             # remove the existing arbitrary load
             self.net.load.drop(self.net.load[self.net.load.bus == existing_node].index, inplace=True)
 
