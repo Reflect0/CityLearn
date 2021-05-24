@@ -95,14 +95,16 @@ class Building:
         # reset/initialize the home to timestep = 0
         # self.grid = self.add_grid(grid)
         self.time_step = 0
+        self.current_net_electricity_demand = 0
         # self.reset()
 
-    # def add_grid(self, grid):
-    #     self.house_bus = grid.next_load_bus + 1
-    #     self.load_index = pp.create_load(grid.net, self.house_bus, 0, name=self.buildingId)
-    #     self.gen_index = pp.create_sgen(grid.net, self.house_bus, 0, name=self.buildingId)
-    #     grid.next_load_bus = (grid.next_load_bus + 1) % (32)
-    #     return grid
+    def add_grid(self, grid):
+        self.grid = grid
+        # self.house_bus = grid.next_load_bus + 1
+        # self.load_index = pp.create_load(grid.net, self.house_bus, 0, name=self.buildingId)
+        # self.gen_index = pp.create_sgen(grid.net, self.house_bus, 0, name=self.buildingId)
+        # grid.next_load_bus = (grid.next_load_bus + 1) % (32)
+        # return grid
 
     def assign_bus(self, bus):
         self.bus = bus
@@ -187,11 +189,11 @@ class Building:
         res['solar_gen'] = subhourly_lin_interp(attributes['Solar_Power_Installed(kW)']*data['Hourly Data: AC inverter power (W)']/1000, self.hourly_timesteps)
         return res
 
-    def get_reward(self, grid): # dummy cost function
-        reward = (grid.res_bus.loc[self.bus]['vm_pu']-1)**2
+    def get_reward(self): # dummy cost function
+        reward = (self.grid.net.res_bus.loc[self.bus]['vm_pu']-1)**2
         return reward
 
-    def get_obs(self, grid):
+    def get_obs(self):
         s = []
         for state_name, value in self.enabled_states.items():
             if value == True:
@@ -217,8 +219,8 @@ class Building:
                         s.append(0)
                     else:
                         voltage_spread = 0
-                        for index, line in grid.line.iterrows():
-                            voltage_spread += abs(grid.res_bus.loc[line.to_bus].vm_pu - grid.res_bus.loc[line.from_bus].vm_pu)
+                        for index, line in self.grid.net.line.iterrows():
+                            voltage_spread += abs(self.grid.net.res_bus.loc[line.to_bus].vm_pu - self.grid.net.res_bus.loc[line.from_bus].vm_pu)
                         s.append(voltage_spread)
 
                 elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
