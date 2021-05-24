@@ -11,10 +11,12 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import random
 from pettingzoo import ParallelEnv
+import os
 
-class GridLearn(ParallelEnv): # not a super class of the CityLearn environment
-    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=3, randomseed=2):
+class GridLearn: # not a super class of the CityLearn environment
+    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=2, randomseed=2):
         self.nclusters = nclusters
+
         self.data_path = data_path
         self.climate_zone = climate_zone
         self.buildings_states_actions_file = buildings_states_actions_file
@@ -31,6 +33,8 @@ class GridLearn(ParallelEnv): # not a super class of the CityLearn environment
         self.buildings = self.add_houses(1,0.3)
         self.agents = list(self.buildings.keys())
         self.possible_agents = self.agents[:]
+        self.clusters = self.set_clusters()
+        self.ncluster = 0
 
         self.observation_spaces = {k:v.observation_space for k,v in self.buildings.items()}
         self.action_spaces = {k:v.action_space for k,v in self.buildings.items()}
@@ -65,7 +69,7 @@ class GridLearn(ParallelEnv): # not a super class of the CityLearn environment
         # print(res_load_nodes)
 
         buildings = {}
-        for existing_node in res_load_nodes:
+        for existing_node in list(res_load_nodes)[:4]:
             # remove the existing arbitrary load
             self.net.load.drop(self.net.load[self.net.load.bus == existing_node].index, inplace=True)
 
@@ -74,6 +78,7 @@ class GridLearn(ParallelEnv): # not a super class of the CityLearn environment
                 # bid = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
                 bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, self.save_memory, self.building_ids)
                 bldg.assign_bus(existing_node)
+                bldg.add_grid(self)
                 bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
                 if np.random.uniform() <= pv_penetration:
                     bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
@@ -81,6 +86,12 @@ class GridLearn(ParallelEnv): # not a super class of the CityLearn environment
                     bldg.gen_index = -1
                 buildings[bldg.buildingId] = bldg
         return buildings
+
+    def set_clusters(self):
+        clusters = []
+        for i in range(self.nclusters):
+            clusters += [self.possible_agents[i::self.nclusters]]
+        return clusters
 
     def calc_system_losses(self):
         self.system_losses += list((self.net.res_ext_grid.p_mw + self.net.res_load.p_mw.sum() - self.net.res_gen.p_mw.sum()).values)
@@ -108,34 +119,40 @@ class GridLearn(ParallelEnv): # not a super class of the CityLearn environment
     def reset(self):
         self.system_losses = []
         self.voltage_dev = []
-        return {k:v.reset(self.net) for k,v in self.buildings.items()}
+        return {k:self.buildings[k].reset() for k in agents}
 
-    def state(self):
-        # results = self.net.load.merge(self.net.res_bus, left_on='bus', right_index=True)
-        # obs = results.set_index('name')['vm_pu'].to_dict()
-        # obs = {k: np.array([v]) for k,v in obs.items()}
-        # self.obs = obs
-        obs = {k:np.array(v.get_obs(self.net)) for k,v in self.buildings.items()}
+    def state(self, agents):
+        print(agents)
+        obs = {k:np.array(self.buildings[k].get_obs()) for k in agents}
         return obs
 
-    def get_reward(self):
-        rewards = {k: v.get_reward(self.net) for k,v in self.buildings.items()}
+    def get_reward(self, agents):
+        rewards = {k:self.buildings[k].get_reward() for k in agents}
         return rewards
 
-    def get_done(self):
-        dones = {agent: False for agent in self.agents}
+    def get_done(self, agents):
+        dones = {agent: False for agent in agents}
         return dones
 
-    def get_info(self):
-        infos = {agent: {} for agent in self.agents}
+    def get_info(self, agents):
+        infos = {agent: {} for agent in agents}
         return infos
+
+    def get_spaces(self, agents):
+        actionspace = {k:self.buildings[k].action_space for k in agents}
+        obsspace = {k:self.buildings[k].observation_space for k in agents}
+        return actionspace, obsspace
 
     def step(self, action_dict):
         # update the buildings
-        # if self.ts > 0:
-        #     self.agents = self.possible_agents[(self.ts%self.nclusters)::2]
+        if self.ts > 0:
+            self.agents = self.possible_agents[(self.ts%self.nclusters)::2]
 
-        for agent in self.agents:
+        i = 0
+        for agent in action_dict:
+            if i == 0:
+                print(self.buildings[agent].time_step)
+                i += 1
             self.buildings[agent].step(action_dict[agent])
 
         # update the grid based on updated buildings
@@ -145,10 +162,9 @@ class GridLearn(ParallelEnv): # not a super class of the CityLearn environment
         runpp(self.net, enforce_q_lims=True)
         self.ts += 1
 
-        obs = self.state()
-        key = list(obs.keys())[0]
-        print(obs[key], obs[key].shape)
-        return obs, self.get_reward(), self.get_done(), self.get_info()
+        obs = self.state(list(action_dict.keys()))
+        print(self.net.load[['name','p_mw']])
+        return obs, self.get_reward(list(action_dict.keys())), self.get_done(list(action_dict.keys())), self.get_info(list(action_dict.keys()))
 
     def update_grid(self):
         for agent, bldg in self.buildings.items():
@@ -159,8 +175,6 @@ class GridLearn(ParallelEnv): # not a super class of the CityLearn environment
             if bldg.gen_index > -1:
                 self.net.sgen.at[bldg.gen_index, 'p_mw'] = bldg.solar_generation * np.cos(bldg.phi) * 0.001
                 self.net.sgen.at[bldg.gen_index, 'q_mvar'] = bldg.solar_generation * np.sin(bldg.phi) * 0.001
-
-    # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
     def plot_buses(self):
         df = self.output['vm_pu']['values']
@@ -232,3 +246,44 @@ class GridLearn(ParallelEnv): # not a super class of the CityLearn environment
         self.plot_northsouth([self.output['p_mw_load']['values']], title="Building loads", y=["P (MW)"])
         self.plot_northsouth([self.output['p_mw_gen']['values'], self.output['q_mvar_gen']['values']], title="Generation", y=["P (MW)", "Q (MVAR)"])
         plt.show()
+
+class MyEnv(ParallelEnv):
+    def __init__(self, grid):
+        self.set_grid(grid)
+        # self.grid = grid
+        #
+        # self.agents = self.grid.clusters.pop()
+        # self.possible_agents = self.agents[:]
+        # self.action_spaces, self.observation_spaces = self.grid.get_spaces(self.agents)
+
+        self.metadata = {'render.modes': [], 'name':"my_env"}
+        self.ts = 0
+
+    def set_grid(self, grid):
+        self.grid = grid
+
+        self.agents = self.grid.clusters[self.grid.ncluster]
+        self.grid.ncluster = (self.grid.ncluster + 1) % self.grid.nclusters
+        self.possible_agents = self.agents[:]
+        self.action_spaces, self.observation_spaces = self.grid.get_spaces(self.agents)
+
+    def reset(self):
+        print('calling reset...')
+        return self.state()
+
+    def state(self):
+        print("these are the agents", self.agents)
+        return self.grid.state(self.agents)
+
+    def get_reward(self):
+        return self.grid.get_reward(self.agents)
+
+    def get_done(self):
+        return self.grid.get_done(self.agents)
+
+    def get_info(self):
+        return self.grid.get_info(self.agents)
+
+    def step(self, action_dict):
+        "calling step"
+        return self.grid.step(action_dict)
