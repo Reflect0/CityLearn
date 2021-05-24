@@ -272,7 +272,6 @@ class MyEnv(ParallelEnv):
         return self.state()
 
     def state(self):
-        print("these are the agents", self.agents)
         return self.grid.state(self.agents)
 
     def get_reward(self):
@@ -285,5 +284,5 @@ class MyEnv(ParallelEnv):
         return self.grid.get_info(self.agents)
 
     def step(self, action_dict):
-        "calling step"
+        print(self.agents, action_dict.keys())
         return self.grid.step(action_dict)
