@@ -59,10 +59,8 @@ for env in envs:
 
 models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=2, n_steps=1, ent_coef=0.01, learning_rate=0.00025, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95, n_epochs=4, clip_range=0.2, clip_range_vf=1) for env in envs]
 
-for yr in range(4):
-    for ts in range(8760*4):
-        for _ in range(5):
-            for model in models:
-                model.learn(1, reset_num_timesteps=False)
-    for m in range(len(models)):
-        models[m].save(f"model_{m}")
+for ts in range(8760):
+    for model in models:
+        model.learn(1, reset_num_timesteps=False)
+for m in range(len(models)):
+    models[m].save(f"model_{m}")
