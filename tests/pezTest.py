@@ -11,11 +11,12 @@ from pathlib import Path
 from stable_baselines3.ppo import MlpPolicy
 from stable_baselines3 import PPO
 import gym
+import numpy as np
 
 import multiprocessing
 import sys
 import supersuit as ss
-import numpy as np
+
 import time
 
 # multiprocessing.set_start_method("fork")
@@ -46,24 +47,22 @@ print('stacking vec env...')
 nenvs = 2
 envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
 
+from copy import deepcopy
+grid2 = deepcopy(grid)
+
+grids = [grid, grid2]
+
 print('setting the grid...')
-for env in envs[1:]:
+for env in envs:
     for n in range(nenvs):
-        env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = envs[0].venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid
+        env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
 
 models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=2, n_steps=1, ent_coef=0.01, learning_rate=0.00025, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95, n_epochs=4, clip_range=0.2, clip_range_vf=1) for env in envs]
 
-obss = [env.reset() for env in envs]
-for _ in range(5):
+for yr in range(4):
+    for ts in range(8760*4):
+        for _ in range(5):
+            for model in models:
+                model.learn(1, reset_num_timesteps=False)
     for m in range(len(models)):
-        obss[m] = [np.concatenate(list(envs[m].venv.vec_envs[i].par_env.state().values())) for i in range(len(envs[m].venv.vec_envs))]
-        obss[m] = np.concatenate(obss[m])
-        obss[m] = obss[m].reshape(2*nenvs,-1)
-
-        action = models[m].predict(obss[m])[0]
-        obss[m], reward, done, info = envs[m].step(action)
-        print(obss[m].shape)
-
-for _ in range(5):
-    for model in models:
-        model.learn(1, reset_num_timesteps=False)
+        models[m].save(f"model_{m}")

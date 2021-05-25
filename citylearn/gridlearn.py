@@ -30,7 +30,7 @@ class GridLearn: # not a super class of the CityLearn environment
         self.name = "test"
         self.net = self.make_grid()
 
-        self.buildings = self.add_houses(5,0.3)
+        self.buildings = self.add_houses(6,0.3)
         self.agents = list(self.buildings.keys())
         self.possible_agents = self.agents[:]
         self.clusters = self.set_clusters()
@@ -78,7 +78,6 @@ class GridLearn: # not a super class of the CityLearn environment
                 # bid = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
                 bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, self.save_memory, self.building_ids)
                 bldg.assign_bus(existing_node)
-                bldg.add_grid(self)
                 bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
                 if np.random.uniform() <= pv_penetration:
                     bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
@@ -123,11 +122,11 @@ class GridLearn: # not a super class of the CityLearn environment
 
     def state(self, agents):
         print(agents)
-        obs = {k:np.array(self.buildings[k].get_obs()) for k in agents}
+        obs = {k:np.array(self.buildings[k].get_obs(self.net)) for k in agents}
         return obs
 
     def get_reward(self, agents):
-        rewards = {k:self.buildings[k].get_reward() for k in agents}
+        rewards = {k:self.buildings[k].get_reward(self.net) for k in agents}
         return rewards
 
     def get_done(self, agents):
@@ -163,7 +162,7 @@ class GridLearn: # not a super class of the CityLearn environment
         self.ts += 1
 
         obs = self.state(list(action_dict.keys()))
-        print(self.net.load[['name','p_mw']])
+        # print(self.net.load[['name','p_mw']])
         return obs, self.get_reward(list(action_dict.keys())), self.get_done(list(action_dict.keys())), self.get_info(list(action_dict.keys()))
 
     def update_grid(self):
@@ -176,85 +175,13 @@ class GridLearn: # not a super class of the CityLearn environment
                 self.net.sgen.at[bldg.gen_index, 'p_mw'] = bldg.solar_generation * np.cos(bldg.phi) * 0.001
                 self.net.sgen.at[bldg.gen_index, 'q_mvar'] = bldg.solar_generation * np.sin(bldg.phi) * 0.001
 
-    def plot_buses(self):
-        df = self.output['vm_pu']['values']
-        xfmr = set(self.net.bus.iloc[self.net.trafo.hv_bus].index) | set(self.net.bus.iloc[self.net.trafo.lv_bus].index)
-        ext_grid = set(self.net.bus.iloc[self.net.ext_grid.bus].index)
-        substation = xfmr | ext_grid
-        loads = set(self.net.load.bus)
-        buses = set(self.net.bus.index) - substation
-        gens = set(self.net.gen.bus)
-
-        # substation buses
-        self.plot_northsouth([df.loc[substation]], title="Substation Voltages", y="Vm_pu")
-
-        # generator buses
-        gen_buses = gens & buses
-        non_gen_buses = gens ^ buses
-        if not len(gen_buses) == 0:
-            self.plot_northsouth([df.loc[gen_buses]], title="Buses with PV", y="Vm_pu")
-
-        # buses with building loads
-        building_ng_buses = non_gen_buses & loads
-        if not len(building_ng_buses) == 0:
-            self.plot_northsouth([df.loc[building_ng_buses]], title="Building Voltages", y="Vm_pu")
-
-        # other buses (distribution strictly)
-        other_ng_buses = non_gen_buses - building_ng_buses
-        if not len(other_ng_buses) == 0:
-            self.plot_northsouth([df.loc[other_ng_buses]], title="Distribution buses", y="Vm_pu")
-
-    def plot_northsouth(self, dfs, title="", y=""):
-        line = self.net.bus_geodata['x'].median()
-
-        temp = self.net.bus_geodata.merge(self.net.bus, left_index=True, right_index=True)
-        north_buses = set(temp.loc[temp["x"] > line].index)
-        south_buses = set(temp.loc[temp["x"] <= line].index)
-
-        fig, axes = plt.subplots(nrows=len(dfs),ncols=2, figsize=(20,8))
-        plt.subplots_adjust(hspace = 0.5, wspace=0.25)
-        for i in range(len(dfs)): # can pass p and q vars
-            north_list = set(dfs[i].index) & north_buses
-            south_list = set(dfs[i].index) & south_buses
-
-            if len(south_list) > 0:
-                if len(dfs) > 1:
-                    quad = axes[i][0]
-                else:
-                    quad = axes[0]
-
-                f = dfs[i].loc[south_list].transpose().plot(ax=quad, figsize=(10,6), color=plt.cm.Spectral(np.linspace(0, 1, len(dfs[i]))))
-                f.set_xlabel(f"Timestep ({60/self.hourly_timesteps} minutes)")
-                f.set_ylabel(y[i])
-                f.set_title(f"South, {title}")
-                quad.legend().set_visible(False)
-
-            if len(north_list) > 0:
-                if len(dfs) > 1:
-                    quad = axes[i][1]
-                else:
-                    quad = axes[1]
-
-                g = dfs[i].loc[north_list].transpose().plot(ax=quad, figsize=(10,6), color=plt.cm.Spectral(np.linspace(1, 0, len(dfs[i]))))
-                g.set_xlabel(f"Time ({60/self.hourly_timesteps} minutes)")
-                g.set_ylabel(y[i])
-                g.set_title(f"North, {title}")
-                quad.legend().set_visible(False)
-
-    def plot_all(self):
-        self.plot_buses()
-        self.plot_northsouth([self.output['p_mw_load']['values']], title="Building loads", y=["P (MW)"])
-        self.plot_northsouth([self.output['p_mw_gen']['values'], self.output['q_mvar_gen']['values']], title="Generation", y=["P (MW)", "Q (MVAR)"])
-        plt.show()
-
 class MyEnv(ParallelEnv):
     def __init__(self, grid):
-        self.set_grid(grid)
-        # self.grid = grid
-        #
-        # self.agents = self.grid.clusters.pop()
-        # self.possible_agents = self.agents[:]
-        # self.action_spaces, self.observation_spaces = self.grid.get_spaces(self.agents)
+        # self.set_grid(grid)
+        self.agents = grid.clusters[grid.ncluster]
+        grid.ncluster = (grid.ncluster + 1) % grid.nclusters
+        self.possible_agents = self.agents[:]
+        self.action_spaces, self.observation_spaces = grid.get_spaces(self.agents)
 
         self.metadata = {'render.modes': [], 'name':"my_env"}
         self.ts = 0
@@ -262,10 +189,10 @@ class MyEnv(ParallelEnv):
     def set_grid(self, grid):
         self.grid = grid
 
-        self.agents = self.grid.clusters[self.grid.ncluster]
-        self.grid.ncluster = (self.grid.ncluster + 1) % self.grid.nclusters
-        self.possible_agents = self.agents[:]
-        self.action_spaces, self.observation_spaces = self.grid.get_spaces(self.agents)
+        # self.agents = self.grid.clusters[self.grid.ncluster]
+        # self.grid.ncluster = (self.grid.ncluster + 1) % self.grid.nclusters
+        # self.possible_agents = self.agents[:]
+        # self.action_spaces, self.observation_spaces = self.grid.get_spaces(self.agents)
 
     def reset(self):
         print('calling reset...')
