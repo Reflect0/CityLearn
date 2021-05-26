@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --nodes=1  #Allocate whatever you need here
-#SBATCH --ntasks=2
-#SBATCH --cpus-per-task=1  #Allocate whatever you need here
+#SBATCH --ntasks=4
+#SBATCH --cpus-per-task=2  #Allocate whatever you need here
 #SBATCH --output=run.out
 #SBATCH --job-name=test
 #SBATCH --time=1-00:00:00
