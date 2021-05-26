@@ -14,7 +14,8 @@ from pettingzoo import ParallelEnv
 import os
 
 class GridLearn: # not a super class of the CityLearn environment
-    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=2, randomseed=2):
+    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=2, randomseed=2, max_num_houses=None):
+        self.max_num_houses = max_num_houses
         self.nclusters = nclusters
 
         self.data_path = data_path
@@ -57,6 +58,8 @@ class GridLearn: # not a super class of the CityLearn environment
         return net
 
     def add_houses(self, n, pv_penetration):
+        if not self.max_num_houses:
+            n = 1
         houses = []
         b = 0
 
@@ -69,7 +72,7 @@ class GridLearn: # not a super class of the CityLearn environment
         # print(res_load_nodes)
 
         buildings = {}
-        for existing_node in list(res_load_nodes):
+        for existing_node in list(res_load_nodes)[:self.max_num_houses]:
             # remove the existing arbitrary load
             self.net.load.drop(self.net.load[self.net.load.bus == existing_node].index, inplace=True)
 
@@ -121,7 +124,6 @@ class GridLearn: # not a super class of the CityLearn environment
         return {k:self.buildings[k].reset() for k in agents}
 
     def state(self, agents):
-        print(agents)
         obs = {k:np.array(self.buildings[k].get_obs(self.net)) for k in agents}
         return obs
 
@@ -150,7 +152,6 @@ class GridLearn: # not a super class of the CityLearn environment
         i = 0
         for agent in action_dict:
             if i == 0:
-                print(self.buildings[agent].time_step)
                 i += 1
             self.buildings[agent].step(action_dict[agent])
 
@@ -162,7 +163,6 @@ class GridLearn: # not a super class of the CityLearn environment
         self.ts += 1
 
         obs = self.state(list(action_dict.keys()))
-        # print(self.net.load[['name','p_mw']])
         return obs, self.get_reward(list(action_dict.keys())), self.get_done(list(action_dict.keys())), self.get_info(list(action_dict.keys()))
 
     def update_grid(self):
