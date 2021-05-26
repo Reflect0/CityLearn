@@ -68,12 +68,11 @@ for ts in range(5): # test on 5 timesteps
         foo = []
         for e in range(nenvs):
             bar = list(envs[m].venv.vec_envs[n].par_env.aec_env.env.env.env.env.state().values())
-            for item in bar:
-                while len(item) < 29:
-                    item = np.append(item, 0)
+            for i in range(len(bar)):
+                while len(bar[i]) < 29:
+                    bar[i] = np.append(bar[i], 0)
             foo += bar
 
-        foo = np.vstack(foo)
         obss[m] = np.vstack(foo)
 
         action = models[m].predict(obss[m])[0] # send it to the SB model to select an action
