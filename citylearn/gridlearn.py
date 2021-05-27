@@ -12,6 +12,7 @@ from pathlib import Path
 import random
 from pettingzoo import ParallelEnv
 import os
+import matplotlib.pyplot as plt
 
 class GridLearn: # not a super class of the CityLearn environment
     def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=2, randomseed=2, max_num_houses=None):
@@ -42,6 +43,9 @@ class GridLearn: # not a super class of the CityLearn environment
 
         self.metadata = {'render.modes': [], 'name':"my_env"}
         self.ts = 0
+
+        self.voltage_data = []
+        self.load_data = []
 
     def make_grid(self):
         # make a grid that fits the buildings generated for CityLearn
@@ -163,6 +167,9 @@ class GridLearn: # not a super class of the CityLearn environment
         self.ts += 1
 
         obs = self.state(list(action_dict.keys()))
+
+        self.voltage_data += [list(self.net.res_bus['vm_pu'])]
+        self.load_data += [list(self.net.load['p_mw'])]
         return obs, self.get_reward(list(action_dict.keys())), self.get_done(list(action_dict.keys())), self.get_info(list(action_dict.keys()))
 
     def update_grid(self):
@@ -174,6 +181,12 @@ class GridLearn: # not a super class of the CityLearn environment
             if bldg.gen_index > -1:
                 self.net.sgen.at[bldg.gen_index, 'p_mw'] = bldg.solar_generation * np.cos(bldg.phi) * 0.001
                 self.net.sgen.at[bldg.gen_index, 'q_mvar'] = bldg.solar_generation * np.sin(bldg.phi) * 0.001
+
+    def plot_all(self):
+        for i in range(33):
+            plt.plot(np.arange(self.ts), np.array(env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid.voltage_data)[:,i])
+
+        plt.savefig('voltage')
 
 class MyEnv(ParallelEnv):
     def __init__(self, grid):
@@ -211,5 +224,5 @@ class MyEnv(ParallelEnv):
         return self.grid.get_info(self.agents)
 
     def step(self, action_dict):
-        print(self.agents, action_dict.keys())
+        # print(self.agents, action_dict.keys())
         return self.grid.step(action_dict)
