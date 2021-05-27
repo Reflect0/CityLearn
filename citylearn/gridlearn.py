@@ -122,10 +122,10 @@ class GridLearn: # not a super class of the CityLearn environment
                 state = next_state
             self.cost_rbc = env_rbc.get_baseline_cost()
 
-    def reset(self):
+    def reset(self, agents):
         self.system_losses = []
         self.voltage_dev = []
-        return {k:self.buildings[k].reset() for k in agents}
+        return {k:self.buildings[k].reset_timestep() for k in agents}
 
     def state(self, agents):
         obs = {k:np.array(self.buildings[k].get_obs(self.net)) for k in agents}
@@ -136,7 +136,7 @@ class GridLearn: # not a super class of the CityLearn environment
         return rewards
 
     def get_done(self, agents):
-        dones = {agent: False for agent in agents}
+        dones = {agent: (self.buildings[k].time_step >= self.hourly_timesteps*8760) for k in agents}
         return dones
 
     def get_info(self, agents):
@@ -184,7 +184,7 @@ class GridLearn: # not a super class of the CityLearn environment
 
     def plot_all(self):
         for i in range(33):
-            plt.plot(np.arange(self.ts), np.array(env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid.voltage_data)[:,i])
+            plt.plot(np.arange(self.ts), np.array(self.voltage_data)[:,i])
 
         plt.savefig('voltage')
 
@@ -209,6 +209,7 @@ class MyEnv(ParallelEnv):
 
     def reset(self):
         print('calling reset...')
+        self.grid.reset(self.agents)
         return self.state()
 
     def state(self):
