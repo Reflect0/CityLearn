@@ -512,9 +512,9 @@ class Building:
     def get_cooling_electric_demand(self):
         return self.cooling_device._electrical_consumption_cooling
 
-    def reset_timestep(self):
+    def reset_timestep(self, net):
         self.time_step = 0
-        return self.reset()
+        return self.reset(net)
 
     def reset(self, net):
 

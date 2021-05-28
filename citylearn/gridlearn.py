@@ -125,7 +125,7 @@ class GridLearn: # not a super class of the CityLearn environment
     def reset(self, agents):
         self.system_losses = []
         self.voltage_dev = []
-        return {k:self.buildings[k].reset_timestep() for k in agents}
+        return {k:self.buildings[k].reset_timestep(self.net) for k in agents}
 
     def state(self, agents):
         obs = {k:np.array(self.buildings[k].get_obs(self.net)) for k in agents}
