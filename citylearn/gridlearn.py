@@ -136,7 +136,7 @@ class GridLearn: # not a super class of the CityLearn environment
         return rewards
 
     def get_done(self, agents):
-        dones = {agent: (self.buildings[k].time_step >= self.hourly_timesteps*8760) for k in agents}
+        dones = {k: (self.buildings[k].time_step >= self.hourly_timesteps*8760) for k in agents}
         return dones
 
     def get_info(self, agents):
