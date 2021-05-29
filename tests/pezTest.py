@@ -29,7 +29,9 @@ config = {
     "data_path":data_path,
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
-    "hourly_timesteps":4
+    "hourly_timesteps":4,
+    "percent_rl":1,
+    "nclusters":2
 }
 
 grid = GridLearn(**config)
@@ -56,6 +58,7 @@ print('setting the grid...')
 for env in envs:
     for n in range(nenvs):
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
+        env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
 models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=2, n_steps=1, ent_coef=0.01, learning_rate=0.00025, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95, n_epochs=4, clip_range=0.2, clip_range_vf=1) for env in envs]
 
