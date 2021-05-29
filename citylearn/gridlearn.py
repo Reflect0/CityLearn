@@ -15,9 +15,10 @@ import os
 import matplotlib.pyplot as plt
 
 class GridLearn: # not a super class of the CityLearn environment
-    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=2, randomseed=2, max_num_houses=None):
+    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=2, randomseed=2, max_num_houses=None, percent_rl=1):
         self.max_num_houses = max_num_houses
         self.nclusters = nclusters
+        self.percent_rl = percent_rl
 
         self.data_path = data_path
         self.climate_zone = climate_zone
@@ -36,6 +37,8 @@ class GridLearn: # not a super class of the CityLearn environment
         self.agents = list(self.buildings.keys())
         self.possible_agents = self.agents[:]
         self.clusters = self.set_clusters()
+        self.rl_agents = [x[0] for x in self.clusters]
+        self.rl_agents = [j for i in self.rl_agents for j in i]
         self.ncluster = 0
 
         self.observation_spaces = {k:v.observation_space for k,v in self.buildings.items()}
@@ -62,7 +65,7 @@ class GridLearn: # not a super class of the CityLearn environment
         return net
 
     def add_houses(self, n, pv_penetration):
-        if not self.max_num_houses:
+        if self.max_num_houses:
             n = 1
         houses = []
         b = 0
@@ -97,6 +100,8 @@ class GridLearn: # not a super class of the CityLearn environment
         clusters = []
         for i in range(self.nclusters):
             clusters += [self.possible_agents[i::self.nclusters]]
+
+        clusters = [(cluster[:int(self.percent_rl*len(cluster))], cluster[int(self.percent_rl*len(cluster)):]) for cluster in clusters]
         return clusters
 
     def calc_system_losses(self):
@@ -128,11 +133,11 @@ class GridLearn: # not a super class of the CityLearn environment
         return {k:self.buildings[k].reset_timestep(self.net) for k in agents}
 
     def state(self, agents):
-        obs = {k:np.array(self.buildings[k].get_obs(self.net)) for k in agents}
+        obs = {k: np.array(self.buildings[k].get_obs(self.net)) for k in agents}
         return obs
 
     def get_reward(self, agents):
-        rewards = {k:self.buildings[k].get_reward(self.net) for k in agents}
+        rewards = {k: self.buildings[k].get_reward(self.net) for k in agents}
         return rewards
 
     def get_done(self, agents):
@@ -149,10 +154,6 @@ class GridLearn: # not a super class of the CityLearn environment
         return actionspace, obsspace
 
     def step(self, action_dict):
-        # update the buildings
-        if self.ts > 0:
-            self.agents = self.possible_agents[(self.ts%self.nclusters)::2]
-
         i = 0
         for agent in action_dict:
             if i == 0:
@@ -166,11 +167,13 @@ class GridLearn: # not a super class of the CityLearn environment
         runpp(self.net, enforce_q_lims=True)
         self.ts += 1
 
-        obs = self.state(list(action_dict.keys()))
+        rl_agent_keys = list(action_dict.keys())
+        rl_agent_keys = [agent for agent in rl_agent_keys if agent in self.rl_agents ]
+        obs = self.state(rl_agent_keys)
 
         self.voltage_data += [list(self.net.res_bus['vm_pu'])]
         self.load_data += [list(self.net.load['p_mw'])]
-        return obs, self.get_reward(list(action_dict.keys())), self.get_done(list(action_dict.keys())), self.get_info(list(action_dict.keys()))
+        return obs, self.get_reward(rl_agent_keys), self.get_done(rl_agent_keys), self.get_info(rl_agent_keys)
 
     def update_grid(self):
         for agent, bldg in self.buildings.items():
@@ -190,8 +193,9 @@ class GridLearn: # not a super class of the CityLearn environment
 
 class MyEnv(ParallelEnv):
     def __init__(self, grid):
-        # self.set_grid(grid)
-        self.agents = grid.clusters[grid.ncluster]
+        self.agents = grid.clusters[grid.ncluster][0]
+        self.rbc_buildings = grid.clusters[grid.ncluster][1]
+        self.rbc_agents = None
         grid.ncluster = (grid.ncluster + 1) % grid.nclusters
         self.possible_agents = self.agents[:]
         self.action_spaces, self.observation_spaces = grid.get_spaces(self.agents)
@@ -201,11 +205,6 @@ class MyEnv(ParallelEnv):
 
     def set_grid(self, grid):
         self.grid = grid
-
-        # self.agents = self.grid.clusters[self.grid.ncluster]
-        # self.grid.ncluster = (self.grid.ncluster + 1) % self.grid.nclusters
-        # self.possible_agents = self.agents[:]
-        # self.action_spaces, self.observation_spaces = self.grid.get_spaces(self.agents)
 
     def reset(self):
         print('calling reset...')
@@ -224,6 +223,17 @@ class MyEnv(ParallelEnv):
     def get_info(self):
         return self.grid.get_info(self.agents)
 
-    def step(self, action_dict):
-        # print(self.agents, action_dict.keys())
+    def initialize_rbc_agents(self):
+        self.rbc_agents = [RBC_Agent(self.grid.buildings[agent]) for agent in self.rbc_buildings]
+        return
+
+    def step(self, rl_action_dict):
+        # print(self.agents)
+        action_dict = rl_action_dict
+        # get the action_dict for the rbc agents
+        for agent in self.rbc_agents:
+            action_dict.update({agent.env.buildingId:agent.predict()})
+
+        # append rbc agent action_dict to the rl agent dict
+
         return self.grid.step(action_dict)
