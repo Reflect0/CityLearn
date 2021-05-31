@@ -3,9 +3,9 @@
 #SBATCH --nodes=1  #Allocate whatever you need here
 #SBATCH --ntasks=4
 #SBATCH --cpus-per-task=2  #Allocate whatever you need here
-#SBATCH --output=run.out
+#SBATCH --output=rl25_c2_reducedss.out
 #SBATCH --job-name=test
-#SBATCH --time=1-00:00:00
+#SBATCH --time=0-06:00:00
 #SBATCH --mail-user=aipi0122@colorado.edu
 #SBATCH --mail-type=ALL
 
