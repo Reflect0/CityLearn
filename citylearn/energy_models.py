@@ -184,7 +184,8 @@ class Building:
         return res
 
     def get_reward(self, net): # dummy cost function
-        reward = (100*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
+        # reward = (100*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
+        reward = -1 * net.res_bus.loc[self.bus]['p_mw']
         return reward
 
     def get_obs(self, net):
