@@ -31,7 +31,10 @@ config = {
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
     "percent_rl":0.25,
-    "nclusters":2
+    # "percent_rl":1,
+    "nclusters":2,
+    "max_num_houses":None
+    # "max_num_houses":4
 }
 
 grid = GridLearn(**config)
@@ -60,10 +63,11 @@ for env in envs:
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=2, n_steps=1, ent_coef=0.01, learning_rate=0.00025, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95, n_epochs=4, clip_range=0.2, clip_range_vf=1) for env in envs]
+models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=32, n_steps=1, ent_coef=0.01, learning_rate=0.00001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95, n_epochs=4, clip_range=0.2, clip_range_vf=1) for env in envs]
 
 for ts in range(8760):
     for model in models:
+        print("CALL LEARN")
         model.learn(1, reset_num_timesteps=False)
 for m in range(len(models)):
     models[m].save(f"model_{m}")
