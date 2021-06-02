@@ -101,7 +101,7 @@ class GridLearn: # not a super class of the CityLearn environment
         for i in range(self.nclusters):
             clusters += [self.possible_agents[i::self.nclusters]]
 
-        clusters = [(cluster[:np.ceil(self.percent_rl*len(cluster))], cluster[np.ceil(self.percent_rl*len(cluster)):]) for cluster in clusters]
+        clusters = [(cluster[:int(np.ceil(self.percent_rl*len(cluster)))], cluster[int(np.ceil(self.percent_rl*len(cluster))):]) for cluster in clusters]
         return clusters
 
     def calc_system_losses(self):
