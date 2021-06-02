@@ -19,7 +19,7 @@ import supersuit as ss
 
 import time
 
-model_name = '2_rlhouse'
+model_name = '5_rlhouse'
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
@@ -33,7 +33,7 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.02,
+    "percent_rl":0.05,
     # "percent_rl":1,
     "nclusters":2,
     "max_num_houses":None
