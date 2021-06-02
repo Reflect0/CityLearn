@@ -44,7 +44,7 @@ class GridLearn: # not a super class of the CityLearn environment
         self.observation_spaces = {k:v.observation_space for k,v in self.buildings.items()}
         self.action_spaces = {k:v.action_space for k,v in self.buildings.items()}
 
-        self.metadata = {'render.modes': [], 'name':"my_env"}
+        self.metadata = {'render.modes': [], 'name':"gridlearn"}
         self.ts = 0
 
         self.voltage_data = []
@@ -101,7 +101,7 @@ class GridLearn: # not a super class of the CityLearn environment
         for i in range(self.nclusters):
             clusters += [self.possible_agents[i::self.nclusters]]
 
-        clusters = [(cluster[:int(self.percent_rl*len(cluster))], cluster[int(self.percent_rl*len(cluster)):]) for cluster in clusters]
+        clusters = [(cluster[:np.ceil(self.percent_rl*len(cluster))], cluster[np.ceil(self.percent_rl*len(cluster)):]) for cluster in clusters]
         return clusters
 
     def calc_system_losses(self):
@@ -154,6 +154,7 @@ class GridLearn: # not a super class of the CityLearn environment
         return actionspace, obsspace
 
     def step(self, action_dict):
+        # print(f"CALL STEP, {action_dict.keys()}")
         i = 0
         for agent in action_dict:
             if i == 0:
@@ -228,12 +229,11 @@ class MyEnv(ParallelEnv):
         return
 
     def step(self, rl_action_dict):
-        # print(self.agents)
         action_dict = rl_action_dict
+
         # get the action_dict for the rbc agents
         for agent in self.rbc_agents:
             action_dict.update({agent.env.buildingId:agent.predict()})
 
         # append rbc agent action_dict to the rl agent dict
-
         return self.grid.step(action_dict)

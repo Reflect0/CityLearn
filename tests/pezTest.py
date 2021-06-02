@@ -19,6 +19,9 @@ import supersuit as ss
 
 import time
 
+model_name = ''
+
+tic = time.time()
 # multiprocessing.set_start_method("fork")
 
 climate_zone = 1
@@ -30,7 +33,7 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.25,
+    "percent_rl":0.01,
     # "percent_rl":1,
     "nclusters":2,
     "max_num_houses":None
@@ -63,11 +66,17 @@ for env in envs:
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=512, n_steps=1, ent_coef=0.05, learning_rate=0.00001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95, n_epochs=4) for env in envs]
+models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=256, n_steps=1, ent_coef=0.01, learning_rate=0.000001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
 
-for ts in range(8760):
+for ts in range(10):
     for model in models:
         # print("CALL LEARN")
         model.learn(1, reset_num_timesteps=False)
+if not os.path.exists(f'models/{model_name}'):
+    os.makedirs(f'models/{model_name}')
+os.chdir(f'models/{model_name}')
 for m in range(len(models)):
     models[m].save(f"model_{m}")
+
+toc = time.time()
+print(toc-tic)
