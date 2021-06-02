@@ -267,7 +267,7 @@ class Building:
         # reward = self.get_reward(obs)
         # done = False
         # info = {}
-        self.time_step += 1
+        self.time_step = (self.time_step + 1) % (8760 * self.hourly_timesteps) 
         return
 
     def set_dhw_draws(self):
