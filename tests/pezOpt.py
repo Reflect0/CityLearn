@@ -113,8 +113,8 @@ def objective(trial):
 
     models = create_trained_models(envs, params)
 
-    return -1 * eval_models(models)
+    return -1 * eval_models(models, 720)
 
 study = optuna.create_study()
-study.optimize(objective, timeout= 3600*22) # timeout 10 hours
+study.optimize(objective, timeout= 3600*10) # timeout 10 hours
 print(study.best_params)
