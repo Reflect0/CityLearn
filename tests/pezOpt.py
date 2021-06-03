@@ -107,7 +107,7 @@ def objective(trial):
         "max_grad_norm": trial.suggest_loguniform('max_grad_norm', .01, 10),
         "n_steps": trial.suggest_categorical('n_steps', [1]),
         "batch_size": trial.suggest_categorical('batch_size', [1024, 4096, 8192]),  # , 512, 1024, 2048, 4096
-        "n_envs": trial.suggest_categorical('n_envs', [2, 4, 8]),
+        # "n_envs": trial.suggest_categorical('n_envs', [2, 4, 8]),
         "clip_range": trial.suggest_uniform('clip_range', .1, 5)
     }
 
