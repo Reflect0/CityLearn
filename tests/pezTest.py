@@ -1,10 +1,6 @@
 import multiprocessing
 import sys
 from pettingzoo.test import parallel_api_test
-
-import multiprocessing
-import sys
-from pettingzoo.test import parallel_api_test
 from citylearn import GridLearn
 from citylearn import MyEnv
 from pathlib import Path
@@ -12,14 +8,12 @@ from stable_baselines3.ppo import MlpPolicy
 from stable_baselines3 import PPO
 import gym
 import numpy as np
-
-import multiprocessing
-import sys
 import supersuit as ss
 
 import time
+import os
 
-model_name = '10_rlhouse'
+model_name = '10_houses'
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
@@ -42,7 +36,7 @@ config = {
 
 grid = GridLearn(**config)
 
-envs = [MyEnv(grid), MyEnv(grid)]
+envs = [MyEnv(grid) for _ in range(config['nclusters'])]
 
 print('padding action/observation spaces...')
 envs = [ss.pad_action_space_v0(env) for env in envs]
@@ -56,9 +50,11 @@ nenvs = 2
 envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
 
 from copy import deepcopy
-grid2 = deepcopy(grid)
-
-grids = [grid, grid2]
+# grid2 = deepcopy(grid)
+#
+# grids = [grid, grid2]
+grids = [grid]
+grids += [deepcopy(grid) for _ in range(nenvs)]
 
 print('setting the grid...')
 for env in envs:
@@ -66,7 +62,7 @@ for env in envs:
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=256, n_steps=1, ent_coef=0.01, learning_rate=0.0001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
+models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=1024, n_steps=1, ent_coef=0.01, learning_rate=0.0001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
 
 for ts in range(8760*2):
     for model in models:

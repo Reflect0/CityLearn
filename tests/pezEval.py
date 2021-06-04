@@ -18,6 +18,7 @@ import sys
 import supersuit as ss
 
 import time
+import os
 
 # multiprocessing.set_start_method("fork")
 
@@ -29,7 +30,12 @@ config = {
     "data_path":data_path,
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
-    "hourly_timesteps":4
+    "hourly_timesteps":4,
+    "percent_rl":0.1,
+    # "percent_rl":1,
+    "nclusters":2,
+    "max_num_houses":None
+    # "max_num_houses":4
 }
 
 grid = GridLearn(**config)
@@ -57,7 +63,7 @@ for env in envs:
     for n in range(nenvs):
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
 
-models = [PPO.load(f"model50_{m}") for m in range(len(envs))]
+models = [PPO.load(f"models/rl_house/model_{m}") for m in range(len(envs))]
 
 obss = [env.reset() for env in envs]
 for ts in range(5): # test on 5 timesteps
