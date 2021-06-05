@@ -62,6 +62,7 @@ print('setting the grid...')
 for env in envs:
     for n in range(nenvs):
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
+        env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
 models = [PPO.load(f"models/rl_house/model_{m}") for m in range(len(envs))]
 
