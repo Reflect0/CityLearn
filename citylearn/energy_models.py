@@ -228,7 +228,7 @@ class Building:
                         s.append(self.cooling_storage._soc/self.cooling_storage.capacity)
                     elif state_name == 'dhw_storage_soc':
                         s.append(self.dhw_storage._soc/self.dhw_storage.capacity)
-        return np.array(s)
+        return (np.array(s) - self.normalization_mid) / self.normalization_range
 
     def step(self, a):
         # a = a[0]
@@ -311,12 +311,12 @@ class Building:
                 if state_name == "net_electricity_consumption":
                     # lower and upper bounds of net electricity consumption are rough estimates and may not be completely accurate. Scaling this state-variable using these bounds may result in normalized values above 1 or below 0.
                     _net_elec_cons_upper_bound = max(np.array(self.sim_results['non_shiftable_load']) - np.array(self.sim_results['solar_gen']) + np.array(self.sim_results['dhw_demand'])/.8 + np.array(self.sim_results['cooling_demand']) + self.dhw_storage.capacity/.8 + self.cooling_storage.capacity/2)
-                    s_low.append(0.)
+                    s_low.append(self.solar_power_capacity)
                     s_high.append(_net_elec_cons_upper_bound)
 
                 elif state_name == "absolute_voltage":
-                    s_low.append(0.94)
-                    s_high.append(1.06)
+                    s_low.append(0.90)
+                    s_high.append(1.10)
 
                 elif state_name == "relative_voltage":
                     # @akp, added relative voltage to give homes their voltage ranked against the community max/min
@@ -325,8 +325,8 @@ class Building:
 
                 elif state_name == "total_voltage_spread":
                     # @akp, added total voltage spread to give a sense of the total loss incurred by the community. without the total voltage spread state "relative_voltage" is more or less meaningless. (total_voltage_spread = how much the community is penaltized, relative_voltage = what that house can do to fix the issue)
-                    s_low.append(0.) # @akp?, not sure what the typical spread in v pu would be.
-                    s_high.append(1.)
+                    s_low.append(0.)
+                    s_high.append(0.2)
 
                 elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
                     s_low.append(min(self.sim_results[state_name]))
@@ -336,7 +336,12 @@ class Building:
                     s_low.append(0.0)
                     s_high.append(1.0)
 
-        return spaces.Box(low=np.array(s_low), high=np.array(s_high), dtype=np.float32)
+        self.normalization_mid = np.array(s_low) + 0.5 * np.array(s_high)
+        self.normalization_range = np.array(s_high) - np.array(s_low)
+        num_states = sum(self.enabled_states.values())
+        low = -1 * np.ones(num_states)
+        high = np.ones(num_states)
+        return spaces.Box(low=low, high=high, dtype=np.float32)
 
     def get_action_space(self, attributes):
         # Setting the action space and the lower and upper bounds of each action-variable
