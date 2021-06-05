@@ -97,10 +97,36 @@ class GridLearn: # not a super class of the CityLearn environment
         return buildings
 
     def set_clusters(self):
+        # determine clusters by geographic order -- an approx for electrical distance
+        num_buses = len(self.net.bus)
+        num_nodes_per = int(len(self.net.bus)/2)
+        geo_index = self.net.bus_geodata.sort_values('y').index
+        nodal_geo_clusters = []
+        i = 0
+        j = 0
+        for _ in range(2): # number geographic clusters
+            j += num_nodes_per
+            nodal_geo_clusters += [geo_index[i:j].tolist()]
+            i += num_nodes_per
+
+        # make a list of clusters of houses geographically
+        house_geo_clusters = []
+        for cluster in nodal_geo_clusters:
+            filtered = self.net.load.bus.isin(cluster)
+            house_geo_clusters += [self.net.load[filtered].name.tolist()]
+
+        # make these into temporal clusters, selecting a portion of agents across each geo_cluster
         clusters = []
         for i in range(self.nclusters):
-            clusters += [self.possible_agents[i::self.nclusters]]
+            cluster = []
+            j = i + 0
+            for geo_cluster in house_geo_clusters:
+                cluster += geo_cluster[j::self.nclusters]
+                j = (j + 1) % 2
+            clusters += [cluster]
+        # clusters = house_geo_clusters
 
+        # make some of the agents in each cluster RBC agents
         clusters = [(cluster[:int(np.ceil(self.percent_rl*len(cluster)))], cluster[int(np.ceil(self.percent_rl*len(cluster))):]) for cluster in clusters]
         return clusters
 
