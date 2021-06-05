@@ -224,8 +224,12 @@ class MyEnv(ParallelEnv):
     def get_info(self):
         return self.grid.get_info(self.agents)
 
-    def initialize_rbc_agents(self):
-        self.rbc_agents = [RBC_Agent(self.grid.buildings[agent]) for agent in self.rbc_buildings]
+    def initialize_rbc_agents(self, mode='partial'):
+        if mode = 'all':
+            agents = self.agents + self.rbc_buildings
+        else:
+            agents = self.rbc_buildings
+        self.rbc_agents = [RBC_Agent(self.grid.buildings[agent]) for agent in agents]
         return
 
     def step(self, rl_action_dict):
