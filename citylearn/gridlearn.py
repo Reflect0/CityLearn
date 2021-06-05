@@ -225,7 +225,7 @@ class MyEnv(ParallelEnv):
         return self.grid.get_info(self.agents)
 
     def initialize_rbc_agents(self, mode='partial'):
-        if mode = 'all':
+        if mode == 'all':
             agents = self.agents + self.rbc_buildings
         else:
             agents = self.rbc_buildings
