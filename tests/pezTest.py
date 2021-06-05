@@ -13,7 +13,7 @@ import supersuit as ss
 import time
 import os
 
-model_name = '10_houses'
+model_name = 'normalized'
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
