@@ -184,7 +184,7 @@ class Building:
         return res
 
     def get_reward(self, net): # dummy cost function
-        reward = (100*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
+        reward = -1 * (100*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
         # reward = -1 * net.res_bus.loc[self.bus]['p_mw']
         return reward
 
@@ -267,7 +267,7 @@ class Building:
         # reward = self.get_reward(obs)
         # done = False
         # info = {}
-        self.time_step = (self.time_step + 1) % (8760 * self.hourly_timesteps) 
+        self.time_step = (self.time_step + 1) % (8760 * self.hourly_timesteps)
         return
 
     def set_dhw_draws(self):
