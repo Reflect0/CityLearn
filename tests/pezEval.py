@@ -64,10 +64,10 @@ for env in envs:
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
-models = [PPO.load(f"models/rl_house/model_{m}") for m in range(len(envs))]
+models = [PPO.load(f"models/10_houses/model_{m}") for m in range(len(envs))]
 
 obss = [env.reset() for env in envs]
-for ts in range(5): # test on 5 timesteps
+for ts in range(7*24*4): # test on 5 timesteps
     for m in range(len(models)): # again, alternate through models
 
         # get the current observation from the perspective of the active team
@@ -76,7 +76,7 @@ for ts in range(5): # test on 5 timesteps
         for e in range(nenvs):
             bar = list(envs[m].venv.vec_envs[n].par_env.aec_env.env.env.env.env.state().values())
             for i in range(len(bar)):
-                while len(bar[i]) < 29:
+                while len(bar[i]) < 19:
                     bar[i] = np.append(bar[i], 0)
             foo += bar
 
