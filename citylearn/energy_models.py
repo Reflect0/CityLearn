@@ -313,7 +313,7 @@ class Building:
                     # lower and upper bounds of net electricity consumption are rough estimates and may not be completely accurate. Scaling this state-variable using these bounds may result in normalized values above 1 or below 0.
                     self._net_elec_cons_upper_bound = max(np.array(self.sim_results['non_shiftable_load']) - np.array(self.sim_results['solar_gen']) + np.array(self.sim_results['dhw_demand'])/.8 + np.array(self.sim_results['cooling_demand']) + self.dhw_storage.capacity/.8 + self.cooling_storage.capacity/2)
                     s_low.append(self.solar_power_capacity)
-                    s_high.append(_net_elec_cons_upper_bound)
+                    s_high.append(self._net_elec_cons_upper_bound)
                     self.net_elec_cons_range = self._net_elec_cons_upper_bound
                     self.net_elec_cons_mid = self.solar_power_capacity + 0.5 * self.net_elec_cons_range
 
