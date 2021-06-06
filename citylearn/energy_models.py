@@ -183,11 +183,18 @@ class Building:
         res['solar_gen'] = subhourly_lin_interp(attributes['Solar_Power_Installed(kW)']*data['Hourly Data: AC inverter power (W)']/1000, self.hourly_timesteps)
         return res
 
+    def assign_neighbors(self, net):
+        my_x = net.bus_geodata.loc[self.bus]['x']
+        my_y = net.bus_geodata.loc[self.bus]['y']
+        net.bus_geodata['distance'] = (net.bus_geodata['x']-my_x)**2 + (net.bus_geodata['y']-my_y)**2
+        self.neighbors = grid.net.bus_geodata.sort_values('distance').drop(index=0).index[1:4]
+        return
+
     def get_reward(self, net): # dummy cost function
-        reward = -1 * (100*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
-        reward -= (self.current_net_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
-        # reward = -1 * net.res_bus.loc[self.bus]['p_mw']
-        # print(reward)
+        my_voltage_dev = (100*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
+        my_cons = (self.current_net_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
+        my_neighbors_voltage_dev = sum(np.square(grid.net.res_bus.loc[neighbors]['min_vm_pu']-1))
+        reward = -1 * (my_voltage_dev + my_cons + my_neighbors_voltage_dev)
         return reward
 
     def get_obs(self, net):

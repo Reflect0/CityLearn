@@ -94,6 +94,7 @@ class GridLearn: # not a super class of the CityLearn environment
                 else:
                     bldg.gen_index = -1
                 buildings[bldg.buildingId] = bldg
+                bldg.assign_neighbors()
         return buildings
 
     def set_clusters(self):
@@ -124,7 +125,6 @@ class GridLearn: # not a super class of the CityLearn environment
                 cluster += geo_cluster[j::self.nclusters]
                 j = (j + 1) % 2
             clusters += [cluster]
-        # clusters = house_geo_clusters
 
         # make some of the agents in each cluster RBC agents
         clusters = [(cluster[:int(np.ceil(self.percent_rl*len(cluster)))], cluster[int(np.ceil(self.percent_rl*len(cluster))):]) for cluster in clusters]
