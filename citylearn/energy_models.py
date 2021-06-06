@@ -187,7 +187,7 @@ class Building:
         my_x = net.bus_geodata.loc[self.bus]['x']
         my_y = net.bus_geodata.loc[self.bus]['y']
         net.bus_geodata['distance'] = (net.bus_geodata['x']-my_x)**2 + (net.bus_geodata['y']-my_y)**2
-        self.neighbors = grid.net.bus_geodata.sort_values('distance').drop(index=0).index[1:4]
+        self.neighbors = net.bus_geodata.sort_values('distance').drop(index=0).index[1:4]
         return
 
     def get_reward(self, net): # dummy cost function
