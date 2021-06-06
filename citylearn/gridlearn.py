@@ -94,7 +94,7 @@ class GridLearn: # not a super class of the CityLearn environment
                 else:
                     bldg.gen_index = -1
                 buildings[bldg.buildingId] = bldg
-                bldg.assign_neighbors()
+                bldg.assign_neighbors(self.net)
         return buildings
 
     def set_clusters(self):
