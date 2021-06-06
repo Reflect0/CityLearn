@@ -185,7 +185,7 @@ class Building:
 
     def get_reward(self, net): # dummy cost function
         reward = -1 * (100*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
-        reward -= (self.current_net_electricity_demand - self.normalization_mid) / self.normalization_range
+        reward -= (self.current_net_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
         # reward = -1 * net.res_bus.loc[self.bus]['p_mw']
         # print(reward)
         return reward
@@ -311,9 +311,11 @@ class Building:
             if value == True:
                 if state_name == "net_electricity_consumption":
                     # lower and upper bounds of net electricity consumption are rough estimates and may not be completely accurate. Scaling this state-variable using these bounds may result in normalized values above 1 or below 0.
-                    _net_elec_cons_upper_bound = max(np.array(self.sim_results['non_shiftable_load']) - np.array(self.sim_results['solar_gen']) + np.array(self.sim_results['dhw_demand'])/.8 + np.array(self.sim_results['cooling_demand']) + self.dhw_storage.capacity/.8 + self.cooling_storage.capacity/2)
+                    self._net_elec_cons_upper_bound = max(np.array(self.sim_results['non_shiftable_load']) - np.array(self.sim_results['solar_gen']) + np.array(self.sim_results['dhw_demand'])/.8 + np.array(self.sim_results['cooling_demand']) + self.dhw_storage.capacity/.8 + self.cooling_storage.capacity/2)
                     s_low.append(self.solar_power_capacity)
                     s_high.append(_net_elec_cons_upper_bound)
+                    self.net_elec_cons_range = self._net_elec_cons_upper_bound
+                    self.net_elec_cons_mid = self.solar_power_capacity + 0.5 * self.net_elec_cons_range
 
                 elif state_name == "absolute_voltage":
                     s_low.append(0.90)
@@ -337,8 +339,9 @@ class Building:
                     s_low.append(0.0)
                     s_high.append(1.0)
 
-        self.normalization_mid = np.array(s_low) + 0.5 * np.array(s_high)
         self.normalization_range = np.array(s_high) - np.array(s_low)
+        self.normalization_mid = np.array(s_low) + 0.5 * self.normalization_range
+
         num_states = sum(self.enabled_states.values())
         low = -1 * np.ones(num_states)
         high = np.ones(num_states)
