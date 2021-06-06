@@ -185,8 +185,9 @@ class Building:
 
     def get_reward(self, net): # dummy cost function
         reward = -1 * (100*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
+        reward -= (self.current_net_electricity_demand - self.normalization_mid) / self.normalization_range
         # reward = -1 * net.res_bus.loc[self.bus]['p_mw']
-        print(reward)
+        # print(reward)
         return reward
 
     def get_obs(self, net):
