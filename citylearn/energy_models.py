@@ -193,7 +193,7 @@ class Building:
     def get_reward(self, net): # dummy cost function
         my_voltage_dev = (100*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
         my_cons = (self.current_net_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
-        my_neighbors_voltage_dev = sum(np.square(grid.net.res_bus.loc[neighbors]['min_vm_pu']-1))
+        my_neighbors_voltage_dev = sum(np.square(self.grid.net.res_bus.loc[neighbors]['min_vm_pu']-1))
         reward = -1 * (my_voltage_dev + my_cons + my_neighbors_voltage_dev)
         return reward
 
