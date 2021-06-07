@@ -13,7 +13,7 @@ import supersuit as ss
 import time
 import os
 
-model_name = 'lower_ent_all_actions'
+model_name = 'randomized_buses'
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
