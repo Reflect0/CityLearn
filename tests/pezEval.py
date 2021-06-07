@@ -64,7 +64,7 @@ for env in envs:
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
-models = [PPO.load(f"models/10_houses/model_{m}") for m in range(len(envs))]
+models = [PPO.load(f"models/lower_ent_all_actions/model_{m}") for m in range(len(envs))]
 
 sum_reward = 0
 obss = [env.reset() for env in envs]

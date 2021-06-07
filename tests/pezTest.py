@@ -13,7 +13,7 @@ import supersuit as ss
 import time
 import os
 
-model_name = 'normalized'
+model_name = 'lower_ent_all_actions'
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
@@ -62,7 +62,7 @@ for env in envs:
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=1024, n_steps=1, ent_coef=0.01, learning_rate=0.0001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
+models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=512, n_steps=1, ent_coef=0.0001, learning_rate=0.0001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
 
 for ts in range(8760*2):
     for model in models:
