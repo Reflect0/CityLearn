@@ -21,12 +21,13 @@ import time
 import os
 
 # multiprocessing.set_start_method("fork")
-
+model_name = os.environ['model_name']
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 
 config = {
+    "model_name":model_name,
     "data_path":data_path,
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
@@ -64,7 +65,7 @@ for env in envs:
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
-models = [PPO.load(f"models/10_houses/model_{m}") for m in range(len(envs))]
+models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
 
 sum_reward = 0
 obss = [env.reset() for env in envs]

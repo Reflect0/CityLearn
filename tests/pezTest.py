@@ -13,7 +13,7 @@ import supersuit as ss
 import time
 import os
 
-model_name = 'normalized'
+model_name = os.environ['model_name']
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
@@ -23,6 +23,7 @@ data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 
 config = {
+    "model_name":model_name,
     "data_path":data_path,
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
@@ -62,7 +63,7 @@ for env in envs:
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=1024, n_steps=1, ent_coef=0.01, learning_rate=0.0001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
+models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=512, n_steps=1, ent_coef=0.0001, learning_rate=0.0001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
 
 for ts in range(8760*2):
     for model in models:
