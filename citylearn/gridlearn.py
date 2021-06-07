@@ -218,7 +218,7 @@ class GridLearn: # not a super class of the CityLearn environment
                 self.net.sgen.at[bldg.gen_index, 'q_mvar'] = bldg.solar_generation * np.sin(bldg.phi) * 0.001
 
     def plot_all(self):
-        fig, ax = plt.subplots(len(self.rl_agents), figsize(20, 20*len(self.rl_agents)))
+        fig, ax = plt.subplots(len(self.rl_agents), figsize=(20, 12*len(self.rl_agents)))
         rl_buses = list(set(self.load.name[self.rl_agents].bus))
         for i in range(len(rl_buses)):
             ax[i].plot(np.arange(self.ts), np.array(self.voltage_data)[:,rl_buses[i]])
