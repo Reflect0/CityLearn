@@ -13,7 +13,7 @@ import supersuit as ss
 import time
 import os
 
-model_name = os.environ['model_name']
+model_name = # os.environ['model_name']
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
