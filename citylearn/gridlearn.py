@@ -15,7 +15,8 @@ import os
 import matplotlib.pyplot as plt
 
 class GridLearn: # not a super class of the CityLearn environment
-    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=2, randomseed=2, max_num_houses=None, percent_rl=1):
+    def __init__(self, model_name, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=2, randomseed=2, max_num_houses=None, percent_rl=1):
+        self.model_name = model_name
         self.max_num_houses = max_num_houses
         self.nclusters = nclusters
         self.percent_rl = percent_rl
@@ -23,14 +24,13 @@ class GridLearn: # not a super class of the CityLearn environment
         self.data_path = data_path
         self.climate_zone = climate_zone
         self.buildings_states_actions_file = buildings_states_actions_file
-        print(self.buildings_states_actions_file)
+        # print(self.buildings_states_actions_file)
         self.hourly_timesteps = hourly_timesteps
         self.save_memory = save_memory
         self.building_ids = building_ids
         random.seed(randomseed)
         np.random.seed(randomseed)
 
-        self.name = "test"
         self.net = self.make_grid()
 
         self.buildings = self.add_houses(6,0.3)
@@ -127,8 +127,13 @@ class GridLearn: # not a super class of the CityLearn environment
             clusters += [cluster]
 
         # make some of the agents in each cluster RBC agents
-        clusters = [(cluster[:int(np.ceil(self.percent_rl*len(cluster)))], cluster[int(np.ceil(self.percent_rl*len(cluster))):]) for cluster in clusters]
-        return clusters
+        agent_clusters = []
+        for cluster in clusters:
+            n_agents = int(self.percent_rl * len(cluster))
+            rl_agents = set(np.random.choice(cluster), n_agents)
+            rbc_agents = set(cluster) - rl_agents
+            agent_clusters += [(rl_agents, rbc_agents)]
+        return agent_clusters
 
     def calc_system_losses(self):
         self.system_losses += list((self.net.res_ext_grid.p_mw + self.net.res_load.p_mw.sum() - self.net.res_gen.p_mw.sum()).values)
@@ -213,10 +218,12 @@ class GridLearn: # not a super class of the CityLearn environment
                 self.net.sgen.at[bldg.gen_index, 'q_mvar'] = bldg.solar_generation * np.sin(bldg.phi) * 0.001
 
     def plot_all(self):
-        for i in range(33):
-            plt.plot(np.arange(self.ts), np.array(self.voltage_data)[:,i])
+        fig, ax = plt.subplots(len(self.rl_agents), figsize(20, 20*len(self.rl_agents)))
+        rl_buses = list(set(self.load.name[self.rl_agents].bus))
+        for i in range(len(rl_buses)):
+            ax[i].plot(np.arange(self.ts), np.array(self.voltage_data)[:,rl_buses[i]])
 
-        plt.savefig('voltage')
+        plt.savefig(f'models/{self.model_name}/voltage')
 
 class MyEnv(ParallelEnv):
     def __init__(self, grid):
