@@ -22,6 +22,7 @@ import os
 
 # multiprocessing.set_start_method("fork")
 model_name = "randomized_buses"
+
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'

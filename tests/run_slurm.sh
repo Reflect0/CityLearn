@@ -12,4 +12,5 @@
 module purge
 source /curc/sw/anaconda3/2019.07/bin/activate
 conda activate cities
-python -u baselineEval.py
+python -u pezTest.py
+python -u pezEval.py
