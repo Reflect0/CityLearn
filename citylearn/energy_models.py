@@ -195,6 +195,10 @@ class Building:
         my_cons = (self.current_net_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
         my_neighbors_voltage_dev = sum(np.square(100 * (net.res_bus.loc[self.neighbors]['vm_pu']-1)))
         reward = -1 * (my_voltage_dev + my_cons + my_neighbors_voltage_dev)
+        if self.action_angle:
+            reward -= 0.1*self.action_angle
+        if self.action_curtail:
+            reward -= 0.1*self.action_curtail
         return reward
 
     def get_obs(self, net):
@@ -255,12 +259,14 @@ class Building:
 
         if self.enabled_actions['pv_curtail']:
             self.solar_generation = self.get_solar_power(a[0])
+            self.action_curtail = a[0]
             a = a[1:]
         else:
             self.solar_generation = self.get_solar_power()
 
         if self.enabled_actions['pv_phi']:
             self.phi = self.set_phase_lag(a[0])
+            self.action_angle = a[0]
             a = a[1:]
         else:
             self.phi = self.set_phase_lag()
