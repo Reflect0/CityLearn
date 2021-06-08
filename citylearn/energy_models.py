@@ -197,7 +197,7 @@ class Building:
         my_neighbors_voltage_dev = sum(np.square(100 * (net.res_bus.loc[self.neighbors]['vm_pu']-1)))
         reward = -1 * (my_voltage_dev + my_cons + my_neighbors_voltage_dev)
         if not self.rbc:
-            if self.solar_generation <= 0.000000001
+            if self.solar_generation <= 0.000000001:
                 if self.action_angle:
                     reward -= 0.05*(self.action_angle + 1)
                 if self.action_curtail:
