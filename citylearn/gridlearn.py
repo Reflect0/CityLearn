@@ -222,11 +222,14 @@ class GridLearn: # not a super class of the CityLearn environment
         filtered = self.net.load.name.isin(self.rl_agents)
         rl_buses = list(set(self.net.load.loc[filtered].bus))
         for i in range(len(rl_buses)):
-            ax[i].plot(np.arange(self.ts), np.array(self.voltage_data)[:,rl_buses[i]])
-
-        if not os.isdir(f'models/{self.model_name}'):
+            ax[i].plot(np.arange(self.ts) / self.hourly_timesteps / 24, np.array(self.voltage_data)[:,rl_buses[i]])
+            ax[i].set_title(f'Bus {rl_buses[i]}')
+            ax[i].set_ylabel('Voltage (p.u.)')
+            ax[i].set_xlabel('Time (Days)')
+        if not os.path.isdir(f'models/{self.model_name}'):
             os.mkdir(f'models/{self.model_name}')
         plt.savefig(f'models/{self.model_name}/voltage')
+        np.savetxt(f'models/{self.model_name}/.csv', np.array(self.voltage_data), delimiter=",")
 
 class MyEnv(ParallelEnv):
     def __init__(self, grid):
