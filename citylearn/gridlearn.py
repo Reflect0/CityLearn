@@ -224,6 +224,8 @@ class GridLearn: # not a super class of the CityLearn environment
         for i in range(len(rl_buses)):
             ax[i].plot(np.arange(self.ts), np.array(self.voltage_data)[:,rl_buses[i]])
 
+        if not os.isdir(f'models/{self.model_name}'):
+            os.mkdir(f'models/{self.model_name}')
         plt.savefig(f'models/{self.model_name}/voltage')
 
 class MyEnv(ParallelEnv):
