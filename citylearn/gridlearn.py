@@ -272,6 +272,8 @@ class MyEnv(ParallelEnv):
         else:
             agents = self.rbc_buildings
         self.rbc_agents = [RBC_Agent(self.grid.buildings[agent]) for agent in agents]
+        for agent in agents:
+            self.grid.buildings[agent].rbc = True
         return
 
     def step(self, rl_action_dict):

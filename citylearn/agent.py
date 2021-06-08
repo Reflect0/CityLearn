@@ -89,7 +89,7 @@ class RBC_Agent:
                     else:
                         actions += [0.91]
                 else:
-                    actions += [0.0]
+                    actions += [-1.0]
 
         return actions # casting this as a list of list matches the predict function in Stable Baselines.
 
