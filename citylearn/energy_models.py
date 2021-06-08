@@ -98,6 +98,7 @@ class Building:
         self.current_net_electricity_demand = 0
         self.solar_generation = 0
         self.phi = 0
+        self.rbc = False
         # self.reset()
 
     def assign_bus(self, bus):
@@ -195,10 +196,12 @@ class Building:
         my_cons = (self.current_net_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
         my_neighbors_voltage_dev = sum(np.square(100 * (net.res_bus.loc[self.neighbors]['vm_pu']-1)))
         reward = -1 * (my_voltage_dev + my_cons + my_neighbors_voltage_dev)
-        if self.action_angle:
-            reward -= 0.05*(self.action_angle + 1)
-        if self.action_curtail:
-            reward -= 0.05*(self.action_curtail + 1)
+        if not self.rbc:
+            if self.solar_generation <= 0.000000001
+                if self.action_angle:
+                    reward -= 0.05*(self.action_angle + 1)
+                if self.action_curtail:
+                    reward -= 0.05*(self.action_curtail + 1)
         return reward
 
     def get_obs(self, net):
