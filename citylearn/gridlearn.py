@@ -219,7 +219,8 @@ class GridLearn: # not a super class of the CityLearn environment
 
     def plot_all(self):
         fig, ax = plt.subplots(len(self.rl_agents), figsize=(20, 12*len(self.rl_agents)))
-        rl_buses = list(set(self.net.load.name[self.rl_agents].bus))
+        filtered = self.net.load.name.isin(self.rl_agents)
+        rl_buses = list(set(self.net.load.loc[filtered].bus))
         for i in range(len(rl_buses)):
             ax[i].plot(np.arange(self.ts), np.array(self.voltage_data)[:,rl_buses[i]])
 
