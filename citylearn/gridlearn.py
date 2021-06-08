@@ -218,18 +218,21 @@ class GridLearn: # not a super class of the CityLearn environment
                 self.net.sgen.at[bldg.gen_index, 'q_mvar'] = bldg.solar_generation * np.sin(bldg.phi) * 0.001
 
     def plot_all(self):
-        fig, ax = plt.subplots(len(self.rl_agents), figsize=(20, 12*len(self.rl_agents)))
+
         filtered = self.net.load.name.isin(self.rl_agents)
         rl_buses = list(set(self.net.load.loc[filtered].bus))
+        fig, ax = plt.subplots(len(rl_buses), figsize=(20, 8*len(rl_buses)))
+        x = np.arange(self.ts) / self.hourly_timesteps / 24 / self.nclusters
         for i in range(len(rl_buses)):
-            ax[i].plot(np.arange(self.ts) / self.hourly_timesteps / 24, np.array(self.voltage_data)[:,rl_buses[i]])
+            data = np.array(self.voltage_data)[:,rl_buses[i]]
+            ax[i].plot(x, data)
             ax[i].set_title(f'Bus {rl_buses[i]}')
             ax[i].set_ylabel('Voltage (p.u.)')
             ax[i].set_xlabel('Time (Days)')
         if not os.path.isdir(f'models/{self.model_name}'):
             os.mkdir(f'models/{self.model_name}')
         plt.savefig(f'models/{self.model_name}/voltage')
-        np.savetxt(f'models/{self.model_name}/.csv', np.array(self.voltage_data), delimiter=",")
+        np.savetxt(f'models/{self.model_name}/voltage.csv', np.array(self.voltage_data), delimiter=",")
 
 class MyEnv(ParallelEnv):
     def __init__(self, grid):
