@@ -89,9 +89,32 @@ class RBC_Agent:
                     else:
                         actions += [0.91]
                 else:
-                    actions += [1.0]
+                    actions += [0.0]
 
         return actions # casting this as a list of list matches the predict function in Stable Baselines.
+
+# this class is used to replace the RL agents in the grid directly
+class RBC_Agent_v2:
+    def __init__(self, env):
+        self.env = env
+        self.reset_action_tracker()
+
+    def reset_action_tracker(self):
+        self.action_tracker = []
+
+    def predict(self):
+        hour_day = self.env.time_step % (self.env.hourly_timesteps * 24)
+        daytime = True if hour_day >= 1 and hour_day <= 21 else False
+        actions = []
+        for action, enabled in self.env.enabled_actions.items():
+            if enabled:
+                if action == 'cooling_storage' or action == 'dhw_storage':
+                    if daytime:
+                        actions += [-0.08]
+                    else:
+                        actions += [0.91]
+                else:
+                    actions += [1.0]
 
 # class PolicyNetwork(nn.Module):
 #     def __init__(self, num_inputs, num_actions, action_space, action_scaling_coef, hidden_dim=[400,300],

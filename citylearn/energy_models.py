@@ -199,9 +199,9 @@ class Building:
         if not self.rbc:
             if self.solar_generation <= 0.000000001:
                 if self.action_angle:
-                    reward -= 0.05*(self.action_angle + 1)
+                    reward -= 0.05*(self.action_angle - 1)
                 if self.action_curtail:
-                    reward -= 0.05*(self.action_curtail + 1)
+                    reward -= 0.05*(self.action_curtail - 1)
         return reward
 
     def get_obs(self, net):
@@ -510,8 +510,9 @@ class Building:
         return self.sim_results['non_shiftable_load'][self.time_step]
 
     def get_solar_power(self, curtailment=-1):
-         self.solar_power = (1 - .5 * curtailment + 0.5) * self.sim_results['solar_gen'][self.time_step]
-         return self.solar_power
+        c = 0.5 - 0.5 * curtailment # maps curtailment -1 to 100% reduction and 1 to no curtailment
+        self.solar_power = (1 - c) * self.sim_results['solar_gen'][self.time_step]
+        return self.solar_power
 
     def set_phase_lag(self,phi=-1):
         # mapping to that -1 is 0 and 1 in np.pi/2
