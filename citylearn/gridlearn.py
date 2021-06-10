@@ -280,7 +280,7 @@ class MyEnv(ParallelEnv):
             self.grid.buildings[agent].rbc = True
 
         if mode == 'all':
-            self.rbc_agents += [RBC_Agent_v2(self.grid.buildings[agent] for agent in self.agents)]
+            self.rbc_agents += [RBC_Agent_v2(self.grid.buildings[agent]) for agent in self.agents]
             for agent in self.agents:
                 self.grid.buildings[agent].rbc = True
         return
