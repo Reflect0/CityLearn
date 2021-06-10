@@ -116,6 +116,8 @@ class RBC_Agent_v2:
                 else:
                     actions += [1.0]
 
+    return actions
+
 # class PolicyNetwork(nn.Module):
 #     def __init__(self, num_inputs, num_actions, action_space, action_scaling_coef, hidden_dim=[400,300],
 #                  init_w=3e-3, log_std_min=-20, log_std_max=2, epsilon = 1e-6):

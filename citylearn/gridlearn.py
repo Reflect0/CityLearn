@@ -4,7 +4,7 @@ from pandapower.plotting import simple_plotly, pf_res_plotly
 import pandapower.networks as networks
 from citylearn import CityLearn
 from citylearn import Building
-from citylearn import RBC_Agent
+from citylearn import RBC_Agent, RBC_Agent_v2
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -49,6 +49,7 @@ class GridLearn: # not a super class of the CityLearn environment
 
         self.voltage_data = []
         self.load_data = []
+        self.reward_data = []
 
     def make_grid(self):
         # make a grid that fits the buildings generated for CityLearn
@@ -169,6 +170,8 @@ class GridLearn: # not a super class of the CityLearn environment
 
     def get_reward(self, agents):
         rewards = {k: self.buildings[k].get_reward(self.net) for k in agents}
+
+        self.reward_data += sum(rewards.values())
         return rewards
 
     def get_done(self, agents):
@@ -233,6 +236,7 @@ class GridLearn: # not a super class of the CityLearn environment
             os.mkdir(f'models/{self.model_name}')
         plt.savefig(f'models/{self.model_name}/voltage')
         np.savetxt(f'models/{self.model_name}/voltage.csv', np.array(self.voltage_data), delimiter=",")
+        np.savetxt(f'models/{self.model_name}/voltage.csv', np.array(self.reward_data), delimiter=",")
 
 class MyEnv(ParallelEnv):
     def __init__(self, grid):
@@ -267,13 +271,18 @@ class MyEnv(ParallelEnv):
         return self.grid.get_info(self.agents)
 
     def initialize_rbc_agents(self, mode='partial'):
-        if mode == 'all':
-            agents = self.agents + self.rbc_buildings
-        else:
-            agents = self.rbc_buildings
-        self.rbc_agents = [RBC_Agent(self.grid.buildings[agent]) for agent in agents]
-        for agent in agents:
+        # if mode == 'all':
+        #     agents = self.agents + self.rbc_buildings
+        # else:
+        #     agents = self.rbc_buildings
+        self.rbc_agents = [RBC_Agent(self.grid.buildings[agent]) for agent in self.rbc_buildings]
+        for agent in self.rbc_agents:
             self.grid.buildings[agent].rbc = True
+
+        if mode == 'all':
+            self.rbc_agents += [RBC_Agent_v2(self.grid.buildings[agent] for agent in self.agents)]
+            for agent in self.agents:
+                self.grid.buildings[agent].rbc = True
         return
 
     def step(self, rl_action_dict):
