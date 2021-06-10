@@ -236,7 +236,7 @@ class GridLearn: # not a super class of the CityLearn environment
             os.mkdir(f'models/{self.model_name}')
         plt.savefig(f'models/{self.model_name}/voltage')
         np.savetxt(f'models/{self.model_name}/voltage.csv', np.array(self.voltage_data), delimiter=",")
-        np.savetxt(f'models/{self.model_name}/voltage.csv', np.array(self.reward_data), delimiter=",")
+        np.savetxt(f'models/{self.model_name}/reward.csv', np.array(self.reward_data), delimiter=",")
 
 class MyEnv(ParallelEnv):
     def __init__(self, grid):
@@ -276,7 +276,7 @@ class MyEnv(ParallelEnv):
         # else:
         #     agents = self.rbc_buildings
         self.rbc_agents = [RBC_Agent(self.grid.buildings[agent]) for agent in self.rbc_buildings]
-        for agent in self.rbc_agents:
+        for agent in self.rbc_buildings:
             self.grid.buildings[agent].rbc = True
 
         if mode == 'all':
