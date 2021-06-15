@@ -13,7 +13,7 @@ import supersuit as ss
 import time
 import os
 
-model_name = 'randomized_buses'
+model_name = 'scaled_cubic'
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
@@ -64,8 +64,9 @@ for env in envs:
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
 models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=512, n_steps=1, ent_coef=0.0001, learning_rate=0.0001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
+#models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
 
-for ts in range(8760*2):
+for ts in range(8759*4):
     for model in models:
         # print("CALL LEARN")
         model.learn(1, reset_num_timesteps=False)
