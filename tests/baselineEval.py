@@ -55,8 +55,6 @@ envs = [MyEnv(grid), MyEnv(grid)]
 # envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
 #
 
-grids = [grid, grid2]
-
 print('setting the grid...')
 for env in envs:
     env.grid = grid
