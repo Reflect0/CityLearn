@@ -213,15 +213,14 @@ class GridLearn: # not a super class of the CityLearn environment
     def update_grid(self):
         for agent, bldg in self.buildings.items():
             # Assign the load in MW (from KW in CityLearn)
-            self.net.load.at[bldg.load_index, 'p_mw'] = 0.9 * bldg.current_net_electricity_demand * 0.001
-            self.net.load.at[bldg.load_index, 'sn_mva'] = bldg.current_net_electricity_demand * 0.001
+            self.net.load.at[bldg.load_index, 'p_mw'] = 0.9 * bldg.current_gross_electricity_demand * 0.001
+            self.net.load.at[bldg.load_index, 'sn_mva'] = bldg.current_gross_electricity_demand * 0.001
 
-            if bldg.gen_index > -1:
-                self.net.sgen.at[bldg.gen_index, 'p_mw'] = bldg.solar_generation * np.cos(bldg.phi) * 0.001
-                self.net.sgen.at[bldg.gen_index, 'q_mvar'] = bldg.solar_generation * np.sin(bldg.phi) * 0.001
+            if bldg.gen_index > -1: # assume PV and battery are both behind the inverter
+                self.net.sgen.at[bldg.gen_index, 'p_mw'] = bldg.current_gross_generation * np.cos(bldg.phi) * 0.001
+                self.net.sgen.at[bldg.gen_index, 'q_mvar'] = bldg.current_gross_generation * np.sin(bldg.phi) * 0.001
 
     def plot_all(self):
-
         filtered = self.net.load.name.isin(self.rl_agents)
         rl_buses = list(set(self.net.load.loc[filtered].bus))
         fig, ax = plt.subplots(len(rl_buses), figsize=(20, 8*len(rl_buses)))
@@ -271,10 +270,6 @@ class MyEnv(ParallelEnv):
         return self.grid.get_info(self.agents)
 
     def initialize_rbc_agents(self, mode='partial'):
-        # if mode == 'all':
-        #     agents = self.agents + self.rbc_buildings
-        # else:
-        #     agents = self.rbc_buildings
         self.rbc_agents = [RBC_Agent(self.grid.buildings[agent]) for agent in self.rbc_buildings]
         for agent in self.rbc_buildings:
             self.grid.buildings[agent].rbc = True
