@@ -95,7 +95,7 @@ class Building:
         # reset/initialize the home to timestep = 0
         # self.grid = self.add_grid(grid)
         self.time_step = 0
-        self.current_net_electricity_demand = 0
+        self.current_gross_electricity_demand = 0
         self.solar_generation = 0
         self.phi = 0
         self.rbc = False
@@ -127,7 +127,14 @@ class Building:
         self.dhw_storage = EnergyStorage(capacity = attributes['DHW_Tank']['capacity'],
                                  loss_coeff = attributes['DHW_Tank']['loss_coefficient'], save_memory = self.save_memory)
 
-        self.electrical_storage = None
+        self.electrical_storage = Battery(capacity = attributes['Battery']['capacity'],
+                                         capacity_loss_coeff = attributes['Battery']['capacity_loss_coefficient'],
+                                         loss_coeff = attributes['Battery']['loss_coefficient'],
+                                         efficiency = attributes['Battery']['efficiency'],
+                                         nominal_power = attributes['Battery']['nominal_power'],
+                                         power_efficiency_curve = attributes['Battery']['power_efficiency_curve'],
+                                         capacity_power_curve = attributes['Battery']['capacity_power_curve'],
+                                         save_memory = self.save_memory)
 
         self.solar_power_capacity = attributes['Solar_Power_Installed(kW)']
         return
@@ -193,15 +200,15 @@ class Building:
 
     def get_reward(self, net): # dummy cost function
         my_voltage_dev = abs(10*np.clip(net.res_bus.loc[self.bus]['vm_pu']-1,-.1,.1))**3
-        my_cons = (self.current_net_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
+        my_cons = (self.current_gross_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
         my_neighbors_voltage_dev = sum(np.square(10 * np.clip(net.res_bus.loc[self.neighbors]['vm_pu']-1,-.1,.1)))
-        reward = -1 * (my_voltage_dev + my_cons + my_neighbors_voltage_dev)
-        if not self.rbc:
-            if self.solar_generation <= 0.000000001:
-                if self.action_angle:
-                    reward -= 0.05*(self.action_angle - 1)
-                if self.action_curtail:
-                    reward -= 0.05*(self.action_curtail - 1)
+        reward = -1 * (my_voltage_dev + 0.1*my_cons + my_neighbors_voltage_dev)
+        # if not self.rbc:
+        #     if self.solar_generation <= 0.000000001:
+        #         if self.action_angle:
+        #             reward -= 0.05*(self.action_angle - 1)
+        #         if self.action_curtail:
+        #             reward -= 0.05*(self.action_curtail - 1)
         return reward
 
     def get_obs(self, net):
@@ -209,7 +216,7 @@ class Building:
         for state_name, value in self.enabled_states.items():
             if value == True:
                 if state_name == "net_electricity_consumption":
-                    s.append(self.current_net_electricity_demand)
+                    s.append(self.current_gross_electricity_demand)
 
                 elif state_name == "absolute_voltage":
                     if self.time_step <= 1:
@@ -232,7 +239,7 @@ class Building:
                             voltage_spread += abs(net.res_bus.loc[line.to_bus].vm_pu - net.res_bus.loc[line.from_bus].vm_pu)
                         s.append(voltage_spread)
 
-                elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
+                elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc' and state_name != 'electrical_storage_soc':
                     s.append(self.sim_results[state_name][self.time_step])
 
                 elif state_name in ['t_in', 'avg_unmet_setpoint', 'rh_in', 'non_shiftable_load', 'solar_gen']:
@@ -243,10 +250,12 @@ class Building:
                         s.append(self.cooling_storage._soc/self.cooling_storage.capacity)
                     elif state_name == 'dhw_storage_soc':
                         s.append(self.dhw_storage._soc/self.dhw_storage.capacity)
+                    elif state_name == 'electrical_storage_soc':
+                        s.append(self.electrical_storage._soc/self.electrical_storage.capacity)
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
     def step(self, a):
-        # a = a[0]
+        print(a, self.enabled_actions)
         # take an action
         if self.enabled_actions['cooling_storage']:
             _electric_demand_cooling = self.set_storage_cooling(a[0])
@@ -274,13 +283,16 @@ class Building:
         else:
             self.phi = self.set_phase_lag()
 
+        if self.enabled_actions['electrical_storage']:
+            _batt_power = self.set_storage_electrical(a[0]) # batt power is negative for discharge
+            a = a[1:]
         # Electrical appliances
         _non_shiftable_load = self.get_non_shiftable_load()
 
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         # print(_solar_generation, phi, _non_shiftable_load, _electric_demand_dhw, _electric_demand_cooling)
-        self.current_net_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load - self.solar_generation, 4)
-
+        self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
+        self.current_gross_generation = self.solar_generation - min(0, _batt_power)
         # obs = self.get_obs()
         # reward = self.get_reward(obs)
         # done = False
@@ -347,13 +359,13 @@ class Building:
                     s_low.append(0.)
                     s_high.append(0.2)
 
-                elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc':
-                    s_low.append(min(self.sim_results[state_name]))
-                    s_high.append(max(self.sim_results[state_name]))
-
-                else: # 'cooling_storage_soc' and 'dhw_storage_soc'
+                elif state_name in ['cooling_storage_soc','dhw_storage_soc','electrical_storage_soc']:
                     s_low.append(0.0)
                     s_high.append(1.0)
+
+                else:
+                    s_low.append(min(self.sim_results[state_name]))
+                    s_high.append(max(self.sim_results[state_name]))
 
         self.normalization_range = np.array(s_high) - np.array(s_low)
         self.normalization_mid = np.array(s_low) + 0.5 * self.normalization_range
@@ -394,6 +406,10 @@ class Building:
 
                 elif action_name == 'pv_phi':
                     # smart inverter voltage control @constance?
+                    a_low.append(-1.0)
+                    a_high.append(1.0)
+
+                elif action_name == 'electrical_storage':
                     a_low.append(-1.0)
                     a_high.append(1.0)
 
@@ -546,7 +562,7 @@ class Building:
 
     def reset(self, net):
 
-        self.current_net_electricity_demand = self.sim_results['non_shiftable_load'][self.time_step] - self.sim_results['solar_gen'][self.time_step]
+        self.current_gross_electricity_demand = self.sim_results['non_shiftable_load'][self.time_step] - self.sim_results['solar_gen'][self.time_step]
 
         if self.dhw_storage is not None:
             self.dhw_storage.reset()
@@ -556,10 +572,10 @@ class Building:
             self.electrical_storage.reset()
         if self.dhw_heating_device is not None:
             self.dhw_heating_device.reset()
-            self.current_net_electricity_demand += self.dhw_heating_device.get_electric_consumption_heating(self.sim_results['dhw_demand'][self.time_step])
+            self.current_gross_electricity_demand += self.dhw_heating_device.get_electric_consumption_heating(self.sim_results['dhw_demand'][self.time_step])
         if self.cooling_device is not None:
             self.cooling_device.reset()
-            self.current_net_electricity_demand += self.cooling_device.get_electric_consumption_cooling(self.sim_results['cooling_demand'][self.time_step])
+            self.current_gross_electricity_demand += self.cooling_device.get_electric_consumption_cooling(self.sim_results['cooling_demand'][self.time_step])
 
         self._electric_consumption_cooling_storage = 0.0
         self._electric_consumption_dhw_storage = 0.0
@@ -1000,6 +1016,7 @@ class Battery:
         self.energy_balance = []
         self._energy_balance = 0
         self.save_memory = save_memory
+        self.time_step = 0
 
     def terminate(self):
         if self.save_memory == False:
