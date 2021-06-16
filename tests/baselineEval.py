@@ -43,28 +43,25 @@ grid = GridLearn(**config)
 
 envs = [MyEnv(grid), MyEnv(grid)]
 
-print('padding action/observation spaces...')
-envs = [ss.pad_action_space_v0(env) for env in envs]
-envs = [ss.pad_observations_v0(env) for env in envs]
-
-print('creating pettingzoo env...')
-envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
-
-print('stacking vec env...')
-nenvs = 2
-envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
-
-from copy import deepcopy
-grid2 = deepcopy(grid)
+# print('padding action/observation spaces...')
+# envs = [ss.pad_action_space_v0(env) for env in envs]
+# envs = [ss.pad_observations_v0(env) for env in envs]
+#
+# print('creating pettingzoo env...')
+# envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
+#
+# print('stacking vec env...')
+# nenvs = 2
+# envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
+#
 
 grids = [grid, grid2]
 
 print('setting the grid...')
 for env in envs:
-    for n in range(nenvs):
-        env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
-        # env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
-        env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents('all')
+    env.grid = grid
+    # env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
+    env.initialize_rbc_agents('all')
 
 # models = [PPO.load(f"models/10_houses/model_{m}") for m in range(len(envs))]
 
@@ -73,20 +70,7 @@ obss = [env.reset() for env in envs]
 for ts in range(7*24*4): # test on 5 timesteps
     for m in range(len(models)): # again, alternate through models
 
-        # get the current observation from the perspective of the active team
-        # this can probably be cleaned up
-        foo = []
-        for e in range(nenvs):
-            bar = list(envs[m].venv.vec_envs[n].par_env.aec_env.env.env.env.env.state().values())
-            for i in range(len(bar)):
-                while len(bar[i]) < 19:
-                    bar[i] = np.append(bar[i], 0)
-            foo += bar
-
-        obss[m] = np.vstack(foo)
-
-        action = {} #models[m].predict(obss[m])[0] # send it to the SB model to select an action
-        obss[m], reward, done, info = envs[m].step(action) # update environment
+        obss[m], reward, done, info = envs[m].step({}) # update environment
         sum_reward += np.sum(reward)
 print(sum_reward)
 grid.plot_all()
