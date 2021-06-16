@@ -96,7 +96,7 @@ class Building:
         # self.grid = self.add_grid(grid)
         self.time_step = 0
         self.current_gross_electricity_demand = 0
-        self.solar_generation = 0
+        self.current_gross_generation = 0
         self.phi = 0
         self.rbc = False
         # self.reset()
@@ -255,7 +255,7 @@ class Building:
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
     def step(self, a):
-        print(a, self.enabled_actions)
+        # print(a, self.enabled_actions)
         # take an action
         if self.enabled_actions['cooling_storage']:
             _electric_demand_cooling = self.set_storage_cooling(a[0])
@@ -562,7 +562,8 @@ class Building:
 
     def reset(self, net):
 
-        self.current_gross_electricity_demand = self.sim_results['non_shiftable_load'][self.time_step] - self.sim_results['solar_gen'][self.time_step]
+        self.current_gross_electricity_demand = self.sim_results['non_shiftable_load'][self.time_step]
+        self.current_gross_generation = self.sim_results['solar_gen'][self.time_step]
 
         if self.dhw_storage is not None:
             self.dhw_storage.reset()
