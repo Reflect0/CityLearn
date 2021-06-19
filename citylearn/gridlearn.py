@@ -63,6 +63,8 @@ class GridLearn: # not a super class of the CityLearn environment
         for node in res_load_nodes:
             # remove the existing arbitrary load
             net.load.drop(net.load[net.load.bus == node].index, inplace=True)
+
+        net.ext_grid.at[0,'vm_pu'] = 1.02
         return net
 
     def add_houses(self, n, pv_penetration):
