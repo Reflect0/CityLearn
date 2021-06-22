@@ -98,6 +98,11 @@ class GridLearn: # not a super class of the CityLearn environment
                     bldg.gen_index = -1
                 buildings[bldg.buildingId] = bldg
                 bldg.assign_neighbors(self.net)
+
+        from collections import Counter
+
+        types = [v.building_type for v in buildings.values()]
+        print(Counter(types))
         return buildings
 
     def set_clusters(self):
