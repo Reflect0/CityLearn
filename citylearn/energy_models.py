@@ -100,6 +100,7 @@ class Building:
         self.phi = 0
         self.rbc = False
         # self.reset()
+        self.action_log = []
 
     def assign_bus(self, bus):
         self.bus = bus
@@ -254,7 +255,12 @@ class Building:
                         s.append(self.electrical_storage._soc/self.electrical_storage.capacity)
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
+    def close(self, folderName):
+        np.savetxt(f'{folderName}/homes/{self.buildingId}.csv', np.array(self.action_tracker), delimiter=',')
+        return
+
     def step(self, a):
+        self.action_tracker += [a]
         # print(a, self.enabled_actions)
         # take an action
         if self.enabled_actions['cooling_storage']:
@@ -298,6 +304,7 @@ class Building:
         # done = False
         # info = {}
         self.time_step = (self.time_step + 1) % (8760 * self.hourly_timesteps)
+
         return
 
     def set_dhw_draws(self):

@@ -227,7 +227,7 @@ class GridLearn: # not a super class of the CityLearn environment
 
             if bldg.gen_index > -1: # assume PV and battery are both behind the inverter
                 self.net.sgen.at[bldg.gen_index, 'p_mw'] = -1 * bldg.current_gross_generation * np.cos(bldg.phi) * 0.001
-                self.net.sgen.at[bldg.gen_index, 'q_mvar'] = -1 * bldg.current_gross_generation * np.sin(bldg.phi) * 0.001
+                self.net.sgen.at[bldg.gen_index, 'q_mvar'] = bldg.current_gross_generation * np.sin(bldg.phi) * 0.001
 
     def plot_all(self):
         filtered = self.net.load.name.isin(self.rl_agents)
@@ -245,6 +245,8 @@ class GridLearn: # not a super class of the CityLearn environment
         plt.savefig(f'models/{self.model_name}/voltage')
         np.savetxt(f'models/{self.model_name}/voltage.csv', np.array(self.voltage_data), delimiter=",")
         np.savetxt(f'models/{self.model_name}/reward.csv', np.array(self.reward_data), delimiter=",")
+        for agent in self.rl_agents:
+            self.buildings[agent].close(self.model_name)
 
 class MyEnv(ParallelEnv):
     def __init__(self, grid):
