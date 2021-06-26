@@ -256,11 +256,11 @@ class Building:
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
     def close(self, folderName):
-        np.savetxt(f'{folderName}/homes/{self.buildingId}.csv', np.array(self.action_tracker), delimiter=',')
+        np.savetxt(f'{folderName}/homes/{self.buildingId}.csv', np.array(self.action_log), delimiter=',')
         return
 
     def step(self, a):
-        self.action_tracker += [a]
+        self.action_log += [a]
         # print(a, self.enabled_actions)
         # take an action
         if self.enabled_actions['cooling_storage']:
