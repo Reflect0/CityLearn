@@ -13,6 +13,7 @@ import random
 from pettingzoo import ParallelEnv
 import os
 import matplotlib.pyplot as plt
+import json
 
 class GridLearn: # not a super class of the CityLearn environment
     def __init__(self, model_name, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=2, randomseed=2, max_num_houses=None, percent_rl=1):
@@ -81,6 +82,8 @@ class GridLearn: # not a super class of the CityLearn environment
         res_load_nodes = res_voltage_nodes - ext_grid_nodes
         # print(res_load_nodes)
 
+
+
         buildings = {}
         for existing_node in list(res_load_nodes)[:self.max_num_houses]:
             # remove the existing arbitrary load
@@ -89,7 +92,14 @@ class GridLearn: # not a super class of the CityLearn environment
             # add n houses at each of these nodes
             for i in range(n):
                 # bid = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
-                bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, self.save_memory, self.building_ids)
+                if not self.building_ids:
+                    with open(self.buildings_states_actions_file) as file:
+                        buildings_states_actions = json.load(file)
+                    self.building_ids = list(buildings_states_actions.keys())
+                    # print(self.building_ids)
+                uid = random.choice(self.building_ids)
+                # print(uid)
+                bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, uid, self.save_memory)
                 bldg.assign_bus(existing_node)
                 bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
                 if np.random.uniform() <= pv_penetration:

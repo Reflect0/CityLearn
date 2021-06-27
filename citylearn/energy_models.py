@@ -38,7 +38,7 @@ def subhourly_randomdraw_interp(hourly_data, subhourly_steps, dhw_pwr):
     return list(data)
 
 class Building:
-    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, grid, save_memory = True, building_ids=None):
+    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, uid, save_memory = True):
         """
         Args:
             buildingId (int)
@@ -57,10 +57,9 @@ class Building:
 
         with open(buildings_states_actions_file) as json_file:
             buildings_states_actions = json.load(json_file)
+        # print('keys', buildings_states_actions.keys())
 
-        if not building_ids:
-            building_ids = list(buildings_states_actions.keys())
-        self.uid = random.choice(building_ids)
+        self.uid = uid
 
         # create all the systems that go in the house
         attributes_file = os.path.join(data_path, "building_attributes.json")
@@ -72,8 +71,9 @@ class Building:
         self.create_systems(attributes)
 
         # get observation and action spaces for the RL agent
-        self.enabled_states = buildings_states_actions[self.uid]['states']
-        self.enabled_actions = buildings_states_actions[self.uid]['actions']
+        tmp = buildings_states_actions[self.uid]
+        self.enabled_states = tmp['states']
+        self.enabled_actions = tmp['actions']
 
         # get e-plus load calcs
         sim_file = os.path.join(data_path, f"Building_{self.building_type}.csv")
@@ -108,8 +108,11 @@ class Building:
     def set_attributes(self, file):
         with open(file) as json_file:
             data = json.load(json_file)
-        self.building_type = data[self.uid]['Building_Type']
-        self.climate_zone = data[self.uid]['Climate_Zone']
+        # print('this',data.keys(), self.uid)
+        tmp = data[self.uid]
+        self.building_type = tmp['Building_Type']
+        # print(self.building_type, self.uid)
+        self.climate_zone = tmp['Climate_Zone']
         return data[self.uid]
 
     def create_systems(self, attributes):
