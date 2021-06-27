@@ -245,6 +245,8 @@ class GridLearn: # not a super class of the CityLearn environment
         plt.savefig(f'models/{self.model_name}/voltage')
         np.savetxt(f'models/{self.model_name}/voltage.csv', np.array(self.voltage_data), delimiter=",")
         np.savetxt(f'models/{self.model_name}/reward.csv', np.array(self.reward_data), delimiter=",")
+        if not os.path.isdir(f'models/{self.model_name}/homes/'):
+            os.mkdir(f'models/{self.model_name}/homes')
         for agent in self.rl_agents:
             self.buildings[agent].close(self.model_name)
 

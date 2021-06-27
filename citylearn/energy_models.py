@@ -256,7 +256,7 @@ class Building:
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
     def close(self, folderName):
-        np.savetxt(f'{folderName}/homes/{self.buildingId}.csv', np.array(self.action_log), delimiter=',')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}.csv', np.array(self.action_log), delimiter=',')
         return
 
     def step(self, a):
