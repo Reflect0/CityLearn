@@ -114,7 +114,7 @@ class RBC_Agent_v2:
                     else:
                         actions += [0.91]
                 else:
-                    actions += [0.0]
+                    actions += [-1.0]
 
         return actions
 
