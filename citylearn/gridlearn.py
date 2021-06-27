@@ -65,6 +65,32 @@ class GridLearn: # not a super class of the CityLearn environment
             # remove the existing arbitrary load
             net.load.drop(net.load[net.load.bus == node].index, inplace=True)
 
+        conns = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+                [18, 19, 20, 21],
+                [25, 26, 27, 28, 29, 30, 31, 32],
+                [22, 23, 24]]
+
+        mapping = {18:1, 25:5, 22:2}
+
+        net.line.drop(index=net.line[net.line.in_service==False].index, inplace=True)
+        net.bus_geodata.at[0,'x'] = 0
+        net.bus_geodata.at[0,'y'] = 0
+        sw = 'x'
+        st = 'y'
+        z = -1
+        for c in conns:
+            z += 1
+            for i in range(len(c)):
+                if i == 0:
+                    if not c[i] == 0:
+                        sw = 'y'
+                        st = 'x'
+                        net.bus_geodata.at[c[i], sw] = net.bus_geodata.at[mapping[c[i]],sw] + 0.2
+                        net.bus_geodata.at[c[i], st] = net.bus_geodata.at[mapping[c[i]],st]
+                else:
+                    net.bus_geodata.at[c[i], sw] = net.bus_geodata.at[c[i-1], sw] + 0.2
+                    net.bus_geodata.at[c[i], st] = net.bus_geodata.at[c[i-1], st]
+
         net.ext_grid.at[0,'vm_pu'] = 1.02
         return net
 
