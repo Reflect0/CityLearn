@@ -41,7 +41,7 @@ config = {
 
 grid = GridLearn(**config)
 
-envs = [MyEnv(grid), MyEnv(grid)]
+envs = [MyEnv(grid) for _ in range(config['nclusters'])]
 
 # print('padding action/observation spaces...')
 # envs = [ss.pad_action_space_v0(env) for env in envs]

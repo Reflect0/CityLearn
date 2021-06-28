@@ -42,7 +42,7 @@ config = {
 
 grid = GridLearn(**config)
 
-envs = [MyEnv(grid), MyEnv(grid)]
+envs = [MyEnv(grid) for _ in range(config['nclusters'])]
 
 print('padding action/observation spaces...')
 envs = [ss.pad_action_space_v0(env) for env in envs]
@@ -87,6 +87,6 @@ for ts in range(7*24*4): # test on 5 timesteps
 
         action = models[m].predict(obss[m])[0] # send it to the SB model to select an action
         obss[m], reward, done, info = envs[m].step(action) # update environment
-        sum_reward += np.sum(reward)
-print(sum_reward)
+#         sum_reward += np.sum(reward)
+# print(sum_reward)
 grid.plot_all()
