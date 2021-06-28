@@ -27,7 +27,7 @@ data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 
 config = {
-    "model_name":"baseline",
+    "model_name":"baseline_fixedPV",
     "data_path":data_path,
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
@@ -66,9 +66,9 @@ for env in envs:
 sum_reward = 0
 obss = [env.reset() for env in envs]
 for ts in range(7*24*4): # test on 5 timesteps
-    for m in range(len(models)): # again, alternate through models
+    for m in range(2): # again, alternate through models
 
         obss[m], reward, done, info = envs[m].step({}) # update environment
-        sum_reward += np.sum(reward)
-print(sum_reward)
+#        sum_reward += np.sum(reward)
+#print(sum_reward)
 grid.plot_all()
