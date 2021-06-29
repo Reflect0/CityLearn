@@ -34,7 +34,7 @@ class GridLearn: # not a super class of the CityLearn environment
 
         self.net = self.make_grid()
 
-        self.buildings = self.add_houses(6,0.3)
+        self.buildings = self.add_houses(6,1)
         self.agents = list(self.buildings.keys())
         self.possible_agents = self.agents[:]
         self.clusters = self.set_clusters()
