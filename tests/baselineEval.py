@@ -20,8 +20,6 @@ import supersuit as ss
 import time
 import os
 
-# multiprocessing.set_start_method("fork")
-
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
@@ -43,18 +41,6 @@ grid = GridLearn(**config)
 
 envs = [MyEnv(grid) for _ in range(config['nclusters'])]
 
-# print('padding action/observation spaces...')
-# envs = [ss.pad_action_space_v0(env) for env in envs]
-# envs = [ss.pad_observations_v0(env) for env in envs]
-#
-# print('creating pettingzoo env...')
-# envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
-#
-# print('stacking vec env...')
-# nenvs = 2
-# envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
-#
-
 print('setting the grid...')
 for env in envs:
     env.grid = grid
@@ -69,6 +55,8 @@ for ts in range(7*24*4): # test on 5 timesteps
     for m in range(len(envs)): # again, alternate through models
 
         obss[m], reward, done, info = envs[m].step({}) # update environment
-#        sum_reward += np.sum(reward)
-#print(sum_reward)
+
+for building in grid.rl_agents:
+    print(building, grid.buildings[building].bus)
+
 grid.plot_all()
