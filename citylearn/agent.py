@@ -70,7 +70,7 @@ class RBC_Agent:
         actions = []
         for action, enabled in self.env.enabled_actions.items():
             if enabled:
-                if action == 'cooling_storage' or action == 'dhw_storage':
+                if action == 'cooling_storage' or action == 'dhw_storage' or action == 'electrical_storage':
                     if daytime:
                         actions += [-.08]
                     else:
@@ -97,7 +97,7 @@ class RBC_Agent_v2:
         actions = []
         for action, enabled in self.env.enabled_actions.items():
             if enabled:
-                if action == 'cooling_storage' or action == 'dhw_storage' or action=='electrical_strage':
+                if action == 'cooling_storage' or action == 'dhw_storage' or action=='electrical_storage':
                     if daytime:
                         actions += [-0.08]
                     else:
