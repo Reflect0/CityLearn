@@ -295,6 +295,9 @@ class Building:
         if self.enabled_actions['electrical_storage']:
             _batt_power = self.set_storage_electrical(a[0]) # batt power is negative for discharge
             a = a[1:]
+        else:
+            _batt_power = 0
+            
         # Electrical appliances
         _non_shiftable_load = self.get_non_shiftable_load()
 
