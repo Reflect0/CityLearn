@@ -70,6 +70,8 @@ class GridLearn: # not a super class of the CityLearn environment
                 [25, 26, 27, 28, 29, 30, 31, 32],
                 [22, 23, 24]]
 
+        self.pv_buses = [item[-2:] for item in conns]
+
         mapping = {18:1, 25:5, 22:2}
 
         net.line.drop(index=net.line[net.line.in_service==False].index, inplace=True)
@@ -106,9 +108,6 @@ class GridLearn: # not a super class of the CityLearn environment
         ext_grid_nodes = set(self.net.ext_grid['bus'])
         res_voltage_nodes = set(self.net.bus['name'][self.net.bus['vn_kv'] == 12.66])
         res_load_nodes = res_voltage_nodes - ext_grid_nodes
-        # print(res_load_nodes)
-
-
 
         buildings = {}
         for existing_node in list(res_load_nodes)[:self.max_num_houses]:
@@ -128,10 +127,12 @@ class GridLearn: # not a super class of the CityLearn environment
                 bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, uid, self.save_memory)
                 bldg.assign_bus(existing_node)
                 bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
-                if np.random.uniform() <= pv_penetration:
+                # if np.random.uniform() <= pv_penetration:
+                if existing_node in self.pv_buses:
                     bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
                 else:
                     bldg.gen_index = -1
+                    bldg.remove_pv()
                 buildings[bldg.buildingId] = bldg
                 bldg.assign_neighbors(self.net)
 
