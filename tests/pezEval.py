@@ -21,7 +21,7 @@ import time
 import os
 
 # multiprocessing.set_start_method("fork")
-model_name = "fixedGeo_v2"
+model_name = "vd_pen_only"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
@@ -35,7 +35,7 @@ config = {
     "hourly_timesteps":4,
     "percent_rl":0.1,
     # "percent_rl":1,
-    "nclusters":2,
+    "nclusters":4,
     "max_num_houses":None
     # "max_num_houses":4
 }
