@@ -258,6 +258,11 @@ class Building:
                         s.append(self.electrical_storage._soc/self.electrical_storage.capacity)
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
+    def remove_pv(self):
+        self.enabled_actions.pop('pv_curtail')
+        self.enabled_actions.pop('pv_phi')
+        return
+
     def close(self, folderName):
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}.csv', np.array(self.action_log), delimiter=',')
         return
@@ -297,7 +302,7 @@ class Building:
             a = a[1:]
         else:
             _batt_power = 0
-            
+
         # Electrical appliances
         _non_shiftable_load = self.get_non_shiftable_load()
 
