@@ -258,6 +258,10 @@ class Building:
                         s.append(self.electrical_storage._soc/self.electrical_storage.capacity)
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
+    def remove_storage(self):
+        self.enabled_actions.pop('dhw_storage')
+        self.enabled_actions.pop('cooling_storage')
+
     def remove_pv(self):
         self.enabled_actions.pop('pv_curtail')
         self.enabled_actions.pop('pv_phi')

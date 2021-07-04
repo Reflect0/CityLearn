@@ -130,6 +130,7 @@ class GridLearn: # not a super class of the CityLearn environment
                 # if np.random.uniform() <= pv_penetration:
                 if existing_node in self.pv_buses:
                     bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
+                    bldg.remove_storage()
                 else:
                     bldg.gen_index = -1
                     bldg.remove_pv()
