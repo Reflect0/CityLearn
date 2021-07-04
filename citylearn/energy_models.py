@@ -275,33 +275,33 @@ class Building:
         self.action_log += [a]
         # print(a, self.enabled_actions)
         # take an action
-        if self.enabled_actions['cooling_storage']:
+        if 'cooling_storage' in self.enabled_actions.keys():
             _electric_demand_cooling = self.set_storage_cooling(a[0])
             a = a[1:]
         else:
             _electric_demand_cooling = 0
 
-        if self.enabled_actions['dhw_storage']:
+        if 'dhw_storage' in self.enabled_actions.keys():
             _electric_demand_dhw = self.set_storage_heating(a[0])
             a = a[1:]
         else:
             _electric_demand_dhw = 0
 
-        if self.enabled_actions['pv_curtail']:
+        if 'pv_curtail' in self.enabled_actions.keys():
             self.solar_generation = self.get_solar_power(a[0])
             self.action_curtail = a[0]
             a = a[1:]
         else:
             self.solar_generation = self.get_solar_power()
 
-        if self.enabled_actions['pv_phi']:
+        if 'pv_phi' in self.enabled_actions.keys()::
             self.phi = self.set_phase_lag(a[0])
             self.action_angle = a[0]
             a = a[1:]
         else:
             self.phi = self.set_phase_lag()
 
-        if self.enabled_actions['electrical_storage']:
+        if 'electrical_storage' in self.enabled_actions.keys():
             _batt_power = self.set_storage_electrical(a[0]) # batt power is negative for discharge
             a = a[1:]
         else:
