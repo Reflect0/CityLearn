@@ -273,7 +273,8 @@ class Building:
 
     def step(self, a):
         self.action_log += [a]
-        # print(a, self.enabled_actions)
+        print("###########")
+        print(a, self.enabled_actions)
         # take an action
         if 'cooling_storage' in self.enabled_actions.keys():
             _electric_demand_cooling = self.set_storage_cooling(a[0])
