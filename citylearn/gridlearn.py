@@ -60,6 +60,8 @@ class GridLearn: # not a super class of the CityLearn environment
         load_nodes = net.load['bus']
         res_voltage_nodes = net.bus['name'][net.bus['vn_kv'] == 12.66]
         res_load_nodes = set(load_nodes) & set(res_voltage_nodes)
+        net.bus['min_vm_pu'] = 0.7
+        net.bus['max_vm_pu'] = 1.3
 
         for node in res_load_nodes:
             # remove the existing arbitrary load
