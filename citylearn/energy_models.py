@@ -268,8 +268,8 @@ class Building:
         return
 
     def close(self, folderName):
-        print(self.action_log)
-        # np.savetxt(f'models/{folderName}/homes/{self.buildingId}.csv', np.array(self.action_log), delimiter=',')
+        # print(self.action_log)
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}.csv', np.array(self.action_log), delimiter=',')
         return
 
     def step(self, a):
