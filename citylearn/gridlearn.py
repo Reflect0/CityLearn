@@ -52,6 +52,10 @@ class GridLearn: # not a super class of the CityLearn environment
         self.load_data = []
         self.reward_data = []
 
+        aspace, ospace = self.get_spaces(self.agents)
+        rand_act = {k:v.sample() for k,v in aspace.items()}
+        self.step(rand_act)
+
     def make_grid(self):
         # make a grid that fits the buildings generated for CityLearn
         net = networks.case33bw()
@@ -72,7 +76,8 @@ class GridLearn: # not a super class of the CityLearn environment
                 [25, 26, 27, 28, 29, 30, 31, 32],
                 [22, 23, 24]]
 
-        self.pv_buses = [item[-2:] for item in conns]
+        self.pv_buses = [item[-1] for item in conns]
+        self.pv_buses += [item[-2] for item in conns]
 
         mapping = {18:1, 25:5, 22:2}
 
