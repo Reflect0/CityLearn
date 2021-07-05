@@ -294,7 +294,7 @@ class Building:
         else:
             self.solar_generation = self.get_solar_power()
 
-        if 'pv_phi' in self.enabled_actions.keys()::
+        if 'pv_phi' in self.enabled_actions.keys():
             self.phi = self.set_phase_lag(a[0])
             self.action_angle = a[0]
             a = a[1:]
