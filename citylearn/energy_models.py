@@ -100,6 +100,7 @@ class Building:
         self.phi = 0
         self.rbc = False
         # self.reset()
+        self.battery_action = 0
         self.action_log = []
 
     def assign_bus(self, bus):
@@ -207,6 +208,7 @@ class Building:
         my_cons = (self.current_gross_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
         my_neighbors_voltage_dev = sum(np.square(10 * np.clip(net.res_bus.loc[self.neighbors]['vm_pu']-1,-.1,.1)))
         reward = -1 * (my_voltage_dev + 0.1*my_cons + my_neighbors_voltage_dev)
+        reward += self.battery_action 
         # if not self.rbc:
         #     if self.solar_generation <= 0.000000001:
         #         if self.action_angle:
@@ -303,6 +305,7 @@ class Building:
             self.phi = self.set_phase_lag()
 
         if self.enabled_actions['electrical_storage']:
+            self.battery_action
             _batt_power = self.set_storage_electrical(a[0]) # batt power is negative for discharge
             a = a[1:]
         else:
