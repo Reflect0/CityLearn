@@ -259,12 +259,12 @@ class Building:
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
     def remove_storage(self):
-        self.enabled_actions.pop('dhw_storage')
-        self.enabled_actions.pop('cooling_storage')
+        self.enabled_actions['dhw_storage'] = False
+        self.enabled_actions['cooling_storage'] = False
 
     def remove_pv(self):
-        self.enabled_actions.pop('pv_curtail')
-        self.enabled_actions.pop('pv_phi')
+        self.enabled_actions['pv_curtail'] = False
+        self.enabled_actions['pv_phi'] = False
         return
 
     def close(self, folderName):
@@ -273,36 +273,35 @@ class Building:
 
     def step(self, a):
         self.action_log += [a]
-        print("###########")
-        print(a, self.enabled_actions)
+        # print(a, self.enabled_actions)
         # take an action
-        if 'cooling_storage' in self.enabled_actions.keys():
+        if self.enabled_actions['cooling_storage']:
             _electric_demand_cooling = self.set_storage_cooling(a[0])
             a = a[1:]
         else:
             _electric_demand_cooling = 0
 
-        if 'dhw_storage' in self.enabled_actions.keys():
+        if self.enabled_actions['dhw_storage']:
             _electric_demand_dhw = self.set_storage_heating(a[0])
             a = a[1:]
         else:
             _electric_demand_dhw = 0
 
-        if 'pv_curtail' in self.enabled_actions.keys():
+        if self.enabled_actions['pv_curtail']:
             self.solar_generation = self.get_solar_power(a[0])
             self.action_curtail = a[0]
             a = a[1:]
         else:
             self.solar_generation = self.get_solar_power()
 
-        if 'pv_phi' in self.enabled_actions.keys():
+        if self.enabled_actions['pv_phi']:
             self.phi = self.set_phase_lag(a[0])
             self.action_angle = a[0]
             a = a[1:]
         else:
             self.phi = self.set_phase_lag()
 
-        if 'electrical_storage' in self.enabled_actions.keys():
+        if self.enabled_actions['electrical_storage']:
             _batt_power = self.set_storage_electrical(a[0]) # batt power is negative for discharge
             a = a[1:]
         else:
