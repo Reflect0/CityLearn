@@ -246,7 +246,11 @@ class GridLearn: # not a super class of the CityLearn environment
         self.update_grid()
 
         # run the grid power flow
-        runpp(self.net, enforce_q_lims=True)
+        try:
+            runpp(self.net, enforce_q_lims=True)
+        except:
+            pp.diagnostic(self.net)
+            quit()
         self.ts += 1
 
         rl_agent_keys = list(action_dict.keys())
