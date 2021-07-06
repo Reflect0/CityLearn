@@ -208,7 +208,7 @@ class Building:
         my_cons = (self.current_gross_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
         my_neighbors_voltage_dev = sum(np.square(10 * np.clip(net.res_bus.loc[self.neighbors]['vm_pu']-1,-.1,.1)))
         reward = -1 * (my_voltage_dev + 0.1*my_cons + my_neighbors_voltage_dev)
-        reward += self.battery_action 
+        reward += self.battery_action
         # if not self.rbc:
         #     if self.solar_generation <= 0.000000001:
         #         if self.action_angle:
@@ -278,17 +278,22 @@ class Building:
         self.action_log += [a]
         # print(a, self.enabled_actions)
         # take an action
+        if self.sim_results['hour'] >= 1 and self.sim_results['hour'] <= 21:
+            act = -0.08
+        else:
+            act = 0.91
+
         if self.enabled_actions['cooling_storage']:
             _electric_demand_cooling = self.set_storage_cooling(a[0])
             a = a[1:]
         else:
-            _electric_demand_cooling = 0
+            _electric_demand_cooling = self.set_storage_cooling(act)
 
         if self.enabled_actions['dhw_storage']:
             _electric_demand_dhw = self.set_storage_heating(a[0])
             a = a[1:]
         else:
-            _electric_demand_dhw = 0
+            _electric_demand_dhw = self.set_storage_heating(act)
 
         if self.enabled_actions['pv_curtail']:
             self.solar_generation = self.get_solar_power(a[0])
@@ -309,7 +314,7 @@ class Building:
             _batt_power = self.set_storage_electrical(a[0]) # batt power is negative for discharge
             a = a[1:]
         else:
-            _batt_power = 0
+            _batt_power = self.set_storage_electrical(act)
 
         # Electrical appliances
         _non_shiftable_load = self.get_non_shiftable_load()
