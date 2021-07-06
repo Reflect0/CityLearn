@@ -140,11 +140,17 @@ class GridLearn: # not a super class of the CityLearn environment
                     # bldg.remove_storage()
                     bldg.enabled_actions['dhw_storage'] = False
                     bldg.enabled_actions['cooling_storage'] = False
+                    bldg.enabled_actions['pv_phi'] = False
+                    bldg.enabled_actions['pv_curtail'] = False
+                    bldg.enabled_actions['electrical_storage'] = True
                 else:
                     bldg.gen_index = -1
                     # bldg.remove_pv()
+                    bldg.enabled_actions['dhw_storage'] = False
+                    bldg.enabled_actions['cooling_storage'] = False
                     bldg.enabled_actions['pv_phi'] = False
                     bldg.enabled_actions['pv_curtail'] = False
+                    bldg.enabled_actions['electrical_storage'] = True
                 buildings[bldg.buildingId] = bldg
                 bldg.assign_neighbors(self.net)
 
