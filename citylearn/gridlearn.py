@@ -137,10 +137,14 @@ class GridLearn: # not a super class of the CityLearn environment
                 # if np.random.uniform() <= pv_penetration:
                 if existing_node in self.pv_buses:
                     bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
-                    bldg.remove_storage()
+                    # bldg.remove_storage()
+                    bldg.enabled_actions['dhw_storage'] = False
+                    bldg.enabled_actions['cooling_storage'] = False
                 else:
                     bldg.gen_index = -1
-                    bldg.remove_pv()
+                    # bldg.remove_pv()
+                    bldg.enabled_actions['pv_phi'] = False
+                    bldg.enabled_actions['pv_curtail'] = False
                 buildings[bldg.buildingId] = bldg
                 bldg.assign_neighbors(self.net)
 
