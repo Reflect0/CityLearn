@@ -278,7 +278,7 @@ class Building:
         self.action_log += [a]
         # print(a, self.enabled_actions)
         # take an action
-        if self.sim_results['hour'] >= 1 and self.sim_results['hour'] <= 21:
+        if self.sim_results['hour'][self.time_step] >= 1 and self.sim_results['hour'][self.time_step] <= 21:
             act = -0.08
         else:
             act = 0.91
