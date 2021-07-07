@@ -15,10 +15,10 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":1,
+    "percent_rl":0.1,
     "nclusters":2,
-    # "max_num_houses":None,
-    "max_num_houses":4
+    "max_num_houses":None
+    # "max_num_houses":4
 }
 
 grid = GridLearn(**config)
