@@ -102,6 +102,8 @@ class Building:
         # self.reset()
         self.battery_action = 0
         self.action_log = []
+        self.pv_log = []
+        self.load_log = []
 
     def assign_bus(self, bus):
         self.bus = bus
@@ -204,10 +206,10 @@ class Building:
         return
 
     def get_reward(self, net): # dummy cost function
-        my_voltage_dev = abs(10*np.clip(net.res_bus.loc[self.bus]['vm_pu']-1,-.1,.1))**3
+        my_voltage_dev = (10*np.clip(net.res_bus.loc[self.bus]['vm_pu']-1,-.1,.1))**2
         my_cons = (self.current_gross_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
         my_neighbors_voltage_dev = sum(np.square(10 * np.clip(net.res_bus.loc[self.neighbors]['vm_pu']-1,-.1,.1)))
-        reward = -1 * (my_voltage_dev + 0.1*my_cons + my_neighbors_voltage_dev)
+        reward = -1 * (my_voltage_dev + my_neighbors_voltage_dev)
         reward += self.battery_action
         # if not self.rbc:
         #     if self.solar_generation <= 0.000000001:
@@ -271,7 +273,9 @@ class Building:
 
     def close(self, folderName):
         # print(self.action_log)
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}.csv', np.array(self.action_log), delimiter=',')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_pv.csv', np.array(self.pv_log), delimiter=',', fmt='%s')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_load.csv', np.array(self.load_log), delimiter=',', fmt='%s')
         return
 
     def step(self, a):
@@ -322,7 +326,9 @@ class Building:
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         # print(_solar_generation, phi, _non_shiftable_load, _electric_demand_dhw, _electric_demand_cooling)
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
-        self.current_gross_generation = self.solar_generation - min(0, _batt_power)
+        self.current_gross_generation = np.round(self.solar_generation + min(0, _batt_power), 3)
+        self.pv_log += [self.solar_generation]
+        self.load_log += [self.current_gross_electricity_demand]
         # obs = self.get_obs()
         # reward = self.get_reward(obs)
         # done = False
