@@ -15,9 +15,9 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.1,
+    "percent_rl":1,
     "nclusters":2,
-    "max_num_houses":None
+    "max_num_houses":4
     # "max_num_houses":4
 }
 
@@ -26,7 +26,7 @@ grid = GridLearn(**config)
 envs = make_envs(grid, config['nclusters'])
 if mode == 'train':
     models = make_models(envs)
-    train_models(models)
+    train_models(models, model_name)
 
 models = load_models(envs, model_name)
 eval_models(models, envs)

@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-def train_models(models, n_steps=8759*4):
+def train_models(models, model_name, n_steps=8759*4):
     toc = time.time()
     for ts in range(n_steps):
         for model in models:
