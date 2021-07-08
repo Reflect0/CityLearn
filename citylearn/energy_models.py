@@ -103,7 +103,9 @@ class Building:
         self.battery_action = 0
         self.action_log = []
         self.pv_log = []
-        self.load_log = []
+        self.unshiftload_log = []
+        self.dhwload_log = []
+        self.hvacload_log = []
 
     def assign_bus(self, bus):
         self.bus = bus
@@ -128,13 +130,13 @@ class Building:
         self.dhw_heating_device = ElectricHeater(nominal_power = attributes['Electric_Water_Heater']['nominal_power'],
                                          efficiency = attributes['Electric_Water_Heater']['efficiency'], save_memory = self.save_memory)
 
-        self.cooling_storage = EnergyStorage(capacity = attributes['Chilled_Water_Tank']['capacity'],
+        self.cooling_storage = EnergyStorage(hourly_steps = self.hourly_timesteps, capacity = attributes['Chilled_Water_Tank']['capacity'],
                                            loss_coeff = attributes['Chilled_Water_Tank']['loss_coefficient'], save_memory = self.save_memory)
 
-        self.dhw_storage = EnergyStorage(capacity = attributes['DHW_Tank']['capacity'],
+        self.dhw_storage = EnergyStorage(hourly_steps = self.hourly_timesteps,capacity = attributes['DHW_Tank']['capacity'],
                                  loss_coeff = attributes['DHW_Tank']['loss_coefficient'], save_memory = self.save_memory)
 
-        self.electrical_storage = Battery(capacity = attributes['Battery']['capacity'],
+        self.electrical_storage = Battery(hourly_timesteps= self.hourly_timesteps, capacity = attributes['Battery']['capacity'],
                                          capacity_loss_coeff = attributes['Battery']['capacity_loss_coefficient'],
                                          loss_coeff = attributes['Battery']['loss_coefficient'],
                                          efficiency = attributes['Battery']['efficiency'],
@@ -275,7 +277,9 @@ class Building:
         # print(self.action_log)
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}_pv.csv', np.array(self.pv_log), delimiter=',', fmt='%s')
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_load.csv', np.array(self.load_log), delimiter=',', fmt='%s')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_hvacload.csv', np.array(self.hvacload_log), delimiter=',', fmt='%s')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_unshiftload.csv', np.array(self.unshiftload_log), delimiter=',', fmt='%s')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_dhwload.csv', np.array(self.dhwload_log), delimiter=',', fmt='%s')
         return
 
     def step(self, a):
@@ -328,7 +332,9 @@ class Building:
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
         self.current_gross_generation = round(self.solar_generation + min(0, _batt_power), 3)
         self.pv_log += [self.solar_generation]
-        self.load_log += [self.current_gross_electricity_demand]
+        self.dhwload_log += [_electric_demand_dhw]
+        self.hvacload_log += [_electric_demand_cooling]
+        self.unshiftload_log += [_non_shiftable_load]
         # obs = self.get_obs()
         # reward = self.get_reward(obs)
         # done = False
@@ -495,6 +501,7 @@ class Building:
         heating_energy_balance = self.dhw_storage.charge(max(-self.sim_results['dhw_demand'][self.time_step], min(heat_power_avail, action*self.dhw_storage.capacity)))
 
         if self.save_memory == False:
+            self.dhw_storage_action.append(action)
             self.dhw_heating_device_to_storage.append(max(0, heating_energy_balance))
             self.dhw_storage_to_building.append(-min(0, heating_energy_balance))
             self.dhw_heating_device_to_building.append(self.sim_results['dhw_demand'][self.time_step] + min(0, heating_energy_balance))
@@ -534,9 +541,10 @@ class Building:
 
         # The storage device is charged (action > 0) or discharged (action < 0) taking into account the max power available and that the storage device cannot be discharged by an amount of energy greater than the energy demand of the building.
         charge_arg = max(-self.sim_results['cooling_demand'][self.time_step], min(cooling_power_avail, action*self.cooling_storage.capacity))
-        cooling_energy_balance = self.cooling_storage.charge(charge_arg)
+        cooling_energy_balance = self.cooling_storage.charge(charge_arg/self.hourly_timesteps) # @AKP FIX THIS!!!
 
         if self.save_memory == False:
+            self.cooling_storage_action.append(action)
             self.cooling_device_to_storage.append(max(0, cooling_energy_balance))
             self.cooling_storage_to_building.append(-min(0, cooling_energy_balance))
             self.cooling_device_to_building.append(self.sim_results['cooling_demand'][self.time_step] + min(0, cooling_energy_balance))
@@ -632,11 +640,13 @@ class Building:
         self.net_electric_consumption_no_storage = []
         self.net_electric_consumption_no_pv_no_storage = []
 
+        self.cooling_storage_action = []
         self.cooling_device_to_building = []
         self.cooling_storage_to_building = []
         self.cooling_device_to_storage = []
         self.cooling_storage_soc = []
 
+        self.dhw_storage_action = []
         self.dhw_heating_device_to_building = []
         self.dhw_storage_to_building = []
         self.dhw_heating_device_to_storage = []
@@ -936,7 +946,7 @@ class ElectricHeater:
         self.heat_supply = []
 
 class EnergyStorage:
-    def __init__(self, capacity = None, max_power_output = None, max_power_charging = None, efficiency = 1, loss_coeff = 0, save_memory = True):
+    def __init__(self,  hourly_steps, capacity = None, max_power_output = None, max_power_charging = None, efficiency = 1, loss_coeff = 0, save_memory = True):
         """
         Generic energy storage class. It can be used as a chilled water storage tank or a DHW storage tank
         Args:
@@ -957,6 +967,7 @@ class EnergyStorage:
         self.energy_balance = []
         self._energy_balance = 0
         self.save_memory = save_memory
+        self.hourly_steps = hourly_steps
 
     def terminate(self):
         if self.save_memory == False:
@@ -980,13 +991,13 @@ class EnergyStorage:
         if energy >= 0:
             if self.max_power_charging is not None:
                 energy =  min(energy, self.max_power_charging)
-            self._soc = soc_init + energy*self.efficiency
+            self._soc = soc_init + energy*self.efficiency/self.hourly_steps
 
         #Discharging
         else:
             if self.max_power_output is not None:
                 energy = max(-max_power_output, energy)
-            self._soc = max(0, soc_init + energy/self.efficiency)
+            self._soc = max(0, soc_init + energy/self.efficiency/self.hourly_steps)
 
         if self.capacity is not None:
             self._soc = min(self._soc, self.capacity)
@@ -1015,7 +1026,7 @@ class EnergyStorage:
         self.time_step = 0
 
 class Battery:
-    def __init__(self, capacity, nominal_power = None, capacity_loss_coeff = None, power_efficiency_curve = None, capacity_power_curve = None, efficiency = None, loss_coeff = 0, save_memory = True):
+    def __init__(self, hourly_timesteps, capacity, nominal_power = None, capacity_loss_coeff = None, power_efficiency_curve = None, capacity_power_curve = None, efficiency = None, loss_coeff = 0, save_memory = True):
         """
         Generic energy storage class. It can be used as a chilled water storage tank or a DHW storage tank
         Args:
@@ -1055,6 +1066,7 @@ class Battery:
         self._energy_balance = 0
         self.save_memory = save_memory
         self.time_step = 0
+        self.hourly_timesteps = hourly_timesteps
 
     def terminate(self):
         if self.save_memory == False:
@@ -1095,7 +1107,7 @@ class Battery:
                     self.efficiency = self.power_efficiency_curve[1][idx] + (energy_normalized - self.power_efficiency_curve[0][idx])*(self.power_efficiency_curve[1][idx + 1] - self.power_efficiency_curve[1][idx])/(self.power_efficiency_curve[0][idx + 1] - self.power_efficiency_curve[0][idx])
                     self.efficiency = self.efficiency**0.5
 
-            self._soc = soc_init + energy*self.efficiency
+            self._soc = soc_init + energy*self.efficiency/self.hourly_timesteps
 
         #Discharging
         else:
@@ -1110,7 +1122,7 @@ class Battery:
                 self.efficiency = self.power_efficiency_curve[1][idx] + (energy_normalized - self.power_efficiency_curve[0][idx])*(self.power_efficiency_curve[1][idx + 1] - self.power_efficiency_curve[1][idx])/(self.power_efficiency_curve[0][idx + 1] - self.power_efficiency_curve[0][idx])
                 self.efficiency = self.efficiency**0.5
 
-            self._soc = max(0, soc_init + energy/self.efficiency)
+            self._soc = max(0, soc_init + energy/self.efficiency/self.hourly_timesteps)
 
         if self.capacity is not None:
             self._soc = min(self._soc, self.capacity)

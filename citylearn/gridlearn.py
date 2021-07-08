@@ -131,7 +131,7 @@ class GridLearn: # not a super class of the CityLearn environment
                     # print(self.building_ids)
                 uid = random.choice(self.building_ids)
                 # print(uid)
-                bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, uid, self.save_memory)
+                bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, uid, save_memory=self.save_memory)
                 bldg.assign_bus(existing_node)
                 bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
                 # if np.random.uniform() <= pv_penetration:
