@@ -36,7 +36,7 @@ def make_envs(grid, n_clusters, n_parallel_envs=2):
             env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
     return envs
 
-def make_models(envs, verbose=2, gamma=0.999, batch_size=512, n_steps=1, ent_coef='auto_0.1', learning_rate=0.0001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95):
+def make_models(envs, verbose=2, gamma=0.999, batch_size=512, n_steps=1, ent_coef=0.1, learning_rate=0.0001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95):
     models = [PPO(MlpPolicy, env, verbose=verbose, gamma=gamma, batch_size=batch_size, n_steps=n_steps, ent_coef=ent_coef, learning_rate=learning_rate, vf_coef=vf_coef, max_grad_norm=max_grad_norm, gae_lambda=gae_lambda) for env in envs]
     return models
 
