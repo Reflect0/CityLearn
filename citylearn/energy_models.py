@@ -326,7 +326,7 @@ class Building:
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         # print(_solar_generation, phi, _non_shiftable_load, _electric_demand_dhw, _electric_demand_cooling)
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
-        self.current_gross_generation = np.round(self.solar_generation + min(0, _batt_power), 3)
+        self.current_gross_generation = round(self.solar_generation + min(0, _batt_power), 3)
         self.pv_log += [self.solar_generation]
         self.load_log += [self.current_gross_electricity_demand]
         # obs = self.get_obs()
