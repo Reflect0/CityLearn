@@ -40,6 +40,6 @@ def make_models(envs, verbose=2, gamma=0.999, batch_size=512, n_steps=1, ent_coe
     models = [PPO(MlpPolicy, env, verbose=verbose, gamma=gamma, batch_size=batch_size, n_steps=n_steps, ent_coef=ent_coef, learning_rate=learning_rate, vf_coef=vf_coef, max_grad_norm=max_grad_norm, gae_lambda=gae_lambda) for env in envs]
     return models
 
-def load_models(envs, names):
+def load_models(envs, model_name):
     models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
     return models
