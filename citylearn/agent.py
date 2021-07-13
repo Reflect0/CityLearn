@@ -72,9 +72,9 @@ class RBC_Agent:
             if enabled:
                 if action == 'cooling_storage' or action == 'dhw_storage' or action == 'electrical_storage':
                     if daytime:
-                        actions += [-.08]
+                        actions += [0.0]#[-.08]
                     else:
-                        actions += [0.91]
+                        actions += [0.0]#[0.91]
                 elif action == 'pv_curtail':
                     actions += [-1.0]
                 else:
@@ -99,9 +99,9 @@ class RBC_Agent_v2:
             if enabled:
                 if action == 'cooling_storage' or action == 'dhw_storage' or action=='electrical_storage':
                     if daytime:
-                        actions += [-0.08]
+                        actions += [0.0]#[-0.08]
                     else:
-                        actions += [0.91]
+                        actions += [0.0]#[0.91]
                 elif action == 'pv_curtail':
                     actions += [-1.0]
                 else:
