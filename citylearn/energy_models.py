@@ -419,26 +419,25 @@ class Building:
         high = np.ones(num_states)
         return spaces.Box(low=low, high=high, dtype=np.float32)
 
-    def get_action_space(self, attributes):
+    def get_action_space(self):
         # Setting the action space and the lower and upper bounds of each action-variable
         '''The energy storage (tank) capacity indicates how many times bigger the tank is compared to the maximum hourly energy demand of the building (cooling or DHW respectively), which sets a lower bound for the action of 1/tank_capacity, as the energy storage device can't provide the building with more energy than it will ever need for a given hour. The heat pump is sized using approximately the maximum hourly energy demand of the building (after accounting for the COP, see function autosize). Therefore, we make the fair assumption that the action also has an upper bound equal to 1/tank_capacity. This boundaries should speed up the learning process of the agents and make them more stable rather than if we just set them to -1 and 1. I.e. if Chilled_Water_Tank.Capacity is 3 (3 times the max. hourly demand of the building in the entire year), its actions will be bounded between -1/3 and 1/3'''
         a_low, a_high = [], []
         for action_name, value in self.enabled_actions.items():
             if value == True:
                 if action_name =='cooling_storage':
-
                     # Avoid division by 0
-                    if attributes['Chilled_Water_Tank']['capacity'] > 0.000001:
-                        a_low.append(max(-1.0/attributes['Chilled_Water_Tank']['capacity'], -1.0))
-                        a_high.append(min(1.0/attributes['Chilled_Water_Tank']['capacity'], 1.0))
+                    if self.cooling_storage.capacity > 0.000001:
+                        a_low.append(max(-1.0/self.cooling_storage.capacity, -1.0))
+                        a_high.append(min(1.0/self.cooling_storage.capacity, 1.0))
                     else:
                         a_low.append(-1.0)
                         a_high.append(1.0)
 
                 elif action_name == 'dhw_storage':
-                    if attributes['DHW_Tank']['capacity'] > 0.000001:
-                        a_low.append(max(-1.0/attributes['DHW_Tank']['capacity'], -1.0))
-                        a_high.append(min(1.0/attributes['DHW_Tank']['capacity'], 1.0))
+                    if self.dhw_storage.capacity > 0.000001:
+                        a_low.append(max(-1.0/self.dhw_storage.capacity, -1.0))
+                        a_high.append(min(1.0/self.dhw_storage.capacity, 1.0))
                     else:
                         a_low.append(-1.0)
                         a_high.append(1.0)
