@@ -91,7 +91,7 @@ class Building:
         self.set_dhw_draws()
 
         self.set_state_space()
-        self.set_action_space(attributes)
+        self.set_action_space()
         # reset/initialize the home to timestep = 0
         # self.grid = self.add_grid(grid)
         self.time_step = 0
@@ -419,7 +419,7 @@ class Building:
         high = np.ones(num_states)
 
         self.observation_space = spaces.Box(low=low, high=high, dtype=np.float32)
-        return 
+        return
 
     def set_action_space(self):
         # Setting the action space and the lower and upper bounds of each action-variable
