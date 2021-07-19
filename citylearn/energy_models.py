@@ -90,8 +90,8 @@ class Building:
         self.autosize_equipment()
         self.set_dhw_draws()
 
-        self.observation_space = self.get_state_space()
-        self.action_space = self.get_action_space(attributes)
+        self.set_state_space()
+        self.set_action_space(attributes)
         # reset/initialize the home to timestep = 0
         # self.grid = self.add_grid(grid)
         self.time_step = 0
@@ -376,7 +376,7 @@ class Building:
         if self.cooling_storage.capacity <= 0.00001:
             self.cooling_storage.capacity = 0.00001
 
-    def get_state_space(self):
+    def set_state_space(self):
         # Finding the max and min possible values of all the states, which can then be used by the RL agent to scale the states and train any function approximators more effectively
         s_low, s_high = [], []
         for state_name, value in self.enabled_states.items():
@@ -417,9 +417,11 @@ class Building:
         num_states = sum(self.enabled_states.values())
         low = -1 * np.ones(num_states)
         high = np.ones(num_states)
-        return spaces.Box(low=low, high=high, dtype=np.float32)
 
-    def get_action_space(self):
+        self.observation_space = spaces.Box(low=low, high=high, dtype=np.float32)
+        return 
+
+    def set_action_space(self):
         # Setting the action space and the lower and upper bounds of each action-variable
         '''The energy storage (tank) capacity indicates how many times bigger the tank is compared to the maximum hourly energy demand of the building (cooling or DHW respectively), which sets a lower bound for the action of 1/tank_capacity, as the energy storage device can't provide the building with more energy than it will ever need for a given hour. The heat pump is sized using approximately the maximum hourly energy demand of the building (after accounting for the COP, see function autosize). Therefore, we make the fair assumption that the action also has an upper bound equal to 1/tank_capacity. This boundaries should speed up the learning process of the agents and make them more stable rather than if we just set them to -1 and 1. I.e. if Chilled_Water_Tank.Capacity is 3 (3 times the max. hourly demand of the building in the entire year), its actions will be bounded between -1/3 and 1/3'''
         a_low, a_high = [], []
@@ -456,7 +458,8 @@ class Building:
                     a_low.append(-1.0)
                     a_high.append(1.0)
 
-        return spaces.Box(low=np.array(a_low), high=np.array(a_high), dtype=np.float32)
+        self.action_space = spaces.Box(low=np.array(a_low), high=np.array(a_high), dtype=np.float32)
+        return
 
     def set_storage_electrical(self, action):
         """
