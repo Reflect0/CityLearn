@@ -141,8 +141,8 @@ class GridLearn: # not a super class of the CityLearn environment
                 else:
                     bldg.gen_index = -1
                     # bldg.remove_pv()
-                   bldg.enabled_actions['pv_curtail'] = False
-                   bldg.get_action_space()
+                    bldg.enabled_actions['pv_curtail'] = False
+                    bldg.get_action_space()
 
                 buildings[bldg.buildingId] = bldg
                 bldg.assign_neighbors(self.net)
