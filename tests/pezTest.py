@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = 'scaled_reward'
+model_name = 'high_ent'
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
