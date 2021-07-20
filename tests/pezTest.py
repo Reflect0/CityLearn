@@ -9,11 +9,11 @@ from stable_baselines3 import PPO
 import gym
 import numpy as np
 import supersuit as ss
-
+from copy import deepcopy
 import time
 import os
 
-model_name = 'scaled_cubic'
+model_name = 'reduced_aspace'
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
@@ -30,7 +30,7 @@ config = {
     "hourly_timesteps":4,
     "percent_rl":0.1,
     # "percent_rl":1,
-    "nclusters":2,
+    "nclusters":4,
     "max_num_houses":None
     # "max_num_houses":4
 }
@@ -50,10 +50,8 @@ print('stacking vec env...')
 nenvs = 2
 envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
 
-from copy import deepcopy
-# grid2 = deepcopy(grid)
-#
-# grids = [grid, grid2]
+
+
 grids = [grid]
 grids += [deepcopy(grid) for _ in range(nenvs)]
 
