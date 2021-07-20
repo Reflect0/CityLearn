@@ -220,6 +220,7 @@ class Building:
         #             reward -= 0.05*(self.action_angle - 1)
         #         if self.action_curtail:
         #             reward -= 0.05*(self.action_curtail - 1)
+        print(reward)
         return reward
 
     def get_obs(self, net):
