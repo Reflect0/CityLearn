@@ -137,16 +137,16 @@ class GridLearn: # not a super class of the CityLearn environment
                 # if np.random.uniform() <= pv_penetration:
                 if existing_node in self.pv_buses:
                     bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
-                    bldg.enabled_actions['dhw_storage'] = False
-                    bldg.enabled_actions['cooling_storage'] = False
+                    # bldg.enabled_actions['dhw_storage'] = False
+                    # bldg.enabled_actions['cooling_storage'] = False
                     bldg.set_action_space()
                     # bldg.remove_storage()
                 else:
                     bldg.gen_index = -1
                     # bldg.remove_pv()
-                    bldg.enabled_actions['dhw_storage'] = False
-                    bldg.enabled_actions['cooling_storage'] = False
-                    bldg.enabled_actions['pv_curtail'] = False
+                    # bldg.enabled_actions['dhw_storage'] = False
+                    # bldg.enabled_actions['cooling_storage'] = False
+                    # bldg.enabled_actions['pv_curtail'] = False
                     bldg.set_action_space()
 
                 buildings[bldg.buildingId] = bldg
@@ -245,6 +245,7 @@ class GridLearn: # not a super class of the CityLearn environment
         return infos
 
     def get_spaces(self, agents):
+        print([self.buildings[k].action_space for k in agents])
         actionspace = {k:self.buildings[k].action_space for k in agents}
         obsspace = {k:self.buildings[k].observation_space for k in agents}
         return actionspace, obsspace

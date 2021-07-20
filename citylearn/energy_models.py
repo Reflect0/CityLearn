@@ -265,17 +265,7 @@ class Building:
                         s.append(self.electrical_storage._soc/self.electrical_storage.capacity)
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
-    def remove_storage(self):
-        self.enabled_actions['dhw_storage'] = False
-        self.enabled_actions['cooling_storage'] = False
-
-    def remove_pv(self):
-        self.enabled_actions['pv_curtail'] = False
-        self.enabled_actions['pv_phi'] = False
-        return
-
     def close(self, folderName):
-        # print(self.action_log)
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}_pv.csv', np.array(self.pv_log), delimiter=',', fmt='%s')
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}_hvacload.csv', np.array(self.hvacload_log), delimiter=',', fmt='%s')
