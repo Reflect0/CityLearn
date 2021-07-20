@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = 'reduced_state_space'
+model_name = 'reduced_aspace_sspace_v2'
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
