@@ -1,7 +1,7 @@
 {"Building_1": {
 "states": {
-"month": true,
-"day": true,
+"month": false,
+"day": false,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -36,8 +36,8 @@
 
 "Building_2": {
 "states": {
-"month": true,
-"day": true,
+"month": false,
+"day": false,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -72,8 +72,8 @@
 
 "Building_3": {
 "states": {
-"month": true,
-"day": true,
+"month": false,
+"day": false,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -108,8 +108,8 @@
 
 "Building_4": {
 "states": {
-"month": true,
-"day": true,
+"month": false,
+"day": false,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -144,8 +144,8 @@
 
 "Building_5": {
 "states": {
-"month": true,
-"day": true,
+"month": false,
+"day": false,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -180,8 +180,8 @@
 
 "Building_6": {
 "states": {
-"month": true,
-"day": true,
+"month": false,
+"day": false,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -216,8 +216,8 @@
 
 "Building_7": {
 "states": {
-"month": true,
-"day": true,
+"month": false,
+"day": false,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -252,8 +252,8 @@
 
 "Building_8": {
 "states": {
-"month": true,
-"day": true,
+"month": false,
+"day": false,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -288,8 +288,8 @@
 
 "Building_9": {
 "states": {
-"month": true,
-"day": true,
+"month": false,
+"day": false,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -324,8 +324,8 @@
 
 "Building_10": {
 "states": {
-"month": true,
-"day": true,
+"month": false,
+"day": false,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
