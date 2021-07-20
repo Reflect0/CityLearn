@@ -213,7 +213,7 @@ class Building:
         my_cons = (self.current_gross_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
         my_neighbors_voltage_dev = sum(np.square(10 * np.clip(net.res_bus.loc[self.neighbors]['vm_pu']-1,-.1,.1)))
         reward = -1 * (my_voltage_dev)+1 #+ my_neighbors_voltage_dev)
-        reward += self.battery_action
+        reward = (reward - 365)/9
         # if not self.rbc:
         #     if self.solar_generation <= 0.000000001:
         #         if self.action_angle:
