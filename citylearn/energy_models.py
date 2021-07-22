@@ -289,13 +289,13 @@ class Building:
             _electric_demand_cooling = self.set_storage_cooling(a[0])
             a = a[1:]
         else:
-            _electric_demand_cooling = self.set_storage_cooling(act)
+            _electric_demand_cooling = self.set_storage_cooling()
 
         if self.enabled_actions['dhw_storage']:
             _electric_demand_dhw = self.set_storage_heating(a[0])
             a = a[1:]
         else:
-            _electric_demand_dhw = self.set_storage_heating(act)
+            _electric_demand_dhw = self.set_storage_heating()
 
         if self.enabled_actions['pv_curtail']:
             self.solar_generation = self.get_solar_power(a[0])
@@ -316,7 +316,7 @@ class Building:
             _batt_power = self.set_storage_electrical(a[0]) # batt power is negative for discharge
             a = a[1:]
         else:
-            _batt_power = self.set_storage_electrical(act)
+            _batt_power = self.set_storage_electrical()
 
         # Electrical appliances
         _non_shiftable_load = self.get_non_shiftable_load()
