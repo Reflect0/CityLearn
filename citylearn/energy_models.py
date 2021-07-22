@@ -213,7 +213,7 @@ class Building:
         my_cons = (self.current_gross_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
         my_neighbors_voltage_dev = sum(np.square(10 * np.clip(net.res_bus.loc[self.neighbors]['vm_pu']-1,-.1,.1)))
         reward = -1 * (my_voltage_dev + 0.3*my_neighbors_voltage_dev) #+ my_neighbors_voltage_dev)
-        print(reward)
+        #print(reward)
         reward = (reward + 365)/9
         # if not self.rbc:
         #     if self.solar_generation <= 0.000000001:
@@ -221,7 +221,7 @@ class Building:
         #             reward -= 0.05*(self.action_angle - 1)
         #         if self.action_curtail:
         #             reward -= 0.05*(self.action_curtail - 1)
-        print(reward)
+        #print(reward)
         return reward
 
     def get_obs(self, net):
@@ -269,10 +269,10 @@ class Building:
 
     def close(self, folderName):
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_pv.csv', np.array(self.pv_log), delimiter=',', fmt='%s')
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_hvacload.csv', np.array(self.hvacload_log), delimiter=',', fmt='%s')
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_unshiftload.csv', np.array(self.unshiftload_log), delimiter=',', fmt='%s')
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_dhwload.csv', np.array(self.dhwload_log), delimiter=',', fmt='%s')
+        # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_pv.csv', np.array(self.pv_log), delimiter=',', fmt='%s')
+        # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_hvacload.csv', np.array(self.hvacload_log), delimiter=',', fmt='%s')
+        # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_unshiftload.csv', np.array(self.unshiftload_log), delimiter=',', fmt='%s')
+        # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_dhwload.csv', np.array(self.dhwload_log), delimiter=',', fmt='%s')
         return
 
     def step(self, a):
@@ -283,7 +283,7 @@ class Building:
 #            act = -0.08
 #        else:
 #            act = 0.91
-        act = 0.0
+        #act = 0.0
 
         if self.enabled_actions['cooling_storage']:
             _electric_demand_cooling = self.set_storage_cooling(a[0])
@@ -1012,6 +1012,7 @@ class EnergyStorage:
             self.energy_balance.append(np.float32(self._energy_balance))
             self.soc.append(np.float32(self._soc))
 
+        print(energy, self._energy_balance)
         return self._energy_balance
 
     def reset(self):
