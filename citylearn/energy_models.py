@@ -454,7 +454,7 @@ class Building:
         self.action_space = spaces.Box(low=np.array(a_low), high=np.array(a_high), dtype=np.float32)
         return
 
-    def set_storage_electrical(self, action):
+    def set_storage_electrical(self, action=0):
         """
         Args:
             action (float): Amount of heating energy stored (added) in that time-step as a ratio of the maximum capacity of the energy storage device.
@@ -477,7 +477,7 @@ class Building:
 
         return electrical_energy_balance
 
-    def set_storage_heating(self, action):
+    def set_storage_heating(self, action=0):
         """
         Args:
             action (float): Amount of heating energy stored (added) in that time-step as a ratio of the maximum capacity of the energy storage device.
@@ -520,7 +520,7 @@ class Building:
 
         return elec_demand_heating
 
-    def set_storage_cooling(self, action):
+    def set_storage_cooling(self, action=0):
         """
             Args:
                 action (float): Amount of cooling energy stored (added) in that time-step as a ratio of the maximum capacity of the energy storage device.
