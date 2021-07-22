@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = 'neighboring_volt_dev'
+model_name = "fixed_hourly_agent"
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
