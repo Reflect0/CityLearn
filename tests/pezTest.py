@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "fixed_hourly_agent"
+model_name = "rl_50"
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
@@ -28,7 +28,7 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.1,
+    "percent_rl":0.5,
     # "percent_rl":1,
     "nclusters":4,
     "max_num_houses":None
