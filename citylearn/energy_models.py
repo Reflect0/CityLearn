@@ -8,7 +8,7 @@ import pandas as pd
 import pandapower as pp
 from pandapower import runpp
 import gym
-
+from collections import OrderedDict
 def subhourly_lin_interp(hourly_data, subhourly_steps):
     """ Returns a linear interpolation of a data array as a list """
     n = len(hourly_data)
@@ -56,7 +56,7 @@ class Building:
         self.buildingId = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
         with open(buildings_states_actions_file) as json_file:
-            buildings_states_actions = json.load(json_file)
+            buildings_states_actions = json.load(json_file, object_pairs_hook=OrderedDict)
         # print('keys', buildings_states_actions.keys())
 
         self.uid = uid
@@ -112,7 +112,7 @@ class Building:
 
     def set_attributes(self, file):
         with open(file) as json_file:
-            data = json.load(json_file)
+            data = json.load(json_file, object_pairs_hook=OrderedDict)
         # print('this',data.keys(), self.uid)
         tmp = data[self.uid]
         self.building_type = tmp['Building_Type']
@@ -226,17 +226,21 @@ class Building:
 
     def get_obs(self, net):
         s = []
+        all_states = []
         for state_name, value in self.enabled_states.items():
             if value == True:
                 if state_name == "net_electricity_consumption":
+                    all_states += [1]
                     s.append(self.current_gross_electricity_demand)
 
                 elif state_name == "absolute_voltage":
+                    all_states += [2]
                     if self.time_step <= 1:
                         s.append(1.0)
                     else:
                         s.append(float(net.res_bus['vm_pu'][net.load.loc[net.load['name']==self.buildingId].bus]))
                 elif state_name == "relative_voltage":
+                    all_states += [3]
                     if self.time_step <= 1:
                         s.append(0.5)
                     else:
@@ -244,6 +248,7 @@ class Building:
                         s.append(ranked_voltage)
 
                 elif state_name == "total_voltage_spread":
+                    all_states += [4]
                     if self.time_step <= 1:
                         s.append(0)
                     else:
@@ -253,17 +258,22 @@ class Building:
                         s.append(voltage_spread)
 
                 elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc' and state_name != 'electrical_storage_soc':
+                    all_states += [5]
                     s.append(self.sim_results[state_name][self.time_step])
 
-                elif state_name in ['t_in', 'avg_unmet_setpoint', 'rh_in', 'non_shiftable_load', 'solar_gen']:
-                    s.append(self.sim_results[state_name][self.time_step])
+                # elif state_name in ['t_in', 'avg_unmet_setpoint', 'rh_in', 'non_shiftable_load', 'solar_gen']:
+                #     all_states += [6]
+                #     s.append(self.sim_results[state_name][self.time_step])
 
                 else: # if state_name = cooling_storage_soc,
                     if state_name == 'cooling_storage_soc':
+                        all_states += [7]
                         s.append(self.cooling_storage._soc/self.cooling_storage.capacity)
                     elif state_name == 'dhw_storage_soc':
+                        all_states += [8]
                         s.append(self.dhw_storage._soc/self.dhw_storage.capacity)
                     elif state_name == 'electrical_storage_soc':
+                        all_states += [9]
                         s.append(self.electrical_storage._soc/self.electrical_storage.capacity)
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
@@ -279,11 +289,6 @@ class Building:
         self.action_log += [a]
         # print(a, self.enabled_actions)
         # take an action
-#        if self.sim_results['hour'][self.time_step] >= 1 and self.sim_results['hour'][self.time_step] <= 21:
-#            act = -0.08
-#        else:
-#            act = 0.91
-        #act = 0.0
 
         if self.enabled_actions['cooling_storage']:
             _electric_demand_cooling = self.set_storage_cooling(a[0])
@@ -537,7 +542,7 @@ class Building:
 
         # The storage device is charged (action > 0) or discharged (action < 0) taking into account the max power available and that the storage device cannot be discharged by an amount of energy greater than the energy demand of the building.
         charge_arg = max(-self.sim_results['cooling_demand'][self.time_step], min(cooling_power_avail, action*self.cooling_storage.capacity))
-        cooling_energy_balance = self.cooling_storage.charge(charge_arg/self.hourly_timesteps) # @AKP FIX THIS!!!
+        cooling_energy_balance = self.cooling_storage.charge(charge_arg/self.hourly_timesteps) # @AKP FIX THIS -- make less janky!!!
 
         if self.save_memory == False:
             self.cooling_storage_action.append(action)
@@ -959,7 +964,7 @@ class EnergyStorage:
         self.efficiency = efficiency**0.5
         self.loss_coeff = loss_coeff
         self.soc = []
-        self._soc = 0 # State of Charge
+        self._soc = np.random.uniform(0.2*self.capacity, 0.8*self.capacity)#0 # State of Charge
         self.energy_balance = []
         self._energy_balance = 0
         self.save_memory = save_memory
@@ -1012,12 +1017,12 @@ class EnergyStorage:
             self.energy_balance.append(np.float32(self._energy_balance))
             self.soc.append(np.float32(self._soc))
 
-        print(energy, self._energy_balance)
+        # print(energy, self._energy_balance)
         return self._energy_balance
 
     def reset(self):
         self.soc = []
-        self._soc = 0 #State of charge
+        self._soc = np.random.uniform(0.2*self.capacity,0.8*self.capacity)#0 #State of charge
         self.energy_balance = [] #Positive for energy entering the storage
         self._energy_balance = 0
         self.time_step = 0
@@ -1058,7 +1063,7 @@ class Battery:
         self._energy = []
         self._max_power = []
         self.soc = []
-        self._soc = 0 # State of Charge
+        self._soc = np.random.uniform(0.2*self.capacity, 0.8*self.capacity)#0 # State of Charge
         self.energy_balance = []
         self._energy_balance = 0
         self.save_memory = save_memory
@@ -1145,7 +1150,7 @@ class Battery:
 
     def reset(self):
         self.soc = []
-        self._soc = 0 #State of charge
+        self._soc = np.random.uniform(0.2*self.capacity,0.8*self.capacity) #State of charge
         self.energy_balance = [] #Positive for energy entering the storage
         self._energy_balance = 0
         self.time_step = 0

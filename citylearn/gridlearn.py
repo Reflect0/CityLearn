@@ -245,7 +245,7 @@ class GridLearn: # not a super class of the CityLearn environment
         return infos
 
     def get_spaces(self, agents):
-        print([self.buildings[k].action_space for k in agents])
+        #print([self.buildings[k].action_space for k in agents])
         actionspace = {k:self.buildings[k].action_space for k in agents}
         obsspace = {k:self.buildings[k].observation_space for k in agents}
         return actionspace, obsspace
@@ -272,7 +272,7 @@ class GridLearn: # not a super class of the CityLearn environment
         rl_agent_keys = list(action_dict.keys())
         rl_agent_keys = [agent for agent in rl_agent_keys if agent in self.rl_agents ]
         obs = self.state(rl_agent_keys)
-
+        #print(obs)
         self.voltage_data += [list(self.net.res_bus['vm_pu'])]
         self.load_data += [list(self.net.load['p_mw'])]
         return obs, self.get_reward(rl_agent_keys), self.get_done(rl_agent_keys), self.get_info(rl_agent_keys)

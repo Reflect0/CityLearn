@@ -12,7 +12,7 @@ from stable_baselines3.ppo import MlpPolicy
 from stable_baselines3 import PPO
 import gym
 import numpy as np
-
+from copy import deepcopy
 import multiprocessing
 import sys
 import supersuit as ss
@@ -21,7 +21,7 @@ import time
 import os
 
 # multiprocessing.set_start_method("fork")
-model_name = "rl_50"
+model_name = "rand_init"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
@@ -33,7 +33,7 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.5,
+    "percent_rl":0.1,
     # "percent_rl":1,
     "nclusters":4,
     "max_num_houses":None
@@ -55,10 +55,8 @@ print('stacking vec env...')
 nenvs = 2
 envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
 
-from copy import deepcopy
-grid2 = deepcopy(grid)
-
-grids = [grid, grid2]
+grids = [grid]
+grids += [deepcopy(grid) for _ in range(nenvs-1)]
 
 print('setting the grid...')
 for env in envs:

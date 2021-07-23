@@ -95,7 +95,7 @@ class RBC_Agent_v2:
         hour_day = self.env.time_step/self.env.hourly_timesteps % 24
         daytime = True if hour_day >= 1 and hour_day <= 21 else False
         # daytime = True if hour_day >= 1 and hour_day <= 12 else False
-        print("hour day", hour_day, self.env.time_step)
+        #print("hour day", hour_day, self.env.time_step)
         actions = []
         for action, enabled in self.env.enabled_actions.items():
             if enabled:
