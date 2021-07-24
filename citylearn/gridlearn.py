@@ -135,19 +135,13 @@ class GridLearn: # not a super class of the CityLearn environment
                 bldg.assign_bus(existing_node)
                 bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
                 # if np.random.uniform() <= pv_penetration:
-                if existing_node in self.pv_buses:
-                    bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
-                    # bldg.enabled_actions['dhw_storage'] = False
-                    # bldg.enabled_actions['cooling_storage'] = False
-                    bldg.set_action_space()
-                    # bldg.remove_storage()
-                else:
-                    bldg.gen_index = -1
-                    # bldg.remove_pv()
-                    # bldg.enabled_actions['dhw_storage'] = False
-                    # bldg.enabled_actions['cooling_storage'] = False
-                    # bldg.enabled_actions['pv_curtail'] = False
-                    bldg.set_action_space()
+                bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
+                # if existing_node in self.pv_buses:
+                #     bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
+                #     bldg.set_action_space()
+                # else:
+                #     bldg.gen_index = -1
+                #     bldg.set_action_space()
 
                 buildings[bldg.buildingId] = bldg
                 bldg.assign_neighbors(self.net)
@@ -268,12 +262,13 @@ class GridLearn: # not a super class of the CityLearn environment
             pp.diagnostic(self.net)
             quit()
         self.ts += 1
-
+        print("calling increment timestep", self.ts)
         rl_agent_keys = list(action_dict.keys())
         rl_agent_keys = [agent for agent in rl_agent_keys if agent in self.rl_agents ]
         obs = self.state(rl_agent_keys)
         #print(obs)
         self.voltage_data += [list(self.net.res_bus['vm_pu'])]
+        print(self.voltage_data)
         self.load_data += [list(self.net.load['p_mw'])]
         return obs, self.get_reward(rl_agent_keys), self.get_done(rl_agent_keys), self.get_info(rl_agent_keys)
 
@@ -292,9 +287,11 @@ class GridLearn: # not a super class of the CityLearn environment
         rl_buses = list(set(self.net.load.loc[filtered].bus))
         fig, ax = plt.subplots(len(rl_buses), figsize=(20, 8*len(rl_buses)))
         x = np.arange(self.ts) / self.hourly_timesteps / 24 / self.nclusters
+        print(len(x))
         for i in range(len(rl_buses)):
             data = np.array(self.voltage_data)[:,rl_buses[i]]
-            ax[i].plot(x, data)
+            ax[i].scatter(x, data)
+            print(data)
             ax[i].set_title(f'Bus {rl_buses[i]}')
             ax[i].set_ylabel('Voltage (p.u.)')
             ax[i].set_xlabel('Time (Days)')
