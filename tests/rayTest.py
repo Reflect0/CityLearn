@@ -82,7 +82,7 @@ config["no_done_at_end"] = False
 # when dones[__all__]= True.
 
 # Initialize ray and trainer object
-ray.init(num_cpus=num_cpus + 1, ignore_reinit_error=True)
+ray.init(num_cpus=num_cpus + 1, ignore_reinit_error=True, object_store_memory=2*10**9)
 trainer = get_trainer_class(alg_name)(env="simple_grid", config=config)
 
 # Train once
