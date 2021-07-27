@@ -6,8 +6,8 @@ from pettingzoo.test import parallel_api_test
 from citylearn import GridLearn
 from citylearn import MyEnv
 from pathlib import Path
-from stable_baselines3.ppo import MlpPolicy
-from stable_baselines3 import PPO
+# from stable_baselines3.ppo import MlpPolicy
+# from stable_baselines3 import PPO
 import gym
 import numpy as np
 import supersuit as ss
