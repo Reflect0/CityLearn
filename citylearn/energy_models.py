@@ -595,7 +595,7 @@ class Building:
         return self.dhw_heating_device._electrical_consumption_heating
 
     def set_cooling_cop(self):
-        self.cooling_device.cop_cooling = self.cooling_device.eta_tech*(np.add(self.cooling_device.t_target_cooling,273.15))/np.subtract(self.sim_results['t_out'],self.cooling_device.t_target_cooling)
+        self.cooling_device.cop_cooling = self.cooling_device.eta_tech*(np.add(self.cooling_device.t_target_cooling,273.15))/max(0.1,np.subtract(self.sim_results['t_out'],self.cooling_device.t_target_cooling))
         self.cooling_device.cop_cooling[self.cooling_device.cop_cooling < 0] = 20.0
         self.cooling_device.cop_cooling[self.cooling_device.cop_cooling > 20] = 20.0
 
