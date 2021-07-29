@@ -319,7 +319,7 @@ class MyEnv(ParallelEnv):
 
         self.metadata = {'render.modes': [], 'name':"my_env"}
         self.ts = 0
-        self.set_grid(grid)
+        #self.set_grid(grid)
 
     def set_grid(self, grid):
         self.grid = grid
