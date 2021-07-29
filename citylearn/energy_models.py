@@ -594,7 +594,7 @@ class Building:
         # If the DHW device is a HeatPump
         if isinstance(self.dhw_heating_device, HeatPump):
             # Calculating COPs of the heat pumps for every hour
-            self.dhw_heating_device.cop_heating = self.dhw_heating_device.eta_tech*(self.dhw_heating_device.t_target_heating + 273.15)/(self.dhw_heating_device.t_target_heating - self.sim_results['t_out'])
+            self.dhw_heating_device.cop_heating = self.dhw_heating_device.eta_tech*(self.dhw_heating_device.t_target_heating + 273.15)/np.clip(self.dhw_heating_device.t_target_heating - self.sim_results['t_out'], lower=0.1*np.ones(len(self.sim_results['t_out'])))
             self.dhw_heating_device.cop_heating[self.dhw_heating_device.cop_heating < 0] = 20.0
             self.dhw_heating_device.cop_heating[self.dhw_heating_device.cop_heating > 20] = 20.0
             self.dhw_heating_device.cop_heating = self.dhw_heating_device.cop_heating.to_numpy()
@@ -603,7 +603,7 @@ class Building:
         return self.dhw_heating_device._electrical_consumption_heating
 
     def set_cooling_cop(self):
-        self.cooling_device.cop_cooling = self.cooling_device.eta_tech*(np.add(self.cooling_device.t_target_cooling,273.15))/np.clip(np.subtract(self.sim_results['t_out'],self.cooling_device.t_target_cooling),lower=0.1)
+        self.cooling_device.cop_cooling = self.cooling_device.eta_tech*(np.add(self.cooling_device.t_target_cooling,273.15))/np.clip(np.subtract(self.sim_results['t_out'],self.cooling_device.t_target_cooling),lower=0.1*np.ones(len(self.cooling_device.t_target_cooling)))
         self.cooling_device.cop_cooling[self.cooling_device.cop_cooling < 0] = 20.0
         self.cooling_device.cop_cooling[self.cooling_device.cop_cooling > 20] = 20.0
 
