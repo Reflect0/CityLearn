@@ -56,6 +56,8 @@ class GridLearn: # not a super class of the CityLearn environment
         rand_act = {k:v.sample() for k,v in aspace.items()}
         self.step(rand_act)
 
+        self.tester = np.random.uniform(1,5,(5,))
+
     def make_grid(self):
         # make a grid that fits the buildings generated for CityLearn
         net = networks.case33bw()
@@ -135,19 +137,13 @@ class GridLearn: # not a super class of the CityLearn environment
                 bldg.assign_bus(existing_node)
                 bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
                 # if np.random.uniform() <= pv_penetration:
-                if existing_node in self.pv_buses:
-                    bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
-                    # bldg.enabled_actions['dhw_storage'] = False
-                    # bldg.enabled_actions['cooling_storage'] = False
-                    bldg.set_action_space()
-                    # bldg.remove_storage()
-                else:
-                    bldg.gen_index = -1
-                    # bldg.remove_pv()
-                    # bldg.enabled_actions['dhw_storage'] = False
-                    # bldg.enabled_actions['cooling_storage'] = False
-                    # bldg.enabled_actions['pv_curtail'] = False
-                    bldg.set_action_space()
+                bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
+                # if existing_node in self.pv_buses:
+                #     bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
+                #     bldg.set_action_space()
+                # else:
+                #     bldg.gen_index = -1
+                #     bldg.set_action_space()
 
                 buildings[bldg.buildingId] = bldg
                 bldg.assign_neighbors(self.net)
@@ -252,12 +248,11 @@ class GridLearn: # not a super class of the CityLearn environment
 
     def step(self, action_dict):
         # print(f"CALL STEP, {action_dict.keys()}")
-        i = 0
         for agent in action_dict:
-            if i == 0:
-                i += 1
             self.buildings[agent].step(action_dict[agent])
 
+        self.ts += 1
+        self.tester = np.random.uniform(1,5,(5,))
         # update the grid based on updated buildings
         self.update_grid()
 
@@ -267,13 +262,14 @@ class GridLearn: # not a super class of the CityLearn environment
         except:
             pp.diagnostic(self.net)
             quit()
-        self.ts += 1
-
+        #self.ts += 1
+        print("calling increment timestep", self.ts)
         rl_agent_keys = list(action_dict.keys())
         rl_agent_keys = [agent for agent in rl_agent_keys if agent in self.rl_agents ]
         obs = self.state(rl_agent_keys)
         #print(obs)
         self.voltage_data += [list(self.net.res_bus['vm_pu'])]
+        #print(self.voltage_data)
         self.load_data += [list(self.net.load['p_mw'])]
         return obs, self.get_reward(rl_agent_keys), self.get_done(rl_agent_keys), self.get_info(rl_agent_keys)
 
@@ -292,9 +288,11 @@ class GridLearn: # not a super class of the CityLearn environment
         rl_buses = list(set(self.net.load.loc[filtered].bus))
         fig, ax = plt.subplots(len(rl_buses), figsize=(20, 8*len(rl_buses)))
         x = np.arange(self.ts) / self.hourly_timesteps / 24 / self.nclusters
+        print(len(x))
         for i in range(len(rl_buses)):
             data = np.array(self.voltage_data)[:,rl_buses[i]]
-            ax[i].plot(x, data)
+            ax[i].scatter(x, data)
+            print(data)
             ax[i].set_title(f'Bus {rl_buses[i]}')
             ax[i].set_ylabel('Voltage (p.u.)')
             ax[i].set_xlabel('Time (Days)')
@@ -311,6 +309,7 @@ class GridLearn: # not a super class of the CityLearn environment
 
 class MyEnv(ParallelEnv):
     def __init__(self, grid):
+
         self.agents = grid.clusters[grid.ncluster][0]
         self.rbc_buildings = grid.clusters[grid.ncluster][1]
         self.rbc_agents = None
@@ -320,6 +319,7 @@ class MyEnv(ParallelEnv):
 
         self.metadata = {'render.modes': [], 'name':"my_env"}
         self.ts = 0
+        self.set_grid(grid)
 
     def set_grid(self, grid):
         self.grid = grid
@@ -356,8 +356,9 @@ class MyEnv(ParallelEnv):
         action_dict = rl_action_dict
 
         # get the action_dict for the rbc agents
-        for agent in self.rbc_agents:
-            action_dict.update({agent.env.buildingId:agent.predict()})
+        if self.rbc_agents:
+            for agent in self.rbc_agents:
+                action_dict.update({agent.env.buildingId:agent.predict()})
 
         # append rbc agent action_dict to the rl agent dict
         return self.grid.step(action_dict)

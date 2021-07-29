@@ -76,7 +76,7 @@ class RBC_Agent:
                     else:
                         actions += [0.91]
                 elif action == 'pv_curtail':
-                    actions += [-1.0]
+                    actions += [1.0]
                 else:
                     actions += [0.0]
 
@@ -105,7 +105,7 @@ class RBC_Agent_v2:
                     else:
                         actions += [0.91]
                 elif action == 'pv_curtail':
-                    actions += [-1.0]
+                    actions += [1.0]
                 else:
                     actions += [0.0]
 

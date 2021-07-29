@@ -340,7 +340,15 @@ class Building:
         # info = {}
         self.time_step = (self.time_step + 1) % (8760 * self.hourly_timesteps)
 
-        return
+        # # Assign the load in MW (from KW in CityLearn)
+        # net.load.at[self.load_index, 'p_mw'] = 0.9 * self.current_gross_electricity_demand * 0.001
+        # net.load.at[self.load_index, 'sn_mva'] = self.current_gross_electricity_demand * 0.001
+        #
+        # if self.gen_index > -1: # assume PV and battery are both behind the inverter
+        #     net.sgen.at[self.gen_index, 'p_mw'] = -1 * self.current_gross_generation * np.cos(self.phi) * 0.001
+        #     net.sgen.at[self.gen_index, 'q_mvar'] = self.current_gross_generation * np.sin(self.phi) * 0.001
+
+        return #net
 
     def set_dhw_draws(self):
         self.sim_results['dhw_demand'] = subhourly_randomdraw_interp(self.sim_results['dhw_demand'], self.hourly_timesteps, self.dhw_heating_device.nominal_power)
