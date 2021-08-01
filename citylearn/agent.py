@@ -71,16 +71,19 @@ class RBC_Agent:
         # for action, enabled in self.env.enabled_actions.items():
         #     if enabled:
         if self.env.enabled_actions['cooling_storage']:
-            if daytime:
-                actions += [-0.08]
-            else:
-                actions += [0.91]
+            actions += [0.0]
+            # if daytime:
+            #     actions += [-0.08]
+            # else:
+            #     actions += [0.91]
 
         if self.env.enabled_actions['dhw_storage']:
-            if daytime:
-                actions += [-0.08]
-            else:
-                actions += [0.91]
+            actions += [0.0]
+            # if daytime:
+            #     actions += [-0.08]
+            # else:
+            #     actions += [0.91]
+
         if self.env.enabled_actions['pv_curtail']:
             actions += [1.0]
 
@@ -88,10 +91,11 @@ class RBC_Agent:
             actions += [0.0]
 
         if self.env.enabled_actions['electrical_storage']:
-            if daytime:
-                actions += [-0.08]
-            else:
-                actions += [0.91]
+            actions += [0.0]
+            # if daytime:
+            #     actions += [-0.08]
+            # else:
+            #     actions += [0.91]
 
         return actions # casting this as a list of list matches the predict function in Stable Baselines.
 
@@ -113,16 +117,19 @@ class RBC_Agent_v2:
         # for action, enabled in self.env.enabled_actions.items():
         #     if enabled:
         if self.env.enabled_actions['cooling_storage']:
-            if daytime:
-                actions += [-0.08]
-            else:
-                actions += [0.91]
+            actions += [0.0]
+            # if daytime:
+            #     actions += [-0.08]
+            # else:
+            #     actions += [0.91]
 
         if self.env.enabled_actions['dhw_storage']:
-            if daytime:
-                actions += [-0.08]
-            else:
-                actions += [0.91]
+            actions += [0.0]
+            # if daytime:
+            #     actions += [-0.08]
+            # else:
+            #     actions += [0.91]
+
         if self.env.enabled_actions['pv_curtail']:
             actions += [1.0]
 
@@ -130,9 +137,10 @@ class RBC_Agent_v2:
             actions += [0.0]
 
         if self.env.enabled_actions['electrical_storage']:
-            if daytime:
-                actions += [-0.08]
-            else:
-                actions += [0.91]
+            actions += [0.0]
+            # if daytime:
+            #     actions += [-0.08]
+            # else:
+            #     actions += [0.91]
 
         return actions
