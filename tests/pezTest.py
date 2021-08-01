@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "no_storage"
+model_name = "rand_diurnal"
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")

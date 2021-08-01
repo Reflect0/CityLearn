@@ -107,6 +107,8 @@ class Building:
         self.dhwload_log = []
         self.hvacload_log = []
 
+        self.night, self.morning = np.random.randint(20,22), np.random.randint(4,10)
+
     def assign_bus(self, bus):
         self.bus = bus
 
