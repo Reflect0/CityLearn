@@ -68,17 +68,30 @@ class RBC_Agent:
         hour_day = self.env.time_step / self.env.hourly_timesteps % 24
         daytime = True if hour_day >= 1 and hour_day <= 21 else False
         actions = []
-        for action, enabled in self.env.enabled_actions.items():
-            if enabled:
-                if action == 'cooling_storage' or action == 'dhw_storage' or action == 'electrical_storage':
-                    if daytime:
-                        actions += [-.08]
-                    else:
-                        actions += [0.91]
-                elif action == 'pv_curtail':
-                    actions += [1.0]
-                else:
-                    actions += [0.0]
+        # for action, enabled in self.env.enabled_actions.items():
+        #     if enabled:
+        if self.env.enabled_actions['cooling_storage']:
+            if daytime:
+                actions += [-0.08]
+            else:
+                actions += [0.91]
+
+        if self.env.enabled_actions['dhw_storage']:
+            if daytime:
+                actions += [-0.08]
+            else:
+                actions += [0.91]
+        if self.env.enabled_actions['pv_curtail']:
+            actions += [1.0]
+
+        if self.env.enabled_actions['pv_phi']:
+            actions += [0.0]
+
+        if self.env.enabled_actions['electrical_storage']:
+            if daytime:
+                actions += [-0.08]
+            else:
+                actions += [0.91]
 
         return actions # casting this as a list of list matches the predict function in Stable Baselines.
 
@@ -97,16 +110,29 @@ class RBC_Agent_v2:
         # daytime = True if hour_day >= 1 and hour_day <= 12 else False
         #print("hour day", hour_day, self.env.time_step)
         actions = []
-        for action, enabled in self.env.enabled_actions.items():
-            if enabled:
-                if action == 'cooling_storage' or action == 'dhw_storage' or action=='electrical_storage':
-                    if daytime:
-                        actions += [-0.08]
-                    else:
-                        actions += [0.91]
-                elif action == 'pv_curtail':
-                    actions += [1.0]
-                else:
-                    actions += [0.0]
+        # for action, enabled in self.env.enabled_actions.items():
+        #     if enabled:
+        if self.env.enabled_actions['cooling_storage']:
+            if daytime:
+                actions += [-0.08]
+            else:
+                actions += [0.91]
+
+        if self.env.enabled_actions['dhw_storage']:
+            if daytime:
+                actions += [-0.08]
+            else:
+                actions += [0.91]
+        if self.env.enabled_actions['pv_curtail']:
+            actions += [1.0]
+
+        if self.env.enabled_actions['pv_phi']:
+            actions += [0.0]
+
+        if self.env.enabled_actions['electrical_storage']:
+            if daytime:
+                actions += [-0.08]
+            else:
+                actions += [0.91]
 
         return actions
