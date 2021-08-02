@@ -66,23 +66,23 @@ class RBC_Agent:
 
     def predict(self):
         hour_day = self.env.time_step / self.env.hourly_timesteps % 24
-        daytime = True if hour_day >= 1 and hour_day <= 21 else False
+        daytime = True if hour_day >= self.env.morning and hour_day <= self.env.night else False
         actions = []
         # for action, enabled in self.env.enabled_actions.items():
         #     if enabled:
         if self.env.enabled_actions['cooling_storage']:
-            actions += [0.0]
-            # if daytime:
-            #     actions += [-0.08]
-            # else:
-            #     actions += [0.91]
+            # actions += [0.0]
+            if daytime:
+                actions += [-0.08]
+            else:
+                actions += [0.91]
 
         if self.env.enabled_actions['dhw_storage']:
-            actions += [0.0]
-            # if daytime:
-            #     actions += [-0.08]
-            # else:
-            #     actions += [0.91]
+            # actions += [0.0]
+            if daytime:
+                actions += [-0.08]
+            else:
+                actions += [0.91]
 
         if self.env.enabled_actions['pv_curtail']:
             actions += [1.0]
@@ -91,11 +91,11 @@ class RBC_Agent:
             actions += [0.0]
 
         if self.env.enabled_actions['electrical_storage']:
-            actions += [0.0]
-            # if daytime:
-            #     actions += [-0.08]
-            # else:
-            #     actions += [0.91]
+            # actions += [0.0]
+            if daytime:
+                actions += [-0.08]
+            else:
+                actions += [0.91]
 
         return actions # casting this as a list of list matches the predict function in Stable Baselines.
 
