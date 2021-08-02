@@ -66,8 +66,8 @@ class RBC_Agent:
 
     def predict(self):
         hour_day = self.env.time_step / self.env.hourly_timesteps % 24
-        # daytime = True if hour_day >= self.env.morning and hour_day <= self.env.night else False
-        daytime = True if hour_day >= 1 and hour_day <= 21 else False
+        daytime = True if hour_day >= self.env.morning and hour_day <= self.env.night else False
+        # daytime = True if hour_day >= 1 and hour_day <= 21 else False
 
         actions = []
         # for action, enabled in self.env.enabled_actions.items():
@@ -112,8 +112,8 @@ class RBC_Agent_v2:
 
     def predict(self):
         hour_day = self.env.time_step/self.env.hourly_timesteps % 24
-        # daytime = True if hour_day >= self.env.morning and hour_day <= self.env.night else False
-        daytime = True if hour_day >= 1 and hour_day <= 21 else False
+        daytime = True if hour_day >= self.env.morning and hour_day <= self.env.night else False
+        # daytime = True if hour_day >= 1 and hour_day <= 21 else False
         #print("hour day", hour_day, self.env.time_step)
         actions = []
         # for action, enabled in self.env.enabled_actions.items():

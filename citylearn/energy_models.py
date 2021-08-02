@@ -581,7 +581,7 @@ class Building:
     def get_non_shiftable_load(self):
         return self.sim_results['non_shiftable_load'][self.time_step]
 
-    def get_solar_power(self, curtailment=-1):
+    def get_solar_power(self, curtailment=1):
         c = 0.5 - 0.5 * curtailment # maps curtailment -1 to 100% reduction and 1 to no curtailment
         self.solar_power = (1 - c) * self.sim_results['solar_gen'][self.time_step]
         return self.solar_power
