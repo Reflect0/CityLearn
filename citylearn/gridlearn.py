@@ -107,7 +107,9 @@ class GridLearn: # not a super class of the CityLearn environment
 
     def add_houses(self, n, pv_penetration):
         if self.max_num_houses:
-            n = 1
+            m = 1
+        else:
+            m = n + np.random.randint(-2,8)
         houses = []
         b = 0
 
@@ -124,7 +126,7 @@ class GridLearn: # not a super class of the CityLearn environment
             self.net.load.drop(self.net.load[self.net.load.bus == existing_node].index, inplace=True)
 
             # add n houses at each of these nodes
-            for i in range(n):
+            for i in range(m):
                 # bid = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
                 if not self.building_ids:
                     with open(self.buildings_states_actions_file) as file:
@@ -136,14 +138,14 @@ class GridLearn: # not a super class of the CityLearn environment
                 bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, uid, save_memory=self.save_memory)
                 bldg.assign_bus(existing_node)
                 bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
-                # if np.random.uniform() <= pv_penetration:
-                bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
+                if np.random.uniform() <= 0.2:#pv_penetration:
+                # bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
                 # if existing_node in self.pv_buses:
-                #     bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
-                #     bldg.set_action_space()
-                # else:
-                #     bldg.gen_index = -1
-                #     bldg.set_action_space()
+                    bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
+                    # bldg.set_action_space()
+                else:
+                    bldg.gen_index = -1
+                    # bldg.set_action_space()
 
                 buildings[bldg.buildingId] = bldg
                 bldg.assign_neighbors(self.net)
