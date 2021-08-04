@@ -584,7 +584,7 @@ class Building:
     def get_solar_power(self, curtailment=1):
         c = 0.5 - 0.5 * curtailment # maps curtailment -1 to 100% reduction and 1 to no curtailment
         self.solar_power = (1 - c) * self.sim_results['solar_gen'][self.time_step]
-        return 5*self.solar_power
+        return self.solar_power
 
     def set_phase_lag(self,phi=-1):
         # mapping to that -1 is 0 and 1 in np.pi/2
