@@ -138,7 +138,7 @@ class GridLearn: # not a super class of the CityLearn environment
                 bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, uid, save_memory=self.save_memory)
                 bldg.assign_bus(existing_node)
                 bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
-                if np.random.uniform() <= 2:#pv_penetration:
+                if np.random.uniform() <= 0.2:#pv_penetration:
                 # bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
                 # if existing_node in self.pv_buses:
                     bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
