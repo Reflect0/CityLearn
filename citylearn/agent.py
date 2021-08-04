@@ -87,7 +87,7 @@ class RBC_Agent:
                 actions += [0.91]
 
         if self.env.enabled_actions['pv_curtail']:
-            actions += [1.0]
+            actions += [-1.0]
 
         if self.env.enabled_actions['pv_phi']:
             actions += [0.0]
@@ -133,7 +133,7 @@ class RBC_Agent_v2:
                 actions += [0.91]
 
         if self.env.enabled_actions['pv_curtail']:
-            actions += [1.0]
+            actions += [-1.0]
 
         if self.env.enabled_actions['pv_phi']:
             actions += [0.0]
