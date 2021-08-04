@@ -109,7 +109,7 @@ class GridLearn: # not a super class of the CityLearn environment
         if self.max_num_houses:
             m = 1
         else:
-            m = n + np.random.randint(-2,8)
+            m = n# + np.random.randint(-2,8)
         houses = []
         b = 0
 
