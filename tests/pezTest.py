@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "non_curtail"
+model_name = "oneX_pv"
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
