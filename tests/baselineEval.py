@@ -25,7 +25,7 @@ data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 
 config = {
-    "model_name":"baseline_more",
+    "model_name":"baseline_noncurtail",
     "data_path":data_path,
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
