@@ -50,6 +50,7 @@ class GridLearn: # not a super class of the CityLearn environment
 
         self.voltage_data = []
         self.load_data = []
+        self.gen_data = []
         self.reward_data = []
 
         aspace, ospace = self.get_spaces(self.agents)
@@ -277,6 +278,7 @@ class GridLearn: # not a super class of the CityLearn environment
         self.voltage_data += [list(self.net.res_bus['vm_pu'])]
         #print(self.voltage_data)
         self.load_data += [list(self.net.load['p_mw'])]
+        self.gen_data += [list(self.net.sgen['p_mw'])]
         return obs, self.get_reward(rl_agent_keys), self.get_done(rl_agent_keys), self.get_info(rl_agent_keys)
 
     def update_grid(self):
