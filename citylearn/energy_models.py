@@ -111,7 +111,7 @@ class Building:
 
     def assign_bus(self, bus):
         self.bus = bus
-        self.buildingId += f'{n:02}'
+        self.buildingId += f'{bus:02}'
 
     def set_attributes(self, file):
         with open(file) as json_file:
