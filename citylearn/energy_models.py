@@ -115,7 +115,7 @@ class Building:
         return
 
     def assign_cluster(self, cluster):
-        self.buildingId += str(cluster)
+        self.buildingCluster = cluster
         return
 
     def set_attributes(self, file):
@@ -217,12 +217,12 @@ class Building:
 
     def get_reward(self, net): # dummy cost function
         #my_voltage_dev = (10*np.clip(net.res_bus.loc[self.bus]['vm_pu']-1,-.1,.1))**2
-        my_voltage_dev = (20*net.res_bus.loc[self.bus]['vm_pu']-1)**2
+        my_voltage_dev = (10*net.res_bus.loc[self.bus]['vm_pu']-1)**2
         my_cons = (self.current_gross_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
         my_neighbors_voltage_dev = sum(np.square(10 * np.clip(net.res_bus.loc[self.neighbors]['vm_pu']-1,-.1,.1)))
-        reward = -1 * (my_voltage_dev + 0.3*my_neighbors_voltage_dev) #+ my_neighbors_voltage_dev)
+        reward = -1 * (my_voltage_dev) #+ my_neighbors_voltage_dev)
         #print(reward)
-        reward = (reward + 365)/9
+        reward =2*reward + 1
         # if not self.rbc:
         #     if self.solar_generation <= 0.000000001:
         #         if self.action_angle:
@@ -286,7 +286,7 @@ class Building:
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
     def close(self, folderName):
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
         # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_pv.csv', np.array(self.pv_log), delimiter=',', fmt='%s')
         # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_hvacload.csv', np.array(self.hvacload_log), delimiter=',', fmt='%s')
         # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_unshiftload.csv', np.array(self.unshiftload_log), delimiter=',', fmt='%s')
