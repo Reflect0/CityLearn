@@ -53,7 +53,7 @@ class Building:
         self.hourly_timesteps = hourly_timesteps
 
         # create a Unique Building ID
-        self.buildingId = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        self.buildingId = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
 
         with open(buildings_states_actions_file) as json_file:
             buildings_states_actions = json.load(json_file, object_pairs_hook=OrderedDict)
@@ -111,6 +111,7 @@ class Building:
 
     def assign_bus(self, bus):
         self.bus = bus
+        self.buildingId += f'{n:02}'
 
     def set_attributes(self, file):
         with open(file) as json_file:
