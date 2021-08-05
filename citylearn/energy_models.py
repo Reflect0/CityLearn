@@ -112,6 +112,11 @@ class Building:
     def assign_bus(self, bus):
         self.bus = bus
         self.buildingId += f'{bus:03}'
+        return
+
+    def assign_cluster(self, cluster):
+        self.buildingId += str(cluster)
+        return
 
     def set_attributes(self, file):
         with open(file) as json_file:

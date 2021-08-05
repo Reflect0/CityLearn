@@ -194,6 +194,10 @@ class GridLearn: # not a super class of the CityLearn environment
             rl_agents = set(np.random.choice(cluster, n_agents))
             rbc_agents = set(cluster) - rl_agents
             agent_clusters += [(list(rl_agents), list(rbc_agents))]
+
+        for n in range(self.nclusters):
+            for bldg in agent_clusters[n][0]:
+                self.buildings[bldg].assign_cluster(n)
         return agent_clusters
 
     def calc_system_losses(self):
