@@ -64,8 +64,22 @@ class RBC_Agent:
     def reset_action_tracker(self):
         self.action_tracker = []
 
+    def get_tou_storage(self, hour):
+        if hour < 7:
+            a = 0.1383
+        elif hour < 16:
+            a = -0.05
+        elif hour < 18:
+            a = -0.11
+        elif hour < 22:
+            a = -0.06
+        else:
+            a = 0.085
+        return a
+
     def predict(self):
         hour_day = self.env.time_step / self.env.hourly_timesteps % 24
+        tou_storage = self.get_tou_storage(hour_day)
         daytime = True if hour_day >= self.env.morning and hour_day <= self.env.night else False
         # daytime = True if hour_day >= 1 and hour_day <= 21 else False
 
@@ -73,18 +87,10 @@ class RBC_Agent:
         # for action, enabled in self.env.enabled_actions.items():
         #     if enabled:
         if self.env.enabled_actions['cooling_storage']:
-            # actions += [0.0]
-            if daytime:
-                actions += [-0.08]
-            else:
-                actions += [0.91]
+            actions += [tou_storage]
 
         if self.env.enabled_actions['dhw_storage']:
-            # actions += [0.0]
-            if daytime:
-                actions += [-0.08]
-            else:
-                actions += [0.91]
+            actions += [tou_storage]
 
         if self.env.enabled_actions['pv_curtail']:
             actions += [1.0]
@@ -93,11 +99,7 @@ class RBC_Agent:
             actions += [0.0]
 
         if self.env.enabled_actions['electrical_storage']:
-            # actions += [0.0]
-            if daytime:
-                actions += [-0.08]
-            else:
-                actions += [0.91]
+            actions += [tou_storage]
 
         return actions # casting this as a list of list matches the predict function in Stable Baselines.
 
@@ -112,6 +114,7 @@ class RBC_Agent_v2:
 
     def predict(self):
         hour_day = self.env.time_step/self.env.hourly_timesteps % 24
+        tou_storage = self.get_tou_storage(hour_day)
         daytime = True if hour_day >= self.env.morning and hour_day <= self.env.night else False
         # daytime = True if hour_day >= 1 and hour_day <= 21 else False
         #print("hour day", hour_day, self.env.time_step)
@@ -119,18 +122,10 @@ class RBC_Agent_v2:
         # for action, enabled in self.env.enabled_actions.items():
         #     if enabled:
         if self.env.enabled_actions['cooling_storage']:
-            # actions += [0.0]
-            if daytime:
-                actions += [-0.08]
-            else:
-                actions += [0.91]
+            actions += [tou_storage]
 
         if self.env.enabled_actions['dhw_storage']:
-            # actions += [0.0]
-            if daytime:
-                actions += [-0.08]
-            else:
-                actions += [0.91]
+            actions += [tou_storage]
 
         if self.env.enabled_actions['pv_curtail']:
             actions += [1.0]
@@ -139,10 +134,6 @@ class RBC_Agent_v2:
             actions += [0.0]
 
         if self.env.enabled_actions['electrical_storage']:
-            # actions += [0.0]
-            if daytime:
-                actions += [-0.08]
-            else:
-                actions += [0.91]
+            actions += [tou_storage]
 
         return actions
