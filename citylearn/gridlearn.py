@@ -103,7 +103,7 @@ class GridLearn: # not a super class of the CityLearn environment
                     net.bus_geodata.at[c[i], sw] = net.bus_geodata.at[c[i-1], sw] + 0.2
                     net.bus_geodata.at[c[i], st] = net.bus_geodata.at[c[i-1], st]
 
-        net.ext_grid.at[0,'vm_pu'] = 1.02
+        net.ext_grid.at[0,'vm_pu'] = 1.04
         return net
 
     def add_houses(self, n, pv_penetration):
@@ -310,6 +310,7 @@ class GridLearn: # not a super class of the CityLearn environment
         np.savetxt(f'models/{self.model_name}/voltage.csv', np.array(self.voltage_data), delimiter=",")
         np.savetxt(f'models/{self.model_name}/load.csv', np.array(self.load_data), delimiter=",")
         np.savetxt(f'models/{self.model_name}/reward.csv', np.array(self.reward_data), delimiter=",")
+        np.savetxt(f'models/{self.model_name}/solar.csv', np.array(self.gen_data), delimiter=",")
         if not os.path.isdir(f'models/{self.model_name}/homes/'):
             os.mkdir(f'models/{self.model_name}/homes')
         for agent in self.rl_agents:
