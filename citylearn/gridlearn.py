@@ -277,8 +277,8 @@ class GridLearn: # not a super class of the CityLearn environment
         #print(obs)
         self.voltage_data += [list(self.net.res_bus['vm_pu'])]
         #print(self.voltage_data)
-        self.load_data += [list(self.net.load['p_mw'])]
-        self.gen_data += [list(self.net.sgen['p_mw'])]
+        self.load_data += [sum(list(self.net.load['p_mw']))]
+        self.gen_data += [sum(list(self.net.sgen['p_mw']))]
         return obs, self.get_reward(rl_agent_keys), self.get_done(rl_agent_keys), self.get_info(rl_agent_keys)
 
     def update_grid(self):
