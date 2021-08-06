@@ -106,7 +106,7 @@ class Building:
         self.unshiftload_log = []
         self.dhwload_log = []
         self.hvacload_log = []
-
+        self.track = []
         self.night, self.morning = np.random.randint(20,22), np.random.randint(4,10)
 
     def assign_bus(self, bus):
@@ -337,11 +337,13 @@ class Building:
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         # print(_solar_generation, phi, _non_shiftable_load, _electric_demand_dhw, _electric_demand_cooling)
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
-        self.current_gross_generation = round(self.solar_generation + min(0, _batt_power), 3)
-        self.pv_log += [self.solar_generation]
-        self.dhwload_log += [_electric_demand_dhw]
-        self.hvacload_log += [_electric_demand_cooling]
-        self.unshiftload_log += [_non_shiftable_load]
+        # print('solar generation',self.solar_generation)
+        self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 3)
+        self.track += [self.current_gross_generation]
+        # print('gross generation',self.current_gross_generation)
+        # print('batt generation',min(0, _batt_power))
+
+        #self.net_log += [self.current_gross_electricity_demand]
         # obs = self.get_obs()
         # reward = self.get_reward(obs)
         # done = False
@@ -590,6 +592,7 @@ class Building:
     def get_solar_power(self, curtailment=1):
         c = 0.5 - 0.5 * curtailment # maps curtailment -1 to 100% reduction and 1 to no curtailment
         self.solar_power = (1 - c) * self.sim_results['solar_gen'][self.time_step]
+        #print(self.solar_power, c, self.)
         return 3*self.solar_power
 
     def set_phase_lag(self,phi=-1):
