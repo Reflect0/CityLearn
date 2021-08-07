@@ -105,9 +105,9 @@ class GridLearn: # not a super class of the CityLearn environment
 
         net.ext_grid.at[0,'vm_pu'] = 1.0
 
-        pp.create_shunt_as_capacitor(net,14,0.3,-1)
-        pp.create_shunt_as_capacitor(net,24,0.6,-1)
-        pp.create_shunt_as_capacitor(net,30,1.2,-1)
+        pp.create_shunt_as_capacitor(net,14,0.3,1)
+        pp.create_shunt_as_capacitor(net,24,0.6,1)
+        pp.create_shunt_as_capacitor(net,30,1.2,1)
         return net
 
     def add_houses(self, n, pv_penetration):
