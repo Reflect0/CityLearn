@@ -21,7 +21,7 @@ import time
 import os
 
 # multiprocessing.set_start_method("fork")
-model_name = "v7"
+model_name = "v8_reset"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
