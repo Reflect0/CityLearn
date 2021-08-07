@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "v6"
+model_name = "v7"
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")

@@ -103,7 +103,7 @@ class GridLearn: # not a super class of the CityLearn environment
                     net.bus_geodata.at[c[i], sw] = net.bus_geodata.at[c[i-1], sw] + 0.2
                     net.bus_geodata.at[c[i], st] = net.bus_geodata.at[c[i-1], st]
 
-        net.ext_grid.at[0,'vm_pu'] = 1.02
+        net.ext_grid.at[0,'vm_pu'] = 1.0
 
         pp.create_shunt(net,14,0.3,0.1)
         pp.create_shunt(net,24,0.6,0.1)
