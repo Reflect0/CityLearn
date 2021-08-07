@@ -104,6 +104,10 @@ class GridLearn: # not a super class of the CityLearn environment
                     net.bus_geodata.at[c[i], st] = net.bus_geodata.at[c[i-1], st]
 
         net.ext_grid.at[0,'vm_pu'] = 1.02
+
+        pp.create_shunt(net,14,300)#,0)
+        pp.create_shunt(net,24,600)#,0)
+        #pp.create_shunt(net,30,1200)#,0)
         return net
 
     def add_houses(self, n, pv_penetration):
@@ -269,8 +273,6 @@ class GridLearn: # not a super class of the CityLearn environment
         except:
             pp.diagnostic(self.net)
             quit()
-        #self.ts += 1
-        print("calling increment timestep", self.ts)
         rl_agent_keys = list(action_dict.keys())
         rl_agent_keys = [agent for agent in rl_agent_keys if agent in self.rl_agents ]
         obs = self.state(rl_agent_keys)
