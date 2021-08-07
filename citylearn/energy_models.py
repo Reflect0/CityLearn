@@ -223,6 +223,7 @@ class Building:
         reward = -1 * (my_voltage_dev) #+ my_neighbors_voltage_dev)
         #print(reward)
         reward =2*reward + 1
+        reward = (reward + 630)/45
         # if not self.rbc:
         #     if self.solar_generation <= 0.000000001:
         #         if self.action_angle:
