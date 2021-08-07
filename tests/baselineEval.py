@@ -51,7 +51,7 @@ for env in envs:
 
 sum_reward = 0
 obss = [env.reset() for env in envs]
-for ts in range(7*24*4): # test on 5 timesteps
+for ts in range(26*7*24*4): # test on 5 timesteps
     for m in range(len(envs)): # again, alternate through models
 
         obss[m], reward, done, info = envs[m].step({}) # update environment
