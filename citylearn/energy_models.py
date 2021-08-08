@@ -9,6 +9,7 @@ import pandapower as pp
 from pandapower import runpp
 import gym
 from collections import OrderedDict
+
 def subhourly_lin_interp(hourly_data, subhourly_steps, subdivide=False):
     """ Returns a linear interpolation of a data array as a list """
     n = len(hourly_data)
@@ -580,6 +581,7 @@ class Building:
     def get_solar_power(self, curtailment=1):
         c = 0.5 - 0.5 * curtailment # maps curtailment -1 to 100% reduction and 1 to no curtailment
         self.solar_power = (1 - c) * self.sim_results['solar_gen'][self.time_step]
+        #print("DEBUG",self.sim_results['solar_gen'][self.time_step], self.time_step, self.solar_power)
         #print(self.solar_power, c, self.)
         return self.solar_power
 
