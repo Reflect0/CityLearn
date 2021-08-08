@@ -865,7 +865,7 @@ class HeatPump:
         self.electrical_consumption_heating = []
         self.heat_supply = []
         self.cooling_supply = []
-        self.time_step = 730#0
+        self.time_step = 0
 
     def terminate(self):
         if self.save_memory == False:
