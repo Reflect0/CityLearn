@@ -9,18 +9,22 @@ import pandapower as pp
 from pandapower import runpp
 import gym
 from collections import OrderedDict
-def subhourly_lin_interp(hourly_data, subhourly_steps):
+def subhourly_lin_interp(hourly_data, subhourly_steps, subdivide=False):
     """ Returns a linear interpolation of a data array as a list """
     n = len(hourly_data)
     data = np.interp(np.linspace(0, n, n*subhourly_steps), np.arange(n), hourly_data)
+    if subdivide:
+        data = np.divide(data, subhourly_steps)
     return list(data)
 
-def subhourly_noisy_interp(hourly_data, subhourly_steps):
+def subhourly_noisy_interp(hourly_data, subhourly_steps, subdivide=False):
     """ Returns a noisy distribution of power consumption +/- 5% standard deviation of the original power draw."""
     n = len(hourly_data)
     data = np.repeat(hourly_data, subhourly_steps)
     perturbation = np.random.normal(1.0, 0.05, n*subhourly_steps)
     data = np.multiply(data, perturbation)
+    if subdivide:
+        data = np.divide(data, subhourly_steps)
     return list(data)
 
 def subhourly_randomdraw_interp(hourly_data, subhourly_steps, dhw_pwr):
@@ -161,9 +165,9 @@ class Building:
             data = pd.read_csv(csv_file)
 
         res = {}
-        res['cooling_demand'] = subhourly_lin_interp(data['Cooling Load [kWh]'], self.hourly_timesteps)
+        res['cooling_demand'] = subhourly_lin_interp(data['Cooling Load [kWh]'], self.hourly_timesteps, subdivide=True)
         res['dhw_demand'] = list(data['DHW Heating [kWh]'])
-        res['non_shiftable_load'] = subhourly_noisy_interp(data['Equipment Electric Power [kWh]'], self.hourly_timesteps)
+        res['non_shiftable_load'] = subhourly_noisy_interp(data['Equipment Electric Power [kWh]'], self.hourly_timesteps, subdivide=True)
         res['month'] = list(np.repeat(data['Month'], self.hourly_timesteps))
         res['day'] = list(np.repeat(data['Day Type'], self.hourly_timesteps))
         res['hour'] = list(np.repeat(data['Hour'], self.hourly_timesteps))
@@ -861,7 +865,7 @@ class HeatPump:
         self.electrical_consumption_heating = []
         self.heat_supply = []
         self.cooling_supply = []
-        self.time_step = 0
+        self.time_step = 730#0
 
     def terminate(self):
         if self.save_memory == False:
