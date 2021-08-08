@@ -581,7 +581,7 @@ class Building:
     def get_solar_power(self, curtailment=1):
         c = 0.5 - 0.5 * curtailment # maps curtailment -1 to 100% reduction and 1 to no curtailment
         self.solar_power = (1 - c) * self.sim_results['solar_gen'][self.time_step]
-        #print("DEBUG",self.sim_results['solar_gen'][self.time_step], self.time_step, self.solar_power)
+        print("DEBUG",self.sim_results['solar_gen'][self.time_step], self.time_step, self.solar_power)
         #print(self.solar_power, c, self.)
         return self.solar_power
 
