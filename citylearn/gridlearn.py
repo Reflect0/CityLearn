@@ -25,7 +25,6 @@ class GridLearn: # not a super class of the CityLearn environment
         self.data_path = data_path
         self.climate_zone = climate_zone
         self.buildings_states_actions_file = buildings_states_actions_file
-        # print(self.buildings_states_actions_file)
         self.hourly_timesteps = hourly_timesteps
         self.save_memory = save_memory
         self.building_ids = building_ids
