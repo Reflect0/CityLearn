@@ -230,13 +230,7 @@ class Building:
         reward =2*reward + 1
         reward = (reward + 630)/45
         reward = (reward-40)/5 #version 9
-        # if not self.rbc:
-        #     if self.solar_generation <= 0.000000001:
-        #         if self.action_angle:
-        #             reward -= 0.05*(self.action_angle - 1)
-        #         if self.action_curtail:
-        #             reward -= 0.05*(self.action_curtail - 1)
-        #print(reward)
+
         return reward
 
     def get_obs(self, net):
@@ -294,7 +288,7 @@ class Building:
 
     def close(self, folderName):
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
-        # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_pv.csv', np.array(self.pv_log), delimiter=',', fmt='%s')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_pv.csv', np.array(self.sim_results['solar_gen']), delimiter=',', fmt='%s')
         # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_hvacload.csv', np.array(self.hvacload_log), delimiter=',', fmt='%s')
         # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_unshiftload.csv', np.array(self.unshiftload_log), delimiter=',', fmt='%s')
         # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_dhwload.csv', np.array(self.dhwload_log), delimiter=',', fmt='%s')
@@ -302,8 +296,6 @@ class Building:
 
     def step(self, a):
         self.action_log += [a]
-        # print(a, self.enabled_actions)
-        # take an action
 
         if self.enabled_actions['cooling_storage']:
             _electric_demand_cooling = self.set_storage_cooling(a[0])
@@ -343,10 +335,9 @@ class Building:
 
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
-        self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 3)
+        self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
+        print("gross", self.current_gross_generation)
         self.time_step = (self.time_step + 1) % (8760 * self.hourly_timesteps)
-        # if self.time_step > 8640: # 90 days
-        #     self.time_step = 0
         return
 
     def set_dhw_draws(self):
