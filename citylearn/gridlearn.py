@@ -140,7 +140,7 @@ class GridLearn: # not a super class of the CityLearn environment
                 prob = np.ones(len(self.building_ids))
                 prob[[1,3,4,5,6,7]] = 10 # building at index 0, 2, 8 correspond to buildings with high energy use
                 prob = prob / sum(prob)
-                uid = random.choice(self.building_ids, p=prob)
+                uid = np.random.choice(self.building_ids, p=prob)
                 # print(uid)
                 bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, uid, save_memory=self.save_memory)
                 bldg.assign_bus(existing_node)
