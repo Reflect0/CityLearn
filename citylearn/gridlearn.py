@@ -104,9 +104,9 @@ class GridLearn: # not a super class of the CityLearn environment
 
         net.ext_grid.at[0,'vm_pu'] = 1.0
 
-        pp.create_shunt_as_capacitor(net,14,0.3,1)
-        pp.create_shunt_as_capacitor(net,24,0.6,1)
-        pp.create_shunt_as_capacitor(net,30,1.2,1)
+        pp.create_shunt_as_capacitor(net,14,0.3,0)
+        pp.create_shunt_as_capacitor(net,24,0.6,0)
+        pp.create_shunt_as_capacitor(net,30,1.2,0)
         return net
 
     def add_houses(self, n, pv_penetration):
@@ -137,7 +137,10 @@ class GridLearn: # not a super class of the CityLearn environment
                         buildings_states_actions = json.load(file)
                     self.building_ids = list(buildings_states_actions.keys())
                     # print(self.building_ids)
-                uid = random.choice(self.building_ids)
+                prob = np.ones(len(self.buildings_ids))
+                prob[[1,3,4,5,6,7]] = 10 # building at index 0, 2, 8 correspond to buildings with high energy use
+                prob = prob / sum(prob)
+                uid = random.choice(self.building_ids, p=prob)
                 # print(uid)
                 bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, uid, save_memory=self.save_memory)
                 bldg.assign_bus(existing_node)
@@ -289,7 +292,6 @@ class GridLearn: # not a super class of the CityLearn environment
             self.net.load.at[bldg.load_index, 'sn_mva'] = bldg.current_gross_electricity_demand * 0.001
 
             if bldg.gen_index > -1: # assume PV and battery are both behind the inverter
-                print('gross generation', bldg.current_gross_generation)
                 self.net.sgen.at[bldg.gen_index, 'p_mw'] = -1 * bldg.current_gross_generation * np.cos(bldg.phi) * 0.001
                 self.net.sgen.at[bldg.gen_index, 'q_mvar'] = bldg.current_gross_generation * np.sin(bldg.phi) * 0.001
 
