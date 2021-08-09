@@ -289,7 +289,7 @@ class GridLearn: # not a super class of the CityLearn environment
             self.net.load.at[bldg.load_index, 'sn_mva'] = bldg.current_gross_electricity_demand * 0.001
 
             if bldg.gen_index > -1: # assume PV and battery are both behind the inverter
-                #print('gross generation', bldg.current_gross_generation)
+                print('gross generation', bldg.current_gross_generation)
                 self.net.sgen.at[bldg.gen_index, 'p_mw'] = -1 * bldg.current_gross_generation * np.cos(bldg.phi) * 0.001
                 self.net.sgen.at[bldg.gen_index, 'q_mvar'] = bldg.current_gross_generation * np.sin(bldg.phi) * 0.001
 
