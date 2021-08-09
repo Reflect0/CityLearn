@@ -29,7 +29,7 @@ config = {
     "data_path":data_path,
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
-    "hourly_timesteps":2,
+    "hourly_timesteps":4,
     "percent_rl":0.1,
     # "percent_rl":1,
     "nclusters":4,
