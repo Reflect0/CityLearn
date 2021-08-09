@@ -25,11 +25,11 @@ data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 
 config = {
-    "model_name":"hourly",
+    "model_name":"30min",
     "data_path":data_path,
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
-    "hourly_timesteps":1,
+    "hourly_timesteps":2,
     "percent_rl":0.1,
     # "percent_rl":1,
     "nclusters":4,
@@ -51,7 +51,7 @@ for env in envs:
 
 sum_reward = 0
 obss = [env.reset() for env in envs]
-for ts in range(7*24): # test on 5 timesteps
+for ts in range(7*24*2): # test on 5 timesteps
     for m in range(len(envs)): # again, alternate through models
 
         obss[m], reward, done, info = envs[m].step({}) # update environment
