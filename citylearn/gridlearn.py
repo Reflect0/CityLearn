@@ -104,9 +104,9 @@ class GridLearn: # not a super class of the CityLearn environment
 
         net.ext_grid.at[0,'vm_pu'] = 1.0
 
-        # pp.create_shunt_as_capacitor(net,14,0.3,0)
-        # pp.create_shunt_as_capacitor(net,24,0.6,0)
-        # pp.create_shunt_as_capacitor(net,30,1.2,0)
+        pp.create_shunt_as_capacitor(net,14,0.3,0)
+        pp.create_shunt_as_capacitor(net,24,0.6,0)
+        pp.create_shunt_as_capacitor(net,30,1.2,0)
         return net
 
     def add_houses(self, n, pv_penetration):
@@ -145,14 +145,10 @@ class GridLearn: # not a super class of the CityLearn environment
                 bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, uid, save_memory=self.save_memory)
                 bldg.assign_bus(existing_node)
                 bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
-                if np.random.uniform() <= 2:#pv_penetration:
-                # bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
-                # if existing_node in self.pv_buses:
+                if np.random.uniform() <= 2:
                     bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
-                    # bldg.set_action_space()
                 else:
                     bldg.gen_index = -1
-                    # bldg.set_action_space()
 
                 buildings[bldg.buildingId] = bldg
                 bldg.assign_neighbors(self.net)
@@ -205,6 +201,7 @@ class GridLearn: # not a super class of the CityLearn environment
         for n in range(self.nclusters):
             for bldg in agent_clusters[n][0]:
                 self.buildings[bldg].assign_cluster(n)
+
         return agent_clusters
 
     def calc_system_losses(self):
@@ -278,9 +275,15 @@ class GridLearn: # not a super class of the CityLearn environment
         rl_agent_keys = list(action_dict.keys())
         rl_agent_keys = [agent for agent in rl_agent_keys if agent in self.rl_agents ]
         obs = self.state(rl_agent_keys)
-        #print(obs)
         self.voltage_data += [list(self.net.res_bus['vm_pu'])]
-        #print(self.voltage_data)
+
+        for i in self.net.shunt.index:
+            bus = self.net.shunt.bus[i]
+            if np.mean(np.array(self.voltage_data[-12*self.hourly_timesteps:,bus])) < 0.95:
+                self.net.shunt.at[i,'in_service'] = True
+            elif np.mean(np.array(self.voltage_data[-12*self.hourly_timesteps:,bus])) > 1.02:
+                self.net.shunt.at[i,'in_service'] = False
+
         self.load_data += [sum(list(self.net.load['p_mw']))]
         self.gen_data += [sum(list(self.net.sgen['p_mw']))]
         return obs, self.get_reward(rl_agent_keys), self.get_done(rl_agent_keys), self.get_info(rl_agent_keys)
