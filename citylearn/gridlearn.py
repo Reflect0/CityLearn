@@ -279,9 +279,9 @@ class GridLearn: # not a super class of the CityLearn environment
 
         for i in self.net.shunt.index:
             bus = self.net.shunt.bus[i]
-            if np.mean(np.array(self.voltage_data[-12*self.hourly_timesteps:,bus])) < 0.95:
+            if np.mean(np.array(self.voltage_data[:,bus][-12*self.hourly_timesteps:])) < 0.95:
                 self.net.shunt.at[i,'in_service'] = True
-            elif np.mean(np.array(self.voltage_data[-12*self.hourly_timesteps:,bus])) > 1.02:
+            elif np.mean(np.array(self.voltage_data[:,bus][-12*self.hourly_timesteps:])) > 1.02:
                 self.net.shunt.at[i,'in_service'] = False
 
         self.load_data += [sum(list(self.net.load['p_mw']))]
