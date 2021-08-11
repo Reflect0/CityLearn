@@ -49,6 +49,7 @@ class Building:
             dhw_heating_device (ElectricHeater or HeatPump)
             cooling_device (HeatPump)
         """
+        self.start_time=8760
         weather_file = os.path.join(data_path, "weather_data.csv")
         solar_file = os.path.join(data_path, "solar_generation_1kW.csv")
         self.hourly_timesteps = hourly_timesteps
@@ -568,6 +569,7 @@ class Building:
     def get_solar_power(self, curtailment=1):
         c = 0.5 - 0.5 * curtailment # maps curtailment -1 to 100% reduction and 1 to no curtailment
         self.solar_power = (1 - c) * self.sim_results['solar_gen'][self.time_step]
+        #print('timestep', self.time_step)
         #print("DEBUG",self.sim_results['solar_gen'][self.time_step], self.time_step, self.solar_power)
         #print(self.solar_power, c, self.)
         return self.solar_power
@@ -598,14 +600,15 @@ class Building:
     def get_cooling_electric_demand(self):
         return self.cooling_device._electrical_consumption_cooling
 
-    def reset_timestep(self, net):
-        self.time_step = 0
-        return self.reset(net)
+    def reset_timestep(self, net, reset_logs):
+        self.time_step = self.start_time
+        return self.reset(net, reset_logs)
 
-    def reset(self, net):
+    def reset(self, net, reset_logs):
 
         self.current_gross_electricity_demand = self.sim_results['non_shiftable_load'][self.time_step]
         self.current_gross_generation = self.sim_results['solar_gen'][self.time_step]
+        #print('getting solar for', self.time_step)
 
         if self.dhw_storage is not None:
             self.dhw_storage.reset()
@@ -623,34 +626,35 @@ class Building:
         self._electric_consumption_cooling_storage = 0.0
         self._electric_consumption_dhw_storage = 0.0
 
-        self.cooling_demand_building = []
-        self.dhw_demand_building = []
-        self.electric_consumption_appliances = []
-        self.electric_generation = []
+        if reset_logs:
+            self.cooling_demand_building = []
+            self.dhw_demand_building = []
+            self.electric_consumption_appliances = []
+            self.electric_generation = []
 
-        self.electric_consumption_cooling = []
-        self.electric_consumption_cooling_storage = []
-        self.electric_consumption_dhw = []
-        self.electric_consumption_dhw_storage = []
+            self.electric_consumption_cooling = []
+            self.electric_consumption_cooling_storage = []
+            self.electric_consumption_dhw = []
+            self.electric_consumption_dhw_storage = []
 
-        self.net_electric_consumption = []
-        self.net_electric_consumption_no_storage = []
-        self.net_electric_consumption_no_pv_no_storage = []
+            self.net_electric_consumption = []
+            self.net_electric_consumption_no_storage = []
+            self.net_electric_consumption_no_pv_no_storage = []
 
-        self.cooling_storage_action = []
-        self.cooling_device_to_building = []
-        self.cooling_storage_to_building = []
-        self.cooling_device_to_storage = []
-        self.cooling_storage_soc = []
+            self.cooling_storage_action = []
+            self.cooling_device_to_building = []
+            self.cooling_storage_to_building = []
+            self.cooling_device_to_storage = []
+            self.cooling_storage_soc = []
 
-        self.dhw_storage_action = []
-        self.dhw_heating_device_to_building = []
-        self.dhw_storage_to_building = []
-        self.dhw_heating_device_to_storage = []
-        self.dhw_storage_soc = []
+            self.dhw_storage_action = []
+            self.dhw_heating_device_to_building = []
+            self.dhw_storage_to_building = []
+            self.dhw_heating_device_to_storage = []
+            self.dhw_storage_soc = []
 
-        self.electrical_storage_electric_consumption = []
-        self.electrical_storage_soc = []
+            self.electrical_storage_electric_consumption = []
+            self.electrical_storage_soc = []
         return self.get_obs(net)
 
     def terminate(self):
@@ -854,7 +858,7 @@ class HeatPump:
         self.electrical_consumption_heating = []
         self.heat_supply = []
         self.cooling_supply = []
-        self.time_step = 0
+        #self.time_step = start_time
 
     def terminate(self):
         if self.save_memory == False:
@@ -941,6 +945,7 @@ class ElectricHeater:
         self.max_heating = None
         self.electrical_consumption_heating = []
         self.heat_supply = []
+        #self.time_step = start_time
 
 class EnergyStorage:
     def __init__(self,  hourly_steps, capacity = None, max_power_output = None, max_power_charging = None, efficiency = 1, loss_coeff = 0, save_memory = True):
@@ -1021,7 +1026,7 @@ class EnergyStorage:
         self._soc = np.random.uniform(0.2*self.capacity,0.8*self.capacity)#0 #State of charge
         self.energy_balance = [] #Positive for energy entering the storage
         self._energy_balance = 0
-        self.time_step = 0
+        #self.time_step = start_time
 
 class Battery:
     def __init__(self, hourly_timesteps, capacity, nominal_power = None, capacity_loss_coeff = None, power_efficiency_curve = None, capacity_power_curve = None, efficiency = None, loss_coeff = 0, save_memory = True):
@@ -1149,4 +1154,4 @@ class Battery:
         self._soc = np.random.uniform(0.2*self.capacity,0.8*self.capacity) #State of charge
         self.energy_balance = [] #Positive for energy entering the storage
         self._energy_balance = 0
-        self.time_step = 0
+        #self.time_step = start_time
