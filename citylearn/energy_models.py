@@ -49,7 +49,7 @@ class Building:
             dhw_heating_device (ElectricHeater or HeatPump)
             cooling_device (HeatPump)
         """
-        self.start_time=0#8760
+        self.start_time=8760
         weather_file = os.path.join(data_path, "weather_data.csv")
         solar_file = os.path.join(data_path, "solar_generation_1kW.csv")
         self.hourly_timesteps = hourly_timesteps
@@ -96,7 +96,7 @@ class Building:
         self.set_action_space()
         # reset/initialize the home to timestep = 0
         # self.grid = self.add_grid(grid)
-        self.time_step = 0
+        self.time_step = self.start_time
         self.current_gross_electricity_demand = 0
         self.current_gross_generation = 0
         self.phi = 0
