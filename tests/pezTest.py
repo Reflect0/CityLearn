@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "reward_v2"
+model_name = "winter"
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
@@ -64,10 +64,10 @@ for env in envs:
 models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=512, n_steps=1, ent_coef=0.001, learning_rate=0.00001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
 #models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
 
-nloops=1
+nloops=2
 for loop in range(nloops):
     env.reset()
-    for ts in range(2*8759):
+    for ts in range(1*8759):
         for model in models:
             # print("CALL LEARN")
             model.learn(1, reset_num_timesteps=False)
