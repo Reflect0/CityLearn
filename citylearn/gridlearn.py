@@ -227,10 +227,10 @@ class GridLearn: # not a super class of the CityLearn environment
                 state = next_state
             self.cost_rbc = env_rbc.get_baseline_cost()
 
-    def reset(self, agents):
+    def reset(self, agents, reset_logs):
         self.system_losses = []
         self.voltage_dev = []
-        return {k:self.buildings[k].reset_timestep(self.net) for k in agents}
+        return {k:self.buildings[k].reset_timestep(self.net, reset_logs) for k in agents}
 
     def state(self, agents):
         obs = {k: np.array(self.buildings[k].get_obs(self.net)) for k in agents}
@@ -340,9 +340,10 @@ class MyEnv(ParallelEnv):
     def set_grid(self, grid):
         self.grid = grid
 
-    def reset(self):
+    def reset(self, reset_logs=True):
         print('calling reset...')
-        self.grid.reset(self.agents)
+        self.grid.reset(self.agents, reset_logs)
+        self.grid.reset([agent.env.buildingId for agent in self.rbc_agents], reset_logs)
         return self.state()
 
     def state(self):
