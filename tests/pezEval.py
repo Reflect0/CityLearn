@@ -21,7 +21,7 @@ import time
 import os
 
 # multiprocessing.set_start_method("fork")
-model_name = "seasonal_summer"
+model_name = "reward_v2"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
@@ -68,7 +68,7 @@ models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
 
 sum_reward = 0
 obss = [env.reset() for env in envs]
-for ts in range(13*7*24*4): # test on 5 timesteps
+for ts in range(26*7*24*4): # test on 5 timesteps
     for m in range(len(models)): # again, alternate through models
 
         # get the current observation from the perspective of the active team
@@ -86,7 +86,4 @@ for ts in range(13*7*24*4): # test on 5 timesteps
         action = models[m].predict(obss[m])[0] # send it to the SB model to select an action
         obss[m], reward, done, info = envs[m].step(action) # update environment
 
-
-#         sum_reward += np.sum(reward)
-# print(sum_reward)
 grid.plot_all()

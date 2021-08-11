@@ -49,7 +49,7 @@ class Building:
             dhw_heating_device (ElectricHeater or HeatPump)
             cooling_device (HeatPump)
         """
-        self.start_time=8760
+        self.start_time=0#8760
         weather_file = os.path.join(data_path, "weather_data.csv")
         solar_file = os.path.join(data_path, "solar_generation_1kW.csv")
         self.hourly_timesteps = hourly_timesteps
@@ -218,16 +218,8 @@ class Building:
         return
 
     def get_reward(self, net): # dummy cost function
-        #my_voltage_dev = (10*np.clip(net.res_bus.loc[self.bus]['vm_pu']-1,-.1,.1))**2
         my_voltage_dev = (10*net.res_bus.loc[self.bus]['vm_pu']-1)**2
-        my_cons = (self.current_gross_electricity_demand - self.net_elec_cons_mid) / self.net_elec_cons_range
-        my_neighbors_voltage_dev = sum(np.square(10 * np.clip(net.res_bus.loc[self.neighbors]['vm_pu']-1,-.1,.1)))
-        reward = -1 * (my_voltage_dev) #+ my_neighbors_voltage_dev)
-        #print(reward)
-        reward =2*reward + 1
-        reward = (reward + 630)/45
-        reward = (reward-40)/5 #version 9
-
+        reward = -1 * (my_voltage_dev)
         return reward
 
     def get_obs(self, net):

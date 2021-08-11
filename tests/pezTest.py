@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "seasonal_summer"
+model_name = "reward_v2"
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
