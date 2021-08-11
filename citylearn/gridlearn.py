@@ -138,7 +138,7 @@ class GridLearn: # not a super class of the CityLearn environment
                     self.building_ids = list(buildings_states_actions.keys())
                     # print(self.building_ids)
                 prob = np.ones(len(self.building_ids))
-                prob[[1,4,5,6,7,9]] = 10 # building at index 0, 2, 8 correspond to buildings with high energy use
+                prob[[1,4,5,6,7,8]] = 10 # building at index 0, 2, 8 correspond to buildings with high energy use
                 prob = prob / sum(prob)
                 uid = np.random.choice(self.building_ids, p=prob)
                 # print(uid)
