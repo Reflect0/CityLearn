@@ -68,6 +68,24 @@ models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
 
 sum_reward = 0
 obss = [env.reset() for env in envs]
+for ts in range(13*7*24*4): # test on 5 timesteps
+    for m in range(len(models)): # again, alternate through models
+
+        # get the current observation from the perspective of the active team
+        # this can probably be cleaned up
+        foo = []
+        for e in range(nenvs):
+            bar = list(envs[m].venv.vec_envs[n].par_env.aec_env.env.env.env.env.state().values())
+            for i in range(len(bar)):
+                while len(bar[i]) < 18:
+                    bar[i] = np.append(bar[i], 0)
+            foo += bar
+
+        obss[m] = np.vstack(foo)
+
+        action = models[m].predict(obss[m])[0] # send it to the SB model to select an action
+        obss[m], reward, done, info = envs[m].step(action) # update environment
+=======
 ndays=7
 for day in ndays:
     for ts in range(24*4): # test on 5 timesteps
@@ -87,6 +105,7 @@ for day in ndays:
 
             action = models[m].predict(obss[m])[0] # send it to the SB model to select an action
             obss[m], reward, done, info = envs[m].step(action) # update environment
+>>>>>>> 5030d79483ea512e9006db2526f23937e77c94b2
 #         sum_reward += np.sum(reward)
 # print(sum_reward)
 grid.plot_all()

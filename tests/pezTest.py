@@ -65,7 +65,7 @@ models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=512, n_steps=1,
 #models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
 
 nloops=6
-for loop in nloops:
+for loop in range(nloops):
     env.reset()
     for ts in range(8759):
         for model in models:
