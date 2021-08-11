@@ -21,7 +21,7 @@ import time
 import os
 
 # multiprocessing.set_start_method("fork")
-model_name = "8k_with_shunt"
+model_name = "2yrs"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
@@ -68,23 +68,25 @@ models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
 
 sum_reward = 0
 obss = [env.reset() for env in envs]
-for ts in range(7*24*4): # test on 5 timesteps
-    for m in range(len(models)): # again, alternate through models
+ndays=7
+for day in ndays:
+    for ts in range(24*4): # test on 5 timesteps
+        for m in range(len(models)): # again, alternate through models
 
-        # get the current observation from the perspective of the active team
-        # this can probably be cleaned up
-        foo = []
-        for e in range(nenvs):
-            bar = list(envs[m].venv.vec_envs[n].par_env.aec_env.env.env.env.env.state().values())
-            for i in range(len(bar)):
-                while len(bar[i]) < 18:
-                    bar[i] = np.append(bar[i], 0)
-            foo += bar
+            # get the current observation from the perspective of the active team
+            # this can probably be cleaned up
+            foo = []
+            for e in range(nenvs):
+                bar = list(envs[m].venv.vec_envs[n].par_env.aec_env.env.env.env.env.state().values())
+                for i in range(len(bar)):
+                    while len(bar[i]) < 18:
+                        bar[i] = np.append(bar[i], 0)
+                foo += bar
 
-        obss[m] = np.vstack(foo)
+            obss[m] = np.vstack(foo)
 
-        action = models[m].predict(obss[m])[0] # send it to the SB model to select an action
-        obss[m], reward, done, info = envs[m].step(action) # update environment
+            action = models[m].predict(obss[m])[0] # send it to the SB model to select an action
+            obss[m], reward, done, info = envs[m].step(action) # update environment
 #         sum_reward += np.sum(reward)
 # print(sum_reward)
 grid.plot_all()
