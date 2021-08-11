@@ -165,12 +165,7 @@ class GridLearn: # not a super class of the CityLearn environment
         num_nodes_per = int(len(self.net.bus)/self.nclusters)
         geo_index = self.net.bus_geodata.sort_values('y').index
         nodal_geo_clusters = [[] for _ in range(self.nclusters)]
-        # i = 0
-        # j = 0
-        # for _ in range(self.nclusters): # number geographic clusters
-        #     j += num_nodes_per
-        #     nodal_geo_clusters += [geo_index[i:j].tolist()]
-        #     i += num_nodes_per
+
         for i in range(self.nclusters):
             nodal_geo_clusters[i] = geo_index.tolist()[i::self.nclusters]
 
@@ -277,13 +272,6 @@ class GridLearn: # not a super class of the CityLearn environment
         obs = self.state(rl_agent_keys)
         self.voltage_data += [list(self.net.res_bus['vm_pu'])]
 
-        # for i in self.net.shunt.index:
-        #     bus = self.net.shunt.bus[i]
-        #     if np.mean(np.array(self.voltage_data[:,bus])[-12*self.hourly_timesteps:]) < 0.95:
-        #         self.net.shunt.at[i,'in_service'] = True
-        #     elif np.mean(np.array(self.voltage_data[:,bus])[-12*self.hourly_timesteps:]) > 1.02:
-        #         self.net.shunt.at[i,'in_service'] = False
-
         self.load_data += [sum(list(self.net.load['p_mw']))]
         self.gen_data += [sum(list(self.net.sgen['p_mw']))]
         return obs, self.get_reward(rl_agent_keys), self.get_done(rl_agent_keys), self.get_info(rl_agent_keys)
@@ -335,7 +323,6 @@ class MyEnv(ParallelEnv):
 
         self.metadata = {'render.modes': [], 'name':"my_env"}
         self.ts = 0
-        #self.set_grid(grid)
 
     def set_grid(self, grid):
         self.grid = grid
