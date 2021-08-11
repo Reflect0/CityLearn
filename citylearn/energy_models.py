@@ -326,7 +326,7 @@ class Building:
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
         self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
         #print("gross", self.current_gross_generation)
-        self.time_step = (self.time_step + 1) % (8760 * self.hourly_timesteps)
+        self.time_step = (self.time_step + 1) % (8759 * self.hourly_timesteps)
         return
 
     def set_dhw_draws(self):
