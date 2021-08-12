@@ -1,7 +1,7 @@
 {"Building_1": {
 "states": {
-"month": false,
-"day": false,
+"month": true,
+"day": true,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -9,7 +9,7 @@
 "t_out_pred_12h": false,
 "t_out_pred_24h": false,
 "rh_out": false,
-"rh_out_pred_6h": true,
+"rh_out_pred_6h": false,
 "rh_out_pred_12h": false,
 "rh_out_pred_24h": false,
 "diffuse_solar_rad": true,
@@ -36,8 +36,8 @@
 
 "Building_2": {
 "states": {
-"month": false,
-"day": false,
+"month": true,
+"day": true,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -45,7 +45,7 @@
 "t_out_pred_12h": false,
 "t_out_pred_24h": false,
 "rh_out": false,
-"rh_out_pred_6h": true,
+"rh_out_pred_6h": false,
 "rh_out_pred_12h": false,
 "rh_out_pred_24h": false,
 "diffuse_solar_rad": true,
@@ -72,8 +72,8 @@
 
 "Building_3": {
 "states": {
-"month": false,
-"day": false,
+"month": true,
+"day": true,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -81,7 +81,7 @@
 "t_out_pred_12h": false,
 "t_out_pred_24h": false,
 "rh_out": false,
-"rh_out_pred_6h": true,
+"rh_out_pred_6h": false,
 "rh_out_pred_12h": false,
 "rh_out_pred_24h": false,
 "diffuse_solar_rad": true,
@@ -108,8 +108,8 @@
 
 "Building_4": {
 "states": {
-"month": false,
-"day": false,
+"month": true,
+"day": true,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -117,7 +117,7 @@
 "t_out_pred_12h": false,
 "t_out_pred_24h": false,
 "rh_out": false,
-"rh_out_pred_6h": true,
+"rh_out_pred_6h": false,
 "rh_out_pred_12h": false,
 "rh_out_pred_24h": false,
 "diffuse_solar_rad": true,
@@ -144,8 +144,8 @@
 
 "Building_5": {
 "states": {
-"month": false,
-"day": false,
+"month": true,
+"day": true,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -153,7 +153,7 @@
 "t_out_pred_12h": false,
 "t_out_pred_24h": false,
 "rh_out": false,
-"rh_out_pred_6h": true,
+"rh_out_pred_6h": false,
 "rh_out_pred_12h": false,
 "rh_out_pred_24h": false,
 "diffuse_solar_rad": true,
@@ -180,8 +180,8 @@
 
 "Building_6": {
 "states": {
-"month": false,
-"day": false,
+"month": true,
+"day": true,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -189,7 +189,7 @@
 "t_out_pred_12h": false,
 "t_out_pred_24h": false,
 "rh_out": false,
-"rh_out_pred_6h": true,
+"rh_out_pred_6h": false,
 "rh_out_pred_12h": false,
 "rh_out_pred_24h": false,
 "diffuse_solar_rad": true,
@@ -216,8 +216,8 @@
 
 "Building_7": {
 "states": {
-"month": false,
-"day": false,
+"month": true,
+"day": true,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -225,7 +225,7 @@
 "t_out_pred_12h": false,
 "t_out_pred_24h": false,
 "rh_out": false,
-"rh_out_pred_6h": true,
+"rh_out_pred_6h": false,
 "rh_out_pred_12h": false,
 "rh_out_pred_24h": false,
 "diffuse_solar_rad": true,
@@ -252,8 +252,8 @@
 
 "Building_8": {
 "states": {
-"month": false,
-"day": false,
+"month": true,
+"day": true,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -261,7 +261,7 @@
 "t_out_pred_12h": false,
 "t_out_pred_24h": false,
 "rh_out": false,
-"rh_out_pred_6h": true,
+"rh_out_pred_6h": false,
 "rh_out_pred_12h": false,
 "rh_out_pred_24h": false,
 "diffuse_solar_rad": true,
@@ -288,8 +288,8 @@
 
 "Building_9": {
 "states": {
-"month": false,
-"day": false,
+"month": true,
+"day": true,
 "hour": true,
 "daylight_savings_status": false,
 "t_out": true,
@@ -297,7 +297,7 @@
 "t_out_pred_12h": false,
 "t_out_pred_24h": false,
 "rh_out": false,
-"rh_out_pred_6h": true,
+"rh_out_pred_6h": false,
 "rh_out_pred_12h": false,
 "rh_out_pred_24h": false,
 "diffuse_solar_rad": true,

@@ -51,6 +51,7 @@ class GridLearn: # not a super class of the CityLearn environment
         self.load_data = []
         self.gen_data = []
         self.reward_data = []
+        self.all_rewards =[]
 
         aspace, ospace = self.get_spaces(self.agents)
         rand_act = {k:v.sample() for k,v in aspace.items()}
@@ -235,6 +236,8 @@ class GridLearn: # not a super class of the CityLearn environment
         rewards = {k: self.buildings[k].get_reward(self.net) for k in agents}
 
         self.reward_data += [sum(rewards.values())]
+        self.all_rewards += [rewards.values()]
+        print(agents)
         return rewards
 
     def get_done(self, agents):

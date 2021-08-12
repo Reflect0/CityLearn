@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "winter"
+model_name = "2yrs"
 
 tic = time.time()
 # multiprocessing.set_start_method("fork")
@@ -67,7 +67,7 @@ models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=512, n_steps=1,
 nloops=2
 for loop in range(nloops):
     env.reset()
-    for ts in range(1*8759):
+    for ts in range(4*8759):
         for model in models:
             # print("CALL LEARN")
             model.learn(1, reset_num_timesteps=False)
@@ -79,3 +79,25 @@ for m in range(len(models)):
 
 toc = time.time()
 print(toc-tic)
+
+sum_reward = 0
+obss = [env.reset() for env in envs]
+for ts in range(26*7*24*4): # test on 5 timesteps
+    for m in range(len(models)): # again, alternate through models
+
+        # get the current observation from the perspective of the active team
+        # this can probably be cleaned up
+        foo = []
+        for e in range(nenvs):
+            bar = list(envs[m].venv.vec_envs[n].par_env.aec_env.env.env.env.env.state().values())
+            for i in range(len(bar)):
+                while len(bar[i]) < 19:
+                    bar[i] = np.append(bar[i], 0)
+            foo += bar
+
+        obss[m] = np.vstack(foo)
+
+        action = models[m].predict(obss[m])[0] # send it to the SB model to select an action
+        obss[m], reward, done, info = envs[m].step(action) # update environment
+
+grid.plot_all()

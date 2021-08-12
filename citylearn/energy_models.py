@@ -102,6 +102,7 @@ class Building:
         self.phi = 0
         self.rbc = False
         # self.reset()
+        self.solar_generation = 0
         self.battery_action = 0
         self.action_log = []
         self.pv_log = []
@@ -166,7 +167,7 @@ class Building:
         res['cooling_demand'] = subhourly_lin_interp(data['Cooling Load [kWh]'], self.hourly_timesteps)
         res['dhw_demand'] = list(data['DHW Heating [kWh]'])
         res['non_shiftable_load'] = subhourly_noisy_interp(data['Equipment Electric Power [kWh]'], self.hourly_timesteps)
-        res['month'] = list(np.repeat(data['Month'], self.hourly_timesteps))
+        res['month'] = list(np.linspace(0,1,8760))#list(np.repeat(data['Month'], self.hourly_timesteps))
         res['day'] = list(np.repeat(data['Day Type'], self.hourly_timesteps))
         res['hour'] = list(np.repeat(data['Hour'], self.hourly_timesteps))
         res['daylight_savings_status'] = list(np.repeat(data['Daylight Savings Status'], self.hourly_timesteps))
@@ -218,8 +219,11 @@ class Building:
         return
 
     def get_reward(self, net): # dummy cost function
-        my_voltage_dev = (10*net.res_bus.loc[self.bus]['vm_pu']-1)**2
-        reward = -1 * (my_voltage_dev)
+        # deviation from 1 ~= [-0.1,+0.1]
+        my_voltage_dev = (10*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
+        # print('reward 1',net.res_bus.loc[self.bus]['vm_pu'])
+        reward = -1 * (2*my_voltage_dev-1)
+        reward = (reward - 0.948) / (0.9571702317686576 - 0.9428163147929681 )
         return reward
 
     def get_obs(self, net):
@@ -255,7 +259,7 @@ class Building:
                             voltage_spread += abs(net.res_bus.loc[line.to_bus].vm_pu - net.res_bus.loc[line.from_bus].vm_pu)
                         s.append(voltage_spread)
 
-                elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc' and state_name != 'electrical_storage_soc':
+                elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc' and state_name != 'electrical_storage_soc' and state_name != 'solar_gen':
                     all_states += [5]
                     s.append(self.sim_results[state_name][self.time_step])
 
@@ -264,6 +268,8 @@ class Building:
                 #     s.append(self.sim_results[state_name][self.time_step])
 
                 else: # if state_name = cooling_storage_soc,
+                    if state_name == 'solar_gen':
+                        s.append(self.solar_generation)
                     if state_name == 'cooling_storage_soc':
                         all_states += [7]
                         s.append(self.cooling_storage._soc/self.cooling_storage.capacity)
