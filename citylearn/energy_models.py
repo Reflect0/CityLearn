@@ -471,7 +471,7 @@ class Building:
             self.electrical_storage_electric_consumption.append(electrical_energy_balance)
             self.electrical_storage_soc.append(self.electrical_storage._soc)
 
-        self.electrical_storage.time_step += 1
+        self.electrical_storage.time_step = self.time_step
 
         return electrical_energy_balance
 
@@ -514,7 +514,7 @@ class Building:
             self.electric_consumption_dhw.append(elec_demand_heating)
             self.electric_consumption_dhw_storage.append(self._electric_consumption_dhw_storage)
 
-        self.dhw_heating_device.time_step += 1
+        self.dhw_heating_device.time_step = self.time_step
 
         return elec_demand_heating
 
@@ -557,7 +557,7 @@ class Building:
             self.electric_consumption_cooling.append(np.float32(elec_demand_cooling))
             self.electric_consumption_cooling_storage.append(np.float32(self._electric_consumption_cooling_storage))
 
-        self.cooling_device.time_step += 1
+        self.cooling_device.time_step = self.time_step
 
         return elec_demand_cooling
 
