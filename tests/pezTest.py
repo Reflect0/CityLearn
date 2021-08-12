@@ -13,12 +13,11 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "2yrs"
+model_name = "reward_v3"
 
 tic = time.time()
-# multiprocessing.set_start_method("fork")
 
-climate_zone = 1
+climate_zone = 5
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 
@@ -29,10 +28,8 @@ config = {
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
     "percent_rl":0.1,
-    # "percent_rl":1,
     "nclusters":4,
     "max_num_houses":None
-    # "max_num_houses":4
 }
 
 grid = GridLearn(**config)
@@ -50,8 +47,6 @@ print('stacking vec env...')
 nenvs = 2
 envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
 
-
-
 grids = [grid]
 grids += [deepcopy(grid) for _ in range(nenvs-1)]
 
@@ -61,16 +56,16 @@ for env in envs:
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, verbose=2, gamma=0.999, batch_size=512, n_steps=1, ent_coef=0.001, learning_rate=0.00001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
-#models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
+models = [PPO(MlpPolicy, env, verbose=0, gamma=0.999, batch_size=512, n_steps=1, ent_coef=0.001, learning_rate=0.00001, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
 
-nloops=2
+nloops=1
 for loop in range(nloops):
+    print('loop', loop)
     env.reset()
     for ts in range(4*8759):
         for model in models:
             # print("CALL LEARN")
-            model.learn(1, reset_num_timesteps=False)
+            model.learn(1, reset_num_timesteps=False, verbose=False)
     if not os.path.exists(f'models/{model_name}'):
         os.makedirs(f'models/{model_name}')
     os.chdir(f'models/{model_name}')
