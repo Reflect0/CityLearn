@@ -105,11 +105,6 @@ class Building:
         self.solar_generation = 0
         self.battery_action = 0
         self.action_log = []
-        self.pv_log = []
-        self.unshiftload_log = []
-        self.dhwload_log = []
-        self.hvacload_log = []
-        self.track = []
         self.night, self.morning = np.random.randint(20,22), np.random.randint(4,10)
 
     def assign_bus(self, bus):
@@ -124,10 +119,8 @@ class Building:
     def set_attributes(self, file):
         with open(file) as json_file:
             data = json.load(json_file, object_pairs_hook=OrderedDict)
-        # print('this',data.keys(), self.uid)
         tmp = data[self.uid]
         self.building_type = tmp['Building_Type']
-        # print(self.building_type, self.uid)
         self.climate_zone = tmp['Climate_Zone']
         return data[self.uid]
 
@@ -180,27 +173,26 @@ class Building:
         with open(weather_file) as csv_file:
             weather_data = pd.read_csv(csv_file)
 
+        mapping_dict = {'t_out':'Outdoor Drybulb Temperature [C]',
+                        'rh_out':'Outdoor Relative Humidity [%]',
+                        'diffuse_solar_rad':'Diffuse Solar Radiation [W/m2]',
+                        'direct_solar_rad':'Direct Solar Radiation [W/m2]',
+                        't_out_pred_6h':'6h Prediction Outdoor Drybulb Temperature [C]',
+                        't_out_pred_12h':'12h Prediction Outdoor Drybulb Temperature [C]',
+                        't_out_pred_24h':'24h Prediction Outdoor Drybulb Temperature [C]',
+                        'rh_out_pred_6h':'6h Prediction Outdoor Relative Humidity [%]',
+                        'rh_out_pred_12h':'12h Prediction Outdoor Relative Humidity [%]',
+                        'rh_out_pred_24h':'24h Prediction Outdoor Relative Humidity [%]',
+                        'diffuse_solar_rad_pred_6h':'6h Prediction Diffuse Solar Radiation [W/m2]',
+                        'diffuse_solar_rad_pred_12h':'12h Prediction Direct Solar Radiation [W/m2]',
+                        'diffuse_solar_rad_pred_24h':'24h Prediction Direct Solar Radiation [W/m2]',
+                        'direct_solar_rad_pred_6h':'6h Prediction Diffuse Solar Radiation [W/m2]',
+                        'direct_solar_rad_pred_12h':'12h Prediction Diffuse Solar Radiation [W/m2]',
+                        'direct_solar_rad_pred_24h':'24h Prediction Diffuse Solar Radiation [W/m2]'}
         res = {}
-        res['t_out'] = subhourly_lin_interp(weather_data['Outdoor Drybulb Temperature [C]'], self.hourly_timesteps)
-        res['rh_out'] = subhourly_lin_interp(weather_data['Outdoor Relative Humidity [%]'], self.hourly_timesteps)
-        res['diffuse_solar_rad'] = subhourly_lin_interp(weather_data['Diffuse Solar Radiation [W/m2]'], self.hourly_timesteps)
-        res['direct_solar_rad'] = subhourly_lin_interp(weather_data['Direct Solar Radiation [W/m2]'], self.hourly_timesteps)
-
-        res['t_out_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Outdoor Drybulb Temperature [C]'], self.hourly_timesteps)
-        res['t_out_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Outdoor Drybulb Temperature [C]'], self.hourly_timesteps)
-        res['t_out_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Outdoor Drybulb Temperature [C]'], self.hourly_timesteps)
-
-        res['rh_out_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Outdoor Relative Humidity [%]'], self.hourly_timesteps)
-        res['rh_out_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Outdoor Relative Humidity [%]'], self.hourly_timesteps)
-        res['rh_out_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Outdoor Relative Humidity [%]'], self.hourly_timesteps)
-
-        res['diffuse_solar_rad_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Diffuse Solar Radiation [W/m2]'], self.hourly_timesteps)
-        res['diffuse_solar_rad_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Diffuse Solar Radiation [W/m2]'], self.hourly_timesteps)
-        res['diffuse_solar_rad_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Diffuse Solar Radiation [W/m2]'], self.hourly_timesteps)
-
-        res['direct_solar_rad_pred_6h'] = subhourly_lin_interp(weather_data['6h Prediction Direct Solar Radiation [W/m2]'], self.hourly_timesteps)
-        res['direct_solar_rad_pred_12h'] = subhourly_lin_interp(weather_data['12h Prediction Direct Solar Radiation [W/m2]'], self.hourly_timesteps)
-        res['direct_solar_rad_pred_24h'] = subhourly_lin_interp(weather_data['24h Prediction Direct Solar Radiation [W/m2]'], self.hourly_timesteps)
+        for k,v in mapping_dict.items():
+            if self.enabled_states[k]:
+                res[k] = subhourly_lin_interp(weather_data[v], self.hourly_timesteps)
         return res
 
     def load_solar_results(self, solar_file, attributes):
@@ -219,11 +211,10 @@ class Building:
         return
 
     def get_reward(self, net): # dummy cost function
-        # deviation from 1 ~= [-0.1,+0.1]
         my_voltage_dev = (10*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
-        # print('reward 1',net.res_bus.loc[self.bus]['vm_pu'])
         reward = -1 * (2*my_voltage_dev-1)
         reward = (reward - 0.948) / (0.9571702317686576 - 0.9428163147929681 )
+        reward = reward*0.1 + 0.33
         return reward
 
     def get_obs(self, net):
@@ -283,7 +274,7 @@ class Building:
 
     def close(self, folderName):
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}_pv.csv', np.array(self.sim_results['solar_gen']), delimiter=',', fmt='%s')
+        # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_pv.csv', np.array(self.sim_results['solar_gen']), delimiter=',', fmt='%s')
         # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_hvacload.csv', np.array(self.hvacload_log), delimiter=',', fmt='%s')
         # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_unshiftload.csv', np.array(self.unshiftload_log), delimiter=',', fmt='%s')
         # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_dhwload.csv', np.array(self.dhwload_log), delimiter=',', fmt='%s')
@@ -331,8 +322,7 @@ class Building:
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
         self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
-        #print("gross", self.current_gross_generation)
-        self.time_step = (self.time_step + 1) % (8759 * self.hourly_timesteps)
+        self.time_step = (self.time_step + 1) % len(self.sim_results['t_in'])
         return
 
     def set_dhw_draws(self):
