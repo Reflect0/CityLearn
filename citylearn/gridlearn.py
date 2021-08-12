@@ -236,8 +236,8 @@ class GridLearn: # not a super class of the CityLearn environment
         rewards = {k: self.buildings[k].get_reward(self.net) for k in agents}
 
         self.reward_data += [sum(rewards.values())]
-        self.all_rewards += [rewards.values()]
-        print(agents)
+        # self.all_rewards += [rewards.values()]
+        # print(agents)
         return rewards
 
     def get_done(self, agents):
