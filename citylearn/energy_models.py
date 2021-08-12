@@ -167,7 +167,7 @@ class Building:
         res['cooling_demand'] = subhourly_lin_interp(data['Cooling Load [kWh]'], self.hourly_timesteps)
         res['dhw_demand'] = list(data['DHW Heating [kWh]'])
         res['non_shiftable_load'] = subhourly_noisy_interp(data['Equipment Electric Power [kWh]'], self.hourly_timesteps)
-        res['month'] = list(np.linspace(0,1,8760))#list(np.repeat(data['Month'], self.hourly_timesteps))
+        res['month'] = list(np.linspace(0,1,8760*self.hourly_timesteps))#list(np.repeat(data['Month'], self.hourly_timesteps))
         res['day'] = list(np.repeat(data['Day Type'], self.hourly_timesteps))
         res['hour'] = list(np.repeat(data['Hour'], self.hourly_timesteps))
         res['daylight_savings_status'] = list(np.repeat(data['Daylight Savings Status'], self.hourly_timesteps))
