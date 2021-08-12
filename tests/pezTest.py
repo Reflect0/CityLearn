@@ -71,11 +71,11 @@ for loop in range(nloops):
         for model in models:
             # print("CALL LEARN")
             model.learn(1, reset_num_timesteps=False)
-if not os.path.exists(f'models/{model_name}'):
-    os.makedirs(f'models/{model_name}')
-os.chdir(f'models/{model_name}')
-for m in range(len(models)):
-    models[m].save(f"model_{m}")
+    if not os.path.exists(f'models/{model_name}'):
+        os.makedirs(f'models/{model_name}')
+    os.chdir(f'models/{model_name}')
+    for m in range(len(models)):
+        models[m].save(f"model_{m}")
 
 toc = time.time()
 print(toc-tic)
