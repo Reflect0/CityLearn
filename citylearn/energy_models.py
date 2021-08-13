@@ -214,7 +214,7 @@ class Building:
         my_voltage_dev = (10*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
         reward = -1 * (2*my_voltage_dev-1)
         reward = (reward - 0.948) / (0.9571702317686576 - 0.9428163147929681 )
-        reward = reward*0.1 + 0.33
+        reward = reward*0.3 -2
         return reward
 
     def get_obs(self, net):

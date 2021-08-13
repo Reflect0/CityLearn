@@ -71,28 +71,7 @@ for loop in range(nloops):
     os.chdir(f'models/{model_name}')
     for m in range(len(models)):
         models[m].save(f"model_{m}")
+    os.chdir('../..')
 
 toc = time.time()
 print(toc-tic)
-
-sum_reward = 0
-obss = [env.reset() for env in envs]
-for ts in range(26*7*24*4): # test on 5 timesteps
-    for m in range(len(models)): # again, alternate through models
-
-        # get the current observation from the perspective of the active team
-        # this can probably be cleaned up
-        foo = []
-        for e in range(nenvs):
-            bar = list(envs[m].venv.vec_envs[n].par_env.aec_env.env.env.env.env.state().values())
-            for i in range(len(bar)):
-                while len(bar[i]) < 19:
-                    bar[i] = np.append(bar[i], 0)
-            foo += bar
-
-        obss[m] = np.vstack(foo)
-
-        action = models[m].predict(obss[m])[0] # send it to the SB model to select an action
-        obss[m], reward, done, info = envs[m].step(action) # update environment
-
-grid.plot_all()
