@@ -21,7 +21,7 @@ import time
 import os
 
 # multiprocessing.set_start_method("fork")
-model_name = "reduced_voltage_features"
+model_name = "reduced_other_features"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
@@ -77,7 +77,7 @@ for ts in range(13*7*24*4): # test on 5 timesteps
         for e in range(nenvs):
             bar = list(envs[m].venv.vec_envs[n].par_env.aec_env.env.env.env.env.state().values())
             for i in range(len(bar)):
-                while len(bar[i]) < 17:
+                while len(bar[i]) < 13:
                     bar[i] = np.append(bar[i], 0)
             foo += bar
 
