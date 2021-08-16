@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "no_thermal"
+model_name = "reduced_voltage_features"
 
 tic = time.time()
 
