@@ -13,11 +13,11 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "reward_v3"
+model_name = "no_thermal"
 
 tic = time.time()
 
-climate_zone = 5
+climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 
@@ -65,7 +65,7 @@ for loop in range(nloops):
     for ts in range(4*8759):
         for model in models:
             # print("CALL LEARN")
-            model.learn(1, reset_num_timesteps=False, verbose=False)
+            model.learn(1, reset_num_timesteps=False)
     if not os.path.exists(f'models/{model_name}'):
         os.makedirs(f'models/{model_name}')
     os.chdir(f'models/{model_name}')
