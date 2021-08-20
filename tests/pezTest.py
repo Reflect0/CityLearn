@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "rescale_rew_low_grad"
+model_name = "rescale_rew_high_lr"
 
 tic = time.time()
 
@@ -56,7 +56,7 @@ for env in envs:
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, verbose=0, gamma=0.999, batch_size=512, n_steps=1, ent_coef=0.0001, learning_rate=0.0005, vf_coef=0.5, max_grad_norm=0.2, gae_lambda=0.95) for env in envs]
+models = [PPO(MlpPolicy, env, verbose=0, gamma=0.999, batch_size=512, n_steps=1, ent_coef=0.0001, learning_rate=0.0005, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
 
 nloops=2
 for loop in range(nloops):
