@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "low_grad"
+model_name = "rescale_rew_low_grad"
 
 tic = time.time()
 
