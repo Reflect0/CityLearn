@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "rescale_rew_low_ent"
+model_name = "maxout_batt"
 
 tic = time.time()
 
@@ -58,7 +58,7 @@ for env in envs:
 
 models = [PPO(MlpPolicy, env, verbose=0, gamma=0.999, batch_size=512, n_steps=1, ent_coef=0.00001, learning_rate=0.0005, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
 
-nloops=2
+nloops=1
 for loop in range(nloops):
     print('loop', loop)
     env.reset()
