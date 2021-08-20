@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "reduce_pgrid"
+model_name = "max_batt_power"
 
 tic = time.time()
 
