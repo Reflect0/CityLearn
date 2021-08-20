@@ -106,7 +106,7 @@ class Building:
         self.battery_action = 0
         self.action_log = []
         self.night, self.morning = np.random.randint(20,22), np.random.randint(4,10)
-
+        self.all_rewards = []
     def assign_bus(self, bus):
         self.bus = bus
         self.buildingId += f'{bus:03}'
@@ -213,9 +213,10 @@ class Building:
     def get_reward(self, net): # dummy cost function
         my_voltage_dev = (10*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
         reward = -1 * (2*my_voltage_dev-1)
-        reward = (reward - 0.948) / (0.9571702317686576 - 0.9428163147929681 )
-        reward = reward*0.3 -2
-        reward = reward * 0.1 + 1
+        self.all_rewards += [reward]
+        # reward = (reward - 0.948) / (0.9571702317686576 - 0.9428163147929681 )
+        # reward = reward*0.3 -2
+        # reward = reward * 0.1 + 1
         return reward
 
     def get_obs(self, net):
@@ -275,6 +276,7 @@ class Building:
 
     def close(self, folderName):
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_rewards.csv', np.array(self.all_rewards), delimiter=',', fmt='%s')
         # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_pv.csv', np.array(self.sim_results['solar_gen']), delimiter=',', fmt='%s')
         # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_hvacload.csv', np.array(self.hvacload_log), delimiter=',', fmt='%s')
         # np.savetxt(f'models/{folderName}/homes/{self.buildingId}_unshiftload.csv', np.array(self.unshiftload_log), delimiter=',', fmt='%s')
