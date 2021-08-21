@@ -214,7 +214,7 @@ class Building:
         my_voltage_dev = (10*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
         # reward = -1 * (2*my_voltage_dev-1)
         # reward = (max(0,self.batt_power))**2
-        reward = (0.33*net.res_ext_grid.p_mw.values[0])-1
+        reward = -1*((0.33*net.res_ext_grid.p_mw.values[0])-1)**2
         self.all_rewards += [reward]
         return reward
 

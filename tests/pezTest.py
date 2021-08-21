@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "min_p_ext"
+model_name = "min_p_ext_fromhalf"
 
 tic = time.time()
 
