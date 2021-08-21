@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "max_batt_power"
+model_name = "min_p_ext"
 
 tic = time.time()
 
