@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "clust1_v2"
+model_name = "clust1_v3"
 
 tic = time.time()
 
