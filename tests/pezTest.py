@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "min_p_ext_fromhalf"
+model_name = "clust1"
 
 tic = time.time()
 
@@ -28,7 +28,7 @@ config = {
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
     "percent_rl":0.1,
-    "nclusters":4,
+    "nclusters":1,
     "max_num_houses":None
 }
 
@@ -62,10 +62,11 @@ nloops=1
 for loop in range(nloops):
     print('loop', loop)
     env.reset()
-    for ts in range(4*8759):
-        for model in models:
-            # print("CALL LEARN")
-            model.learn(1, reset_num_timesteps=False)
+    model.learn(4*8759)
+    # for ts in range(4*8759):
+    #     for model in models:
+    #         # print("CALL LEARN")
+    #         model.learn(1, reset_num_timesteps=False)
     if not os.path.exists(f'models/{model_name}'):
         os.makedirs(f'models/{model_name}')
     os.chdir(f'models/{model_name}')

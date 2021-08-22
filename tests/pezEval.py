@@ -20,7 +20,7 @@ import time
 import os
 
 # multiprocessing.set_start_method("fork")
-model_name = "min_p_ext_fromhalf"
+model_name = "clust1"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
@@ -34,7 +34,7 @@ config = {
     "hourly_timesteps":4,
     "percent_rl":0.1,
     # "percent_rl":1,
-    "nclusters":4,
+    "nclusters":1,
     "max_num_houses":None
     # "max_num_houses":4
 }
@@ -70,17 +70,17 @@ obss = [env.reset() for env in envs]
 for ts in range(3*7*24*4): # test on 5 timesteps
     for m in range(len(models)): # again, alternate through models
 
-        # get the current observation from the perspective of the active team
-        # this can probably be cleaned up
-        foo = []
-        for e in range(nenvs):
-            bar = list(envs[m].venv.vec_envs[n].par_env.aec_env.env.env.env.env.state().values())
-            for i in range(len(bar)):
-                while len(bar[i]) < 13:
-                    bar[i] = np.append(bar[i], 0)
-            foo += bar
-
-        obss[m] = np.vstack(foo)
+        # # get the current observation from the perspective of the active team
+        # # this can probably be cleaned up
+        # foo = []
+        # for e in range(nenvs):
+        #     bar = list(envs[m].venv.vec_envs[n].par_env.aec_env.env.env.env.env.state().values())
+        #     for i in range(len(bar)):
+        #         while len(bar[i]) < 13:
+        #             bar[i] = np.append(bar[i], 0)
+        #     foo += bar
+        #
+        # obss[m] = np.vstack(foo)
 
         action = models[m].predict(obss[m])[0] # send it to the SB model to select an action
         obss[m], reward, done, info = envs[m].step(action) # update environment

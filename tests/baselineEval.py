@@ -32,7 +32,7 @@ config = {
     "hourly_timesteps":4,
     "percent_rl":0.1,
     # "percent_rl":1,
-    "nclusters":4,
+    "nclusters":1,
     "max_num_houses":None
     # "max_num_houses":4
 }
