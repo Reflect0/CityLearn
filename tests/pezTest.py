@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "clust1"
+model_name = "clust1_v2"
 
 tic = time.time()
 
@@ -56,13 +56,13 @@ for env in envs:
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, verbose=0, gamma=0.999, batch_size=512, n_steps=1, ent_coef=0.00001, learning_rate=0.0005, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
+models = [PPO(MlpPolicy, env, verbose=0, gamma=0.999, batch_size=512, n_steps=100, ent_coef=0.00001, learning_rate=0.0005, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
 
 nloops=1
 for loop in range(nloops):
     print('loop', loop)
     env.reset()
-    models[0].learn(4*8759)
+    models[0].learn(4*4*8759)
     # for ts in range(4*8759):
     #     for model in models:
     #         # print("CALL LEARN")
