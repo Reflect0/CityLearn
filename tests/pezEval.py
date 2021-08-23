@@ -20,7 +20,7 @@ import time
 import os
 
 # multiprocessing.set_start_method("fork")
-model_name = "clust1_v3"
+model_name = "clust1_v4"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
@@ -82,7 +82,7 @@ for ts in range(3*7*24*4): # test on 5 timesteps
         #
         # obss[m] = np.vstack(foo)
 
-        action = models[m].predict(obss[m])[0] # send it to the SB model to select an action
+        action = models[m].predict(obss[m], deterministic=True)[0] # send it to the SB model to select an action
         obss[m], reward, done, info = envs[m].step(action) # update environment
 
 grid.plot_all()
