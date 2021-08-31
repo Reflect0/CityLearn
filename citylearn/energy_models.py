@@ -105,6 +105,9 @@ class Building:
         self.solar_generation = 0
         self.battery_action = 0
         self.action_log = []
+        self.batt_soc = []
+        self.hvac_soc = []
+        self.dhw_soc = []
         self.night, self.morning = np.random.randint(20,22), np.random.randint(4,10)
         self.all_rewards = []
     def assign_bus(self, bus):
@@ -215,6 +218,7 @@ class Building:
         # reward = -1 * (2*my_voltage_dev-1)
         # reward = (max(0,self.batt_power))**2
         reward = -1*((0.33*net.res_ext_grid.p_mw.values[0])-1)**2
+        reward += 1
         self.all_rewards += [reward]
         return reward
 
@@ -272,6 +276,8 @@ class Building:
     def close(self, folderName):
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_rewards.csv', np.array(self.all_rewards), delimiter=',', fmt='%s')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_battsoc.csv', nparray(self.batt_soc), delimiter=',', fmt='%s')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_hvacsoc.csv', nparray(self.hvac_soc), delimiter=',', fmt='%s')
         return
 
     def step(self, a):
@@ -311,11 +317,16 @@ class Building:
         else:
             _batt_power = self.set_storage_electrical()
 
+        # Track soc of all energy storage devices
+        self.hvac_soc += [self.cooling_device.soc]
+        self.dhw_soc += [self.dhw_storage.soc]
+        self.batt_soc += [self.electrical_storage.soc]
+
         # Electrical appliances
         _non_shiftable_load = self.get_non_shiftable_load()
 
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
-        self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
+        self.current_gross_electricity_demand = 5*round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
         self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
         self.time_step = (self.time_step + 1) % len(self.sim_results['t_in'])
         return
