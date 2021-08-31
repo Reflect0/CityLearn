@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "clust1_v4"
+model_name = "5x_load"
 
 tic = time.time()
 
