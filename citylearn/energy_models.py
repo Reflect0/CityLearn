@@ -276,8 +276,8 @@ class Building:
     def close(self, folderName):
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
         np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_rewards.csv', np.array(self.all_rewards), delimiter=',', fmt='%s')
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_battsoc.csv', nparray(self.batt_soc), delimiter=',', fmt='%s')
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_hvacsoc.csv', nparray(self.hvac_soc), delimiter=',', fmt='%s')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_battsoc.csv', np.array(self.batt_soc), delimiter=',', fmt='%s')
+        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_hvacsoc.csv', np.array(self.hvac_soc), delimiter=',', fmt='%s')
         return
 
     def step(self, a):
