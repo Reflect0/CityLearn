@@ -326,7 +326,7 @@ class Building:
         _non_shiftable_load = self.get_non_shiftable_load()
 
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
-        self.current_gross_electricity_demand = 5*round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
+        self.current_gross_electricity_demand = 2*round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
         self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
         self.time_step = (self.time_step + 1) % len(self.sim_results['t_in'])
         return
