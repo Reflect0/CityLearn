@@ -318,9 +318,9 @@ class Building:
             _batt_power = self.set_storage_electrical()
 
         # Track soc of all energy storage devices
-        self.hvac_soc += [self.cooling_storage.soc]
-        self.dhw_soc += [self.dhw_storage.soc]
-        self.batt_soc += [self.electrical_storage.soc]
+        self.hvac_soc += [self.cooling_storage._soc]
+        self.dhw_soc += [self.dhw_storage._soc]
+        self.batt_soc += [self.electrical_storage._soc]
 
         # Electrical appliances
         _non_shiftable_load = self.get_non_shiftable_load()
