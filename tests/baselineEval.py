@@ -38,7 +38,7 @@ config = {
 }
 
 grid = GridLearn(**config)
-
+grid.normalize_reward()
 envs = [MyEnv(grid) for _ in range(config['nclusters'])]
 
 print('setting the grid...')
