@@ -318,7 +318,7 @@ class Building:
             _batt_power = self.set_storage_electrical()
 
         # Track soc of all energy storage devices
-        self.hvac_soc += [self.cooling_device.soc]
+        self.hvac_soc += [self.cooling_storage.soc]
         self.dhw_soc += [self.dhw_storage.soc]
         self.batt_soc += [self.electrical_storage.soc]
 
