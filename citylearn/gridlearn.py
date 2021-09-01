@@ -59,6 +59,15 @@ class GridLearn: # not a super class of the CityLearn environment
 
         self.tester = np.random.uniform(1,5,(5,))
 
+    def normalize_reward(self):
+        timesteps = 4*24*7
+        for timestep in range(timesteps):
+            action = {k:v.sample() for k,v in self.action_spaces.items()}
+            self.step(action)
+        for building in self.buildings:
+            building.normalize()
+        return self.reset()
+
     def make_grid(self):
         # make a grid that fits the buildings generated for CityLearn
         net = networks.case33bw()

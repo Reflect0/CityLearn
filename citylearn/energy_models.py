@@ -110,6 +110,9 @@ class Building:
         self.dhw_soc = []
         self.night, self.morning = np.random.randint(20,22), np.random.randint(4,10)
         self.all_rewards = []
+        self.average_reward = 0
+        self.max_reward = 0.5
+        self.min_reward = -0.5
     def assign_bus(self, bus):
         self.bus = bus
         self.buildingId += f'{bus:03}'
@@ -213,11 +216,17 @@ class Building:
         self.neighbors = net.bus_geodata.sort_values('distance').drop(index=0).index[1:4]
         return
 
+    def normalize(self):
+        self.average_reward = np.mean(self.all_rewards)
+        self.max_reward = max(self.all_rewards)
+        self.min_reward = min(self.all_rewards)
+
     def get_reward(self, net): # dummy cost function
         my_voltage_dev = (10*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
-        # reward = -1 * (2*my_voltage_dev-1)
-        # reward = (max(0,self.batt_power))**2
         reward = -1*my_voltage_dev
+        reward = max(reward, -4)
+        reward = (reward * 0.5) + 1
+        reward = (reward - self.average_reward) / (self.max_reward - self.min_reward)
         self.all_rewards += [reward]
         return reward
 
