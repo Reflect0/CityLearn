@@ -112,7 +112,7 @@ class Building:
         self.all_rewards = []
         self.average_reward = 0
         self.std_dev = 1
-        self.max_dev = 0
+        self.max_dev = 1
         self.all_devs = []
     def assign_bus(self, bus):
         self.bus = bus
