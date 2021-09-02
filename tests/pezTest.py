@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "2x_load"
+model_name = "90_days"
 
 tic = time.time()
 
