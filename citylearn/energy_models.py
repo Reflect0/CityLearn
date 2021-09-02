@@ -112,6 +112,8 @@ class Building:
         self.all_rewards = []
         self.average_reward = 0
         self.std_dev = 1
+        self.max_dev = 0
+        self.all_devs = []
     def assign_bus(self, bus):
         self.bus = bus
         self.buildingId += f'{bus:03}'
@@ -218,15 +220,19 @@ class Building:
     def normalize(self):
         self.average_reward = np.mean(self.all_rewards)
         self.std_dev = np.std(self.all_rewards)
+        self.max_dev = max(self.all_devs)
         # self.max_reward = max(self.all_rewards)
         # self.min_reward = min(self.all_rewards)
 
     def get_reward(self, net): # dummy cost function
-        my_voltage_dev = (10*(net.res_bus.loc[self.bus]['vm_pu']-1))**2
+        dev = (net.res_bus.loc[self.bus]['vm_pu']-1)
+        dev = dev / self.max_dev
+        my_voltage_dev = (dev)**2
         reward = -1*my_voltage_dev
         reward = max(reward, -4)
         reward = (reward * 0.5) + 1
         reward = (reward - self.average_reward) / (self.std_dev)
+        self.all_devs += [dev]
         self.all_rewards += [reward]
         return reward
 

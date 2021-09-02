@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "90_days"
+model_name = "renorm2"
 
 tic = time.time()
 
