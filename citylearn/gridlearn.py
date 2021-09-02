@@ -66,7 +66,7 @@ class GridLearn: # not a super class of the CityLearn environment
             self.step(action)
         for k,building in self.buildings.items():
             building.normalize()
-        return self.reset()
+        return self.reset(self.buildings.keys(), True)
 
     def make_grid(self):
         # make a grid that fits the buildings generated for CityLearn
