@@ -64,7 +64,7 @@ class GridLearn: # not a super class of the CityLearn environment
         for timestep in range(timesteps):
             action = {k:v.sample() for k,v in self.action_spaces.items()}
             self.step(action)
-        for building in self.buildings.items():
+        for k,building in self.buildings.items():
             building.normalize()
         return self.reset()
 
