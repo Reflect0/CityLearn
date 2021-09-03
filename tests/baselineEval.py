@@ -30,7 +30,7 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.1,
+    "percent_rl":0.5,
     # "percent_rl":1,
     "nclusters":1,
     "max_num_houses":None
