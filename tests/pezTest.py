@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "renorm2"
+model_name = "renorm2_50"
 
 tic = time.time()
 
@@ -27,7 +27,7 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.1,
+    "percent_rl":0.5,
     "nclusters":1,
     "max_num_houses":None
 }
