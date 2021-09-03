@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "renorm2_50"
+model_name = "renorm3_50"
 
 tic = time.time()
 
