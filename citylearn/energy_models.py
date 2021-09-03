@@ -233,7 +233,7 @@ class Building:
         my_voltage_dev = (dev)**2
         reward = -1*my_voltage_dev
         reward = min(4,max(reward, -4))
-        reward = (reward * 0.5) + 1
+        reward = (reward * 2) + 1
         #reward = (reward - self.average_reward) / (self.std_dev)
         self.all_devs += [dev]
         #print(self.all_devs)
