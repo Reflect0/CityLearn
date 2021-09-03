@@ -64,9 +64,10 @@ class GridLearn: # not a super class of the CityLearn environment
         for timestep in range(timesteps):
             action = {k:v.sample() for k,v in self.action_spaces.items()}
             self.step(action)
-        for k,building in self.buildings.items():
-            building.normalize()
-        return self.reset(self.buildings.keys(), True)
+        for k in self.rl_agents:
+            #print(self.buildings[k].all_devs)
+            self.buildings[k].normalize()
+        return #self.reset(self.buildings.keys(), True)
 
     def make_grid(self):
         # make a grid that fits the buildings generated for CityLearn

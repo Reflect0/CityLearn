@@ -113,6 +113,7 @@ class Building:
         self.average_reward = 0
         self.std_dev = 1
         self.max_dev = 1
+        print('reset')
         self.all_devs = []
     def assign_bus(self, bus):
         self.bus = bus
@@ -220,6 +221,7 @@ class Building:
     def normalize(self):
         self.average_reward = np.mean(self.all_rewards)
         self.std_dev = np.std(self.all_rewards)
+        #print(self.all_devs)
         self.max_dev = max(self.all_devs)
         # self.max_reward = max(self.all_rewards)
         # self.min_reward = min(self.all_rewards)
@@ -233,6 +235,7 @@ class Building:
         reward = (reward * 0.5) + 1
         reward = (reward - self.average_reward) / (self.std_dev)
         self.all_devs += [dev]
+        #print(self.all_devs)
         self.all_rewards += [reward]
         return reward
 
