@@ -223,6 +223,7 @@ class Building:
         self.std_dev = np.std(self.all_rewards)
         #print(self.all_devs)
         self.max_dev = max(self.all_devs)
+        print(self.max_dev)
         # self.max_reward = max(self.all_rewards)
         # self.min_reward = min(self.all_rewards)
 
@@ -231,9 +232,9 @@ class Building:
         dev = dev / self.max_dev
         my_voltage_dev = (dev)**2
         reward = -1*my_voltage_dev
-        reward = max(reward, -4)
+        reward = min(4,max(reward, -4))
         reward = (reward * 0.5) + 1
-        reward = (reward - self.average_reward) / (self.std_dev)
+        #reward = (reward - self.average_reward) / (self.std_dev)
         self.all_devs += [dev]
         #print(self.all_devs)
         self.all_rewards += [reward]
