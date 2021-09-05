@@ -234,6 +234,7 @@ class Building:
         reward = -1*my_voltage_dev
         reward = min(4,max(reward, -4))
         reward = (reward * 2) + 1
+        reward += (self.current_gross_electricity_demand - self._net_elec_cons_upper_bound/2)**2
         #reward = (reward - self.average_reward) / (self.std_dev)
         self.all_devs += [dev]
         #print(self.all_devs)
