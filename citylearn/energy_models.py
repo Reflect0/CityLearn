@@ -110,11 +110,8 @@ class Building:
         self.dhw_soc = []
         self.night, self.morning = np.random.randint(20,22), np.random.randint(4,10)
         self.all_rewards = []
-        self.average_reward = 0
-        self.std_dev = 1
-        self.max_dev = 1
-        print('reset')
         self.all_devs = []
+        self.all_pwrs = []
     def assign_bus(self, bus):
         self.bus = bus
         self.buildingId += f'{bus:03}'
@@ -219,26 +216,19 @@ class Building:
         return
 
     def normalize(self):
-        self.average_reward = np.mean(self.all_rewards)
-        self.std_dev = np.std(self.all_rewards)
-        #print(self.all_devs)
         self.max_dev = max(self.all_devs)
-        print(self.max_dev)
-        # self.max_reward = max(self.all_rewards)
-        # self.min_reward = min(self.all_rewards)
+        self.max_pwr = max(self.all_pwrs)
 
     def get_reward(self, net): # dummy cost function
         dev = (net.res_bus.loc[self.bus]['vm_pu']-1)
-        reward = -1*(10*dev)**2
-        reward = (reward * 2) + 1
-        max_pwr = self.dhw_heating_device.nominal_power + self.cooling_device.nominal_power
-        reward -= (self.current_gross_electricity_demand - max_pwr/2)**2
+        pwr = (self.current_gross_electricity_demand)**2
 
-        if self.max_dev:
-            reward = reward / self.max_dev
-            reward = min(4,max(reward, -4))
-        self.all_devs += [reward]
-        self.all_rewards += [reward]
+        if self.max_dev and self.max_max_pwr:
+            reward = -1*(dev/self.max_dev)**2 - (pwr/self.max_pwr)
+        else:
+            self.all_devs += [dev]
+            self.all_pwrs += [pwr]
+            reward = -1*(10*dev)**2 - (pwr/(self.dhw_heating_device.nominal_power+self.cooling_device.nominal_power))**2
         return reward
 
     def get_obs(self, net):
@@ -669,6 +659,12 @@ class Building:
 
             self.electrical_storage_electric_consumption = []
             self.electrical_storage_soc = []
+
+            self.action_log = []
+            self.hvac_soc = []
+            self.dhw_soc = []
+            self.batt_soc = []
+
         return self.get_obs(net)
 
     def terminate(self):
