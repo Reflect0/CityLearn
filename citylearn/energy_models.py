@@ -221,7 +221,7 @@ class Building:
         file = f'models/{self.buildingId}/norm_values.json'
         if os.path.isfile(file):
             with open(file, 'r') as f:
-                data = json.load(f):
+                data = json.load(f)
             self.max_dev = data['max_dev']
             self.max_pwr = data['max_pwr']
         else:
