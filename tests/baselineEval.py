@@ -25,7 +25,7 @@ data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 
 config = {
-    "model_name":"multiobj3_baseline",
+    "model_name":"whole_yr_baseline",
     "data_path":data_path,
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
@@ -53,7 +53,6 @@ sum_reward = 0
 obss = [env.reset() for env in envs]
 for ts in range(3*7*24*4): # test on 5 timesteps
     for m in range(len(envs)): # again, alternate through models
-
         obss[m], reward, done, info = envs[m].step({}) # update environment
 
 for building in grid.rl_agents:
