@@ -112,6 +112,8 @@ class Building:
         self.all_rewards = []
         self.all_devs = []
         self.all_pwrs = []
+        self.max_dev = None
+        self.max_pwr = None
     def assign_bus(self, bus):
         self.bus = bus
         self.buildingId += f'{bus:03}'
