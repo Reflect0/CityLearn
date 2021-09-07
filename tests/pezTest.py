@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "whole_yr"
+model_name = "qtr_yr"
 
 tic = time.time()
 
