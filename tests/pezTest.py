@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "qtr_yr"
+model_name = "inc_caps"
 
 tic = time.time()
 
@@ -47,7 +47,7 @@ print('stacking vec env...')
 nenvs = 2
 envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
 
-grid.normalize_reward()
+grid.normalize_reward(mode='load')
 grids = [grid]
 grids += [deepcopy(grid) for _ in range(nenvs-1)]
 

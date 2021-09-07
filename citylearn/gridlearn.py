@@ -112,11 +112,11 @@ class GridLearn: # not a super class of the CityLearn environment
                     net.bus_geodata.at[c[i], sw] = net.bus_geodata.at[c[i-1], sw] + 0.2
                     net.bus_geodata.at[c[i], st] = net.bus_geodata.at[c[i-1], st]
 
-        net.ext_grid.at[0,'vm_pu'] = 1.0
+        net.ext_grid.at[0,'vm_pu'] = 1.03
 
-        pp.create_shunt_as_capacitor(net,14,0.3,0)
+        pp.create_shunt_as_capacitor(net,14,1,0)
         pp.create_shunt_as_capacitor(net,24,0.6,0)
-        pp.create_shunt_as_capacitor(net,30,1.2,0)
+        pp.create_shunt_as_capacitor(net,30,2,0)
         return net
 
     def add_houses(self, n, pv_penetration):
