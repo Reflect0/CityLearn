@@ -229,7 +229,7 @@ class Building:
 
     def get_reward(self, net): # dummy cost function
         dev = (net.res_bus.loc[self.bus]['vm_pu']-1)
-        reward = -1*my_voltage_dev
+        reward = -1*(10*dev)**2
         reward = (reward * 2) + 1
         max_pwr = self.dhw_heating_device.nominal_power + self.cooling_device.nominal_power
         reward -= (self.current_gross_electricity_demand - max_pwr/2)**2
