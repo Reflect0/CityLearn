@@ -217,9 +217,23 @@ class Building:
         self.neighbors = net.bus_geodata.sort_values('distance').drop(index=0).index[1:4]
         return
 
+    def load_normalize_values(self, model_name):
+        file = f'models/{self.buildingId}/norm_values.json'
+        if os.path.isfile(file):
+            with open(file, 'r') as f:
+                data = json.load(f):
+            self.max_dev = data['max_dev']
+            self.max_pwr = data['max_pwr']
+        else:
+            self.normalize()
+
     def normalize(self):
         self.max_dev = max(self.all_devs)
         self.max_pwr = max(self.all_pwrs)
+
+        file = f'models/{self.buildingId}/norm_values.json'
+        with open(file, 'w') as f:
+            data = json.dump({'max_dev':self.max_dev,'max_pwr':self.max_pwr},f)
 
     def get_reward(self, net): # dummy cost function
         dev = (net.res_bus.loc[self.bus]['vm_pu']-1)

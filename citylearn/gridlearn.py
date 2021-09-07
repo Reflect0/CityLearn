@@ -114,9 +114,9 @@ class GridLearn: # not a super class of the CityLearn environment
 
         net.ext_grid.at[0,'vm_pu'] = 1.03
 
-        pp.create_shunt_as_capacitor(net,14,1,0)
+        pp.create_shunt_as_capacitor(net,14,0.6,0)
         pp.create_shunt_as_capacitor(net,24,0.6,0)
-        pp.create_shunt_as_capacitor(net,30,2,0)
+        pp.create_shunt_as_capacitor(net,30,1.5,0)
         return net
 
     def add_houses(self, n, pv_penetration):
@@ -291,7 +291,7 @@ class GridLearn: # not a super class of the CityLearn environment
     def update_grid(self):
         for agent, bldg in self.buildings.items():
             # Assign the load in MW (from KW in CityLearn)
-            self.net.load.at[bldg.load_index, 'p_mw'] = 0.9 * bldg.current_gross_electricity_demand * 0.001
+            self.net.load.at[bldg.load_index, 'p_mw'] = 0.95 * bldg.current_gross_electricity_demand * 0.001
             self.net.load.at[bldg.load_index, 'sn_mva'] = bldg.current_gross_electricity_demand * 0.001
 
             if bldg.gen_index > -1: # assume PV and battery are both behind the inverter
