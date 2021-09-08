@@ -231,9 +231,9 @@ class Building:
         self.max_dev = max(self.all_devs)
         self.max_pwr = max(self.all_pwrs)
 
-        file = f'models/{self.buildingId}/norm_values.json'
-        with open(file, 'w') as f:
-            data = json.dump({'max_dev':self.max_dev,'max_pwr':self.max_pwr},f)
+        # file = f'models/{self.buildingId}/norm_values.json'
+        # with open(file, 'w') as f:
+        #     data = json.dump({'max_dev':self.max_dev,'max_pwr':self.max_pwr},f)
 
     def get_reward(self, net): # dummy cost function
         dev = (net.res_bus.loc[self.bus]['vm_pu']-1)
