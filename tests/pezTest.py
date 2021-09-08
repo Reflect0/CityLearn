@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "para_50"
+model_name = "1_yr"
 
 tic = time.time()
 
