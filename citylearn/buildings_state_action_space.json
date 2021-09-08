@@ -32,7 +32,7 @@
 "total_voltage_spread": false,
 "absolute_voltage": true,
 "relative_voltage": false},
-"actions": {"cooling_storage": false, "dhw_storage": false, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
 
 "Building_2": {
 "states": {
@@ -68,7 +68,7 @@
 "total_voltage_spread": false,
 "absolute_voltage": true,
 "relative_voltage": false},
-"actions": {"cooling_storage": false, "dhw_storage": false, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
 
 "Building_3": {
 "states": {
@@ -104,7 +104,7 @@
 "total_voltage_spread": false,
 "absolute_voltage": true,
 "relative_voltage": false},
-"actions": {"cooling_storage": false, "dhw_storage": false, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
 
 "Building_4": {
 "states": {
@@ -140,7 +140,7 @@
 "total_voltage_spread": false,
 "absolute_voltage": true,
 "relative_voltage": false},
-"actions": {"cooling_storage": false, "dhw_storage": false, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
 
 "Building_5": {
 "states": {
@@ -176,7 +176,7 @@
 "total_voltage_spread": false,
 "absolute_voltage": true,
 "relative_voltage": false},
-"actions": {"cooling_storage": false, "dhw_storage": false, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
 
 "Building_6": {
 "states": {
@@ -212,7 +212,7 @@
 "total_voltage_spread": false,
 "absolute_voltage": true,
 "relative_voltage": false},
-"actions": {"cooling_storage": false, "dhw_storage": false, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
 
 "Building_7": {
 "states": {
@@ -248,7 +248,7 @@
 "total_voltage_spread": false,
 "absolute_voltage": true,
 "relative_voltage": false},
-"actions": {"cooling_storage": false, "dhw_storage": false, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
 
 "Building_8": {
 "states": {
@@ -284,7 +284,7 @@
 "total_voltage_spread": false,
 "absolute_voltage": true,
 "relative_voltage": false},
-"actions": {"cooling_storage": false, "dhw_storage": false, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}},
 
 "Building_9": {
 "states": {
@@ -320,5 +320,5 @@
 "total_voltage_spread": false,
 "absolute_voltage": true,
 "relative_voltage": false},
-"actions": {"cooling_storage": false, "dhw_storage": false, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}}
+"actions": {"cooling_storage": true, "dhw_storage": true, "pv_curtail":true, "pv_phi":true, "electrical_storage":true}}
 }
