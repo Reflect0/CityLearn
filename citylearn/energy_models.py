@@ -299,12 +299,13 @@ class Building:
                         s.append(self.electrical_storage._soc/self.electrical_storage.capacity)
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
-    def close(self, folderName):
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_rewards.csv', np.array(self.all_rewards), delimiter=',', fmt='%s')
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_battsoc.csv', np.array(self.batt_soc), delimiter=',', fmt='%s')
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_hvacsoc.csv', np.array(self.hvac_soc), delimiter=',', fmt='%s')
-        np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_dhwsoc.csv', np.array(self.dhw_soc), delimiter=',', fmt='%s')
+    def close(self, folderName, write=False):
+        if write:
+            np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_actions.csv', np.array(self.action_log), delimiter=',', fmt='%s')
+            np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_rewards.csv', np.array(self.all_rewards), delimiter=',', fmt='%s')
+            np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_battsoc.csv', np.array(self.batt_soc), delimiter=',', fmt='%s')
+            np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_hvacsoc.csv', np.array(self.hvac_soc), delimiter=',', fmt='%s')
+            np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_dhwsoc.csv', np.array(self.dhw_soc), delimiter=',', fmt='%s')
         return
 
     def step(self, a):
