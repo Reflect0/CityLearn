@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "low_cap"
+model_name = "no_thermal"
 
 tic = time.time()
 
