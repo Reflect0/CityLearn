@@ -244,7 +244,7 @@ class Building:
         else:
             self.all_devs += [dev]
             self.all_pwrs += [pwr]
-            reward = -0.001*(10*dev)**2 - 1(pwr/(self.dhw_heating_device.nominal_power+self.cooling_device.nominal_power))**2
+            reward = -0.001*(10*dev)**2 - 1*(pwr/(self.dhw_heating_device.nominal_power+self.cooling_device.nominal_power))**2
         reward -= 1
         return reward
 
