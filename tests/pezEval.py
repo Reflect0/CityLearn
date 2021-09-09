@@ -68,7 +68,7 @@ models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
 
 sum_reward = 0
 obss = [env.reset() for env in envs]
-for ts in range(20*24*4): # test on 5 timesteps
+for ts in range(365*24*4): # test on 5 timesteps
     for m in range(len(models)): # again, alternate through models
 
         # # get the current observation from the perspective of the active team
