@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "multiobj4b_cc"
+model_name = "multiobj4c_cc"
 
 tic = time.time()
 
