@@ -320,8 +320,8 @@ class GridLearn: # not a super class of the CityLearn environment
         np.savetxt(f'models/{self.model_name}/solar.csv', np.array(self.gen_data), delimiter=",")
         if not os.path.isdir(f'models/{self.model_name}/homes/'):
             os.mkdir(f'models/{self.model_name}/homes')
-        for agent in self.rl_agents:
-            self.buildings[agent].close(self.model_name)
+        for agent in self.rl_agents[::10]:
+            self.buildings[agent].close(self.model_name, write=True)
 
 class MyEnv(ParallelEnv):
     def __init__(self, grid):

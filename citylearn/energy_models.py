@@ -101,7 +101,6 @@ class Building:
         self.current_gross_generation = 0
         self.phi = 0
         self.rbc = False
-        # self.reset()
         self.solar_generation = 0
         self.battery_action = 0
         self.action_log = []
@@ -112,6 +111,7 @@ class Building:
         self.all_rewards = []
         self.all_devs = []
         self.all_pwrs = []
+        self.pv = []
         self.max_dev = None
         self.max_pwr = None
     def assign_bus(self, bus):
@@ -306,6 +306,8 @@ class Building:
             np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_battsoc.csv', np.array(self.batt_soc), delimiter=',', fmt='%s')
             np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_hvacsoc.csv', np.array(self.hvac_soc), delimiter=',', fmt='%s')
             np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_dhwsoc.csv', np.array(self.dhw_soc), delimiter=',', fmt='%s')
+            np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_pv.csv', np.array(self.pv), delimiter=',', fmt='%s')
+
         return
 
     def step(self, a):
@@ -349,7 +351,7 @@ class Building:
         self.hvac_soc += [self.cooling_storage._soc/self.cooling_storage.capacity]
         self.dhw_soc += [self.dhw_storage._soc/self.dhw_storage.capacity]
         self.batt_soc += [self.electrical_storage._soc/self.electrical_storage.capacity]
-
+        self.pv += [self.solar_generation]
         # Electrical appliances
         _non_shiftable_load = self.get_non_shiftable_load()
 
