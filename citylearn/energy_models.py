@@ -240,10 +240,10 @@ class Building:
         dev = (net.res_bus.loc[self.bus]['vm_pu']-1)
         pwr = (self.current_gross_electricity_demand - self.current_gross_generation)**2
 
-        a = 0.001
-        b = 1
+        a = 1
+        b = 0.001
         if self.max_dev and self.max_pwr:
-            reward = -a*(dev/self.max_dev)**2 - b*(pwr/self.max_pwr)
+            reward = -a*(dev/self.max_dev)**2 - b*(pwr/self.max_pwr)**2
         else:
             self.all_devs += [dev]
             self.all_pwrs += [pwr]
