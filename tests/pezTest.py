@@ -13,7 +13,7 @@ from copy import deepcopy
 import time
 import os
 
-model_name = "multiobj5c"
+model_name = "scrap"
 
 tic = time.time()
 
@@ -63,7 +63,7 @@ nloops=1
 for loop in range(nloops):
     print('loop', loop)
     env.reset()
-    models[0].learn(4*4*8759)
+    models[0].learn(4*8759)
     # for ts in range(4*8759):
     #     for model in models:
     #         # print("CALL LEARN")
