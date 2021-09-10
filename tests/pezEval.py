@@ -20,7 +20,7 @@ import time
 import os
 
 # multiprocessing.set_start_method("fork")
-model_name = "multiobj4c_cc"
+model_name = "multiobj4d_cc"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))

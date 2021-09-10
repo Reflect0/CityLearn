@@ -244,7 +244,7 @@ class Building:
         else:
             self.all_devs += [dev]
             self.all_pwrs += [pwr]
-            reward = -0.001*(10*dev)**2 - 1*(pwr/(self.dhw_heating_device.nominal_power+self.cooling_device.nominal_power))**2
+            reward = -1*(10*dev)**2 - 0.001*(pwr/(self.dhw_heating_device.nominal_power+self.cooling_device.nominal_power))**2
         reward -= 1
         return reward
 
@@ -254,17 +254,18 @@ class Building:
         for state_name, value in self.enabled_states.items():
             if value == True:
                 if state_name == "net_electricity_consumption":
-                    all_states += [1]
                     s.append(self.current_gross_electricity_demand)
 
                 elif state_name == "absolute_voltage":
-                    all_states += [2]
                     if self.time_step <= 1:
                         s.append(1.0)
+                        s.append(1.0)
                     else:
-                        s.append(float(net.res_bus['vm_pu'][net.load.loc[net.load['name']==self.buildingId].bus]))
+                        v = float(net.res_bus['vm_pu'][net.load.loc[net.load['name']==self.buildingId].bus])
+                        s.append(v)
+                        s.append(-1*v)
+
                 elif state_name == "relative_voltage":
-                    all_states += [3]
                     if self.time_step <= 1:
                         s.append(0.5)
                     else:
@@ -272,7 +273,6 @@ class Building:
                         s.append(ranked_voltage)
 
                 elif state_name == "total_voltage_spread":
-                    all_states += [4]
                     if self.time_step <= 1:
                         s.append(0)
                     else:
@@ -282,20 +282,16 @@ class Building:
                         s.append(voltage_spread)
 
                 elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc' and state_name != 'electrical_storage_soc' and state_name != 'solar_gen':
-                    all_states += [5]
                     s.append(self.sim_results[state_name][self.time_step])
 
                 else: # if state_name = cooling_storage_soc,
                     if state_name == 'solar_gen':
                         s.append(self.solar_generation)
                     if state_name == 'cooling_storage_soc':
-                        all_states += [7]
                         s.append(self.cooling_storage._soc/self.cooling_storage.capacity)
                     elif state_name == 'dhw_storage_soc':
-                        all_states += [8]
                         s.append(self.dhw_storage._soc/self.dhw_storage.capacity)
                     elif state_name == 'electrical_storage_soc':
-                        all_states += [9]
                         s.append(self.electrical_storage._soc/self.electrical_storage.capacity)
         return (np.array(s) - self.normalization_mid) / self.normalization_range
 
@@ -407,6 +403,8 @@ class Building:
                     self.net_elec_cons_mid = self.solar_power_capacity + 0.5 * self.net_elec_cons_range
 
                 elif state_name == "absolute_voltage":
+                    s_low.append(0.90)
+                    s_high.append(1.10)
                     s_low.append(0.90)
                     s_high.append(1.10)
 

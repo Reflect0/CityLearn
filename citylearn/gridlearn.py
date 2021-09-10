@@ -114,7 +114,7 @@ class GridLearn: # not a super class of the CityLearn environment
 
         net.ext_grid.at[0,'vm_pu'] = 1.01
 
-        pp.create_shunt_as_capacitor(net,14,0.6,0)
+        pp.create_shunt_as_capacitor(net,14,1.2,0)
         pp.create_shunt_as_capacitor(net,24,0.6,0)
         pp.create_shunt_as_capacitor(net,30,1.2,0)
         return net
