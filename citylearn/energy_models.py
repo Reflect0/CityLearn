@@ -240,12 +240,14 @@ class Building:
         dev = (net.res_bus.loc[self.bus]['vm_pu']-1)
         pwr = (self.current_gross_electricity_demand - self.current_gross_generation)**2
 
+        a = 1
+        b = 0.001
         if self.max_dev and self.max_pwr:
-            reward = -1*(dev/self.max_dev)**2 - (pwr/self.max_pwr)
+            reward = -a*(dev/self.max_dev)**2 - b*(pwr/self.max_pwr)
         else:
             self.all_devs += [dev]
             self.all_pwrs += [pwr]
-            reward = -1*(10*dev)**2 - 0.001*(pwr/(self.dhw_heating_device.nominal_power+self.cooling_device.nominal_power))**2
+            reward = -a*(10*dev)**2 - b*(pwr/(self.dhw_heating_device.nominal_power+self.cooling_device.nominal_power))**2
         reward -= 1
         return reward
 
@@ -355,8 +357,8 @@ class Building:
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
         self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
-        self.ts = (self.time_step + 1) % (96*60)#
-        self.time_step = 6*30*96 + self.ts #(self.time_step + 1) % (96*60)#len(self.sim_results['t_in'])
+        # self.ts = (self.time_step + 1) % (96*60)#
+        self.time_step = (self.time_step + 1) % len(self.sim_results['t_in'])
         return
 
     def set_dhw_draws(self):
