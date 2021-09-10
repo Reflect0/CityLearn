@@ -96,6 +96,7 @@ class Building:
         self.set_action_space()
         # reset/initialize the home to timestep = 0
         # self.grid = self.add_grid(grid)
+        self.ts = 0
         self.time_step = self.start_time
         self.current_gross_electricity_demand = 0
         self.current_gross_generation = 0
@@ -354,7 +355,8 @@ class Building:
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
         self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
-        self.time_step = (self.time_step + 1) % (96*60)#len(self.sim_results['t_in'])
+        self.ts = (self.time_step + 1) % (96*60)#
+        self.time_step = 6*30*96 + self.ts #(self.time_step + 1) % (96*60)#len(self.sim_results['t_in'])
         return
 
     def set_dhw_draws(self):
