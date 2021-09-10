@@ -259,11 +259,11 @@ class Building:
                 elif state_name == "absolute_voltage":
                     if self.time_step <= 1:
                         s.append(1.0)
-                        s.append(1.0)
+                        # s.append(1.0)
                     else:
                         v = float(net.res_bus['vm_pu'][net.load.loc[net.load['name']==self.buildingId].bus])
                         s.append(v)
-                        s.append(-1*v)
+                        # s.append(-1*v)
 
                 elif state_name == "relative_voltage":
                     if self.time_step <= 1:
@@ -354,7 +354,7 @@ class Building:
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
         self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
-        self.time_step = (self.time_step + 1) % len(self.sim_results['t_in'])
+        self.time_step = (self.time_step + 1) % (96*60)#len(self.sim_results['t_in'])
         return
 
     def set_dhw_draws(self):
@@ -405,8 +405,8 @@ class Building:
                 elif state_name == "absolute_voltage":
                     s_low.append(0.90)
                     s_high.append(1.10)
-                    s_low.append(0.90)
-                    s_high.append(1.10)
+                    # s_low.append(0.90)
+                    # s_high.append(1.10)
 
                 elif state_name == "relative_voltage":
                     # @akp, added relative voltage to give homes their voltage ranked against the community max/min
