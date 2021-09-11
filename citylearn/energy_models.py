@@ -306,7 +306,6 @@ class Building:
             np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_hvacsoc.csv', np.array(self.hvac_soc), delimiter=',', fmt='%s')
             np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_dhwsoc.csv', np.array(self.dhw_soc), delimiter=',', fmt='%s')
             np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_pv.csv', np.array(self.pv), delimiter=',', fmt='%s')
-
         return
 
     def step(self, a):
@@ -357,7 +356,6 @@ class Building:
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
         self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
-        # self.ts = (self.time_step + 1) % (96*60)#
         self.time_step = (self.time_step + 1) % len(self.sim_results['t_in'])
         return
 
@@ -595,9 +593,6 @@ class Building:
     def get_solar_power(self, curtailment=1):
         c = 0.5 - 0.5 * curtailment # maps curtailment -1 to 100% reduction and 1 to no curtailment
         self.solar_power = (1 - c) * self.sim_results['solar_gen'][self.time_step]
-        #print('timestep', self.time_step)
-        #print("DEBUG",self.sim_results['solar_gen'][self.time_step], self.time_step, self.solar_power)
-        #print(self.solar_power, c, self.)
         return self.solar_power
 
     def set_phase_lag(self,phi=-1):
@@ -634,7 +629,6 @@ class Building:
 
         self.current_gross_electricity_demand = self.sim_results['non_shiftable_load'][self.time_step]
         self.current_gross_generation = self.sim_results['solar_gen'][self.time_step]
-        #print('getting solar for', self.time_step)
 
         if self.dhw_storage is not None:
             self.dhw_storage.reset()

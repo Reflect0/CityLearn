@@ -28,8 +28,8 @@ class GridLearn: # not a super class of the CityLearn environment
         self.hourly_timesteps = hourly_timesteps
         self.save_memory = save_memory
         self.building_ids = building_ids
-        random.seed(randomseed)
-        np.random.seed(randomseed)
+        # random.seed(randomseed)
+        # np.random.seed(randomseed)
 
         self.net = self.make_grid()
 

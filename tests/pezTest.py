@@ -12,6 +12,9 @@ import supersuit as ss
 from copy import deepcopy
 import time
 import os
+import random
+random.seed(12)
+np.random.seed(12)
 
 model_name = "scrap"
 

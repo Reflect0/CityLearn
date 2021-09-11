@@ -19,6 +19,9 @@ import supersuit as ss
 
 import time
 import os
+import random
+random.seed(12)
+np.random.seed(12)
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
@@ -51,7 +54,7 @@ for env in envs:
 
 sum_reward = 0
 obss = [env.reset() for env in envs]
-for ts in range(20*24*4): # test on 5 timesteps
+for ts in range(10*24*4): # test on 5 timesteps
     for m in range(len(envs)): # again, alternate through models
         obss[m], reward, done, info = envs[m].step({}) # update environment
 
