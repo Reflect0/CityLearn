@@ -199,9 +199,9 @@ class GridLearn: # not a super class of the CityLearn environment
         agent_clusters = []
         for cluster in clusters:
             n_agents = int(self.percent_rl * len(cluster))
-            rl_agents = set(np.random.choice(cluster, n_agents))
-            rbc_agents = set(cluster) - rl_agents
-            agent_clusters += [(list(rl_agents), list(rbc_agents))]
+            rl_agents = np.random.choice(cluster, n_agents)
+            rbc_agents = set(cluster) - set(rl_agents)
+            agent_clusters += [(rl_agents, list(rbc_agents))]
 
         for n in range(self.nclusters):
             for bldg in agent_clusters[n][0]:
