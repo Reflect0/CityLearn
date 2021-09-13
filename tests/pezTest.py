@@ -16,7 +16,7 @@ import random
 random.seed(12)
 np.random.seed(12)
 
-model_name = "v5_40"
+model_name = "v5_60"
 
 tic = time.time()
 
@@ -30,7 +30,7 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.4,
+    "percent_rl":0.6,
     "nclusters":1,
     "max_num_houses":None
 }

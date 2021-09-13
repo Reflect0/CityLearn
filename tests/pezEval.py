@@ -22,7 +22,7 @@ import random
 random.seed(12)
 np.random.seed(12)
 # multiprocessing.set_start_method("fork")
-model_name = "v5_40"
+model_name = "v5_60"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
@@ -34,7 +34,7 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.4,
+    "percent_rl":0.6,
     # "percent_rl":1,
     "nclusters":1,
     "max_num_houses":None
