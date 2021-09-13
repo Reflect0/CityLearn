@@ -22,7 +22,7 @@ import random
 random.seed(12)
 np.random.seed(12)
 # multiprocessing.set_start_method("fork")
-model_name = "scrap"
+model_name = "scrap2"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
