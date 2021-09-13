@@ -28,12 +28,12 @@ data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 
 config = {
-    "model_name":"v5_70_baseline",
+    "model_name":"v5_80_baseline",
     "data_path":data_path,
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.7,
+    "percent_rl":0.8,
     # "percent_rl":1,
     "nclusters":1,
     "max_num_houses":None
