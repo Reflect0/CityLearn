@@ -22,7 +22,7 @@ import random
 random.seed(12)
 np.random.seed(12)
 # multiprocessing.set_start_method("fork")
-model_name = "scrap2"
+model_name = "v5"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
@@ -70,7 +70,7 @@ models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
 
 sum_reward = 0
 obss = [env.reset() for env in envs]
-for ts in range(10*24*4): # test on 5 timesteps
+for ts in range(365*24*4): # test on 5 timesteps
     for m in range(len(models)): # again, alternate through models
         # # get the current observation from the perspective of the active team
         # # this can probably be cleaned up
