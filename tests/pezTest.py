@@ -60,7 +60,7 @@ grids = [grid]
 #     for n in range(nenvs):
 #         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
 #         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
-envs[0].par_env.aec_env.env.env.env.env.grid = grids[n]
+envs[0].par_env.aec_env.env.env.env.env.grid = grids[0]
 envs[0].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
 models = [PPO(MlpPolicy, env, verbose=0, gamma=0.999, batch_size=512, n_steps=100, ent_coef=0.00001, learning_rate=0.0005, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]

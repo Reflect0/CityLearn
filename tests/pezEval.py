@@ -65,7 +65,7 @@ grids = [grid]
 #     for n in range(nenvs):
 #         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
 #         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
-envs[0].par_env.aec_env.env.env.env.env.grid = grids[n]
+envs[0].par_env.aec_env.env.env.env.env.grid = grids[0]
 envs[0].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
 models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
