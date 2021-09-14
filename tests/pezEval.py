@@ -53,20 +53,18 @@ print('creating pettingzoo env...')
 envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
 
 print('stacking vec env...')
-nenvs = 1
-# envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
+nenvs = 2
+envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
 
 grid.normalize_reward()
 grids = [grid]
-# grids += [deepcopy(grid) for _ in range(nenvs-1)]
+grids += [deepcopy(grid) for _ in range(nenvs-1)]
 
-# print('setting the grid...')
-# for env in envs:
-#     for n in range(nenvs):
-#         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
-#         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
-envs[0].par_env.aec_env.env.env.env.env.grid = grids[0]
-envs[0].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
+print('setting the grid...')
+for env in envs:
+    for n in range(nenvs):
+        env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
+        env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
 models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
 

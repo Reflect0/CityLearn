@@ -276,6 +276,7 @@ class GridLearn: # not a super class of the CityLearn environment
         # run the grid power flow
         try:
             runpp(self.net, enforce_q_lims=True)
+            print(self.net.res_bus.p_mw.tolist())
         except:
             pp.diagnostic(self.net)
             quit()

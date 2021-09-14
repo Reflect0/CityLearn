@@ -48,7 +48,7 @@ print('creating pettingzoo env...')
 envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
 
 print('stacking vec env...')
-nenvs = 1
+nenvs = 2
 envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
 
 grid.normalize_reward()
@@ -60,17 +60,15 @@ for env in envs:
     for n in range(nenvs):
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
-# envs[0].par_env.aec_env.env.env.env.env.grid = grids[0]
-# envs[0].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
 models = [PPO(MlpPolicy, env, verbose=0, gamma=0.999, batch_size=512, n_steps=100, ent_coef=0.00001, learning_rate=0.0005, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
 
 nloops=1
 for loop in range(nloops):
     print('loop', loop)
-    envs[0].reset()
-    print(time.time())
-    models[0].learn(4*4*8759)
+    [env.reset() for env in envs]
+    print('==============')
+    models[0].learn(10)
     # for ts in range(4*8759):
     #     for model in models:
     #         # print("CALL LEARN")
