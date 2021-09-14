@@ -445,21 +445,25 @@ class Building:
         for action_name, value in self.enabled_actions.items():
             if value == True:
                 if action_name =='cooling_storage':
+                    a_low.append(-1.0)
+                    a_high.append(1.0)
                     # Avoid division by 0
-                    if self.cooling_storage.capacity > 0.000001:
-                        a_low.append(max(-1.0/self.cooling_storage.capacity, -1.0))
-                        a_high.append(min(1.0/self.cooling_storage.capacity, 1.0))
-                    else:
-                        a_low.append(-1.0)
-                        a_high.append(1.0)
+                    # if self.cooling_storage.capacity > 0.000001:
+                    #     a_low.append(max(-1.0/self.cooling_storage.capacity, -1.0))
+                    #     a_high.append(min(1.0/self.cooling_storage.capacity, 1.0))
+                    # else:
+                    #     a_low.append(-1.0)
+                    #     a_high.append(1.0)
 
                 elif action_name == 'dhw_storage':
-                    if self.dhw_storage.capacity > 0.000001:
-                        a_low.append(max(-1.0/self.dhw_storage.capacity, -1.0))
-                        a_high.append(min(1.0/self.dhw_storage.capacity, 1.0))
-                    else:
-                        a_low.append(-1.0)
-                        a_high.append(1.0)
+                    a_low.append(-1.0)
+                    a_high.append(1.0)
+                    # if self.dhw_storage.capacity > 0.000001:
+                    #     a_low.append(max(-1.0/self.dhw_storage.capacity, -1.0))
+                    #     a_high.append(min(1.0/self.dhw_storage.capacity, 1.0))
+                    # else:
+                    #     a_low.append(-1.0)
+                    #     a_high.append(1.0)
 
                 elif action_name == 'pv_curtail':
                     # pv curtailment of apparent power, S
