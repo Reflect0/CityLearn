@@ -13,10 +13,11 @@ from copy import deepcopy
 import time
 import os
 import random
+import time
 random.seed(12)
 np.random.seed(12)
 
-model_name = "v5_90"
+model_name = "one_env"
 
 tic = time.time()
 
@@ -47,18 +48,20 @@ print('creating pettingzoo env...')
 envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
 
 print('stacking vec env...')
-nenvs = 2
-envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
+nenvs = 1
+# envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
 
 grid.normalize_reward()
 grids = [grid]
-grids += [deepcopy(grid) for _ in range(nenvs-1)]
+# grids += [deepcopy(grid) for _ in range(nenvs-1)]
 
-print('setting the grid...')
-for env in envs:
-    for n in range(nenvs):
-        env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
-        env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
+# print('setting the grid...')
+# for env in envs:
+#     for n in range(nenvs):
+#         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.grid = grids[n]
+#         env.venv.vec_envs[n].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
+envs[0].par_env.aec_env.env.env.env.env.grid = grids[n]
+envs[0].par_env.aec_env.env.env.env.env.initialize_rbc_agents()
 
 models = [PPO(MlpPolicy, env, verbose=0, gamma=0.999, batch_size=512, n_steps=100, ent_coef=0.00001, learning_rate=0.0005, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
 
@@ -66,6 +69,7 @@ nloops=1
 for loop in range(nloops):
     print('loop', loop)
     env.reset()
+    print(time.time())
     models[0].learn(4*4*8759)
     # for ts in range(4*8759):
     #     for model in models:
