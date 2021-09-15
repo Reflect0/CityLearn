@@ -68,7 +68,7 @@ for loop in range(nloops):
     print('loop', loop)
     [env.reset() for env in envs]
     print('==============')
-    models[0].learn(10)
+    models[0].learn(1)
     # for ts in range(4*8759):
     #     for model in models:
     #         # print("CALL LEARN")
