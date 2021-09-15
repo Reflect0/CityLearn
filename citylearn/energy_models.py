@@ -228,14 +228,15 @@ class Building:
         else:
             self.normalize()
 
-    def normalize(self):
+    def normalize(self, file=None):
         self.max_dev = max(self.all_devs)
         self.max_pwr = max(self.all_pwrs)
-
-        # file = f'models/{self.buildingId}/norm_values.json'
-        # with open(file, 'w') as f:
-        #     data = json.dump({'max_dev':self.max_dev,'max_pwr':self.max_pwr},f)
-
+        if file:
+            if os.path.isfile(file):
+                with open(file) as f:
+                    data = json.load(f)
+                self.max_pwr = data[self.buildingId]
+    
     def get_reward(self, net): # dummy cost function
         dev = (net.res_bus.loc[self.bus]['vm_pu']-1)
         pwr = (self.current_gross_electricity_demand - self.current_gross_generation)**2
@@ -243,12 +244,12 @@ class Building:
         a = 1
         b = 0.001
         if self.max_dev and self.max_pwr:
-            reward = -a*(dev/self.max_dev)**2 - b*(pwr/self.max_pwr)**2
+            reward = -a*(dev/self.max_dev)**2# - b*(pwr/self.max_pwr)**2
         else:
             self.all_devs += [dev]
             self.all_pwrs += [pwr]
-            reward = -a*(10*dev)**2 - b*(pwr/(self.dhw_heating_device.nominal_power+self.cooling_device.nominal_power))**2
-        reward -= 1
+            reward = -a*(10*dev)**2# - b*(pwr/(self.dhw_heating_device.nominal_power+self.cooling_device.nominal_power))**2
+        reward += 1
         return reward
 
     def get_obs(self, net):

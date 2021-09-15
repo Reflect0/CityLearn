@@ -60,12 +60,19 @@ class GridLearn: # not a super class of the CityLearn environment
         self.tester = np.random.uniform(1,5,(5,))
 
     def normalize_reward(self):
-        timesteps = 4*24*7
-        for timestep in range(timesteps):
-            action = {k:v.sample() for k,v in self.action_spaces.items()}
-            self.step(action)
-        for k in self.rl_agents:
-            self.buildings[k].normalize()
+        file = f'models/{self.model_name}/norm_values.json'
+        if not os.path.isfile(file)
+            timesteps = 4*24*7
+            for timestep in range(timesteps):
+                action = {k:v.sample() for k,v in self.action_spaces.items()}
+                self.step(action)
+            all_values = {}
+            for k in self.rl_agents:
+                self.buildings[k].normalize()
+                all_values[k] = self.buildings[k].max_pwr
+        else:
+            for k in self.rl_agents:
+                self.buildings[k].normalize(file)
         return self.reset(self.buildings.keys(), True)
 
     def make_grid(self):
