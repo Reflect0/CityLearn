@@ -17,7 +17,7 @@ import time
 random.seed(12)
 np.random.seed(12)
 
-model_name = "v6"
+model_name = "v8"
 
 tic = time.time()
 
