@@ -70,7 +70,8 @@ class GridLearn: # not a super class of the CityLearn environment
             for k in self.rl_agents:
                 self.buildings[k].normalize()
                 all_values[k] = self.buildings[k].max_pwr
-            json.dump(all_values, file)
+            with open(file,'w') as f:
+                json.dump(all_values, file)
         else:
             for k in self.rl_agents:
                 self.buildings[k].normalize(file)
