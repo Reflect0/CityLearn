@@ -144,7 +144,7 @@ class RBC_Agent_v2:
             actions += [1.0]
 
         if self.env.enabled_actions['pv_phi']:
-            actions += [1.0]
+            actions += [-1.0]
 
         if self.env.enabled_actions['electrical_storage']:
             actions += [tou_storage]
