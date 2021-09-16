@@ -1,3 +1,4 @@
+model_name = "p10"
 import multiprocessing
 import sys
 from pettingzoo.test import parallel_api_test
@@ -16,8 +17,6 @@ import random
 import time
 random.seed(12)
 np.random.seed(12)
-
-model_name = "p10"
 
 tic = time.time()
 

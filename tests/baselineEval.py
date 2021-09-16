@@ -1,3 +1,5 @@
+model_name = "p10_baseline"
+
 import multiprocessing
 import sys
 from pettingzoo.test import parallel_api_test
@@ -16,7 +18,6 @@ import numpy as np
 import multiprocessing
 import sys
 import supersuit as ss
-
 import time
 import os
 import random
@@ -28,7 +29,7 @@ data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 
 config = {
-    "model_name":"p10_baseline",
+    "model_name":model_name,
     "data_path":data_path,
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
