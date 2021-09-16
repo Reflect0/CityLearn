@@ -50,6 +50,7 @@ class Building:
             cooling_device (HeatPump)
         """
         self.start_time=0
+        self.tracker = 0
         weather_file = os.path.join(data_path, "weather_data.csv")
         solar_file = os.path.join(data_path, "solar_generation_1kW.csv")
         self.hourly_timesteps = hourly_timesteps
@@ -94,8 +95,6 @@ class Building:
 
         self.set_state_space()
         self.set_action_space()
-        # reset/initialize the home to timestep = 0
-        # self.grid = self.add_grid(grid)
         self.ts = 0
         self.time_step = self.start_time
         self.current_gross_electricity_demand = 0
@@ -229,14 +228,18 @@ class Building:
             self.normalize()
 
     def normalize(self, file=None):
-        self.max_dev = max(self.all_devs)
-        self.max_pwr = max(self.all_pwrs)
         if file:
-            if os.path.isfile(file):
-                with open(file) as f:
-                    data = json.load(f)
-                self.max_pwr = data[self.buildingId]
-    
+            try:
+                if os.path.isfile(file):
+                    with open(file) as f:
+                        data = json.load(f)
+                    self.max_pwr = data[self.buildingId]
+            except:
+                file = None
+        if not file:
+            self.max_dev = max(self.all_devs)
+            self.max_pwr = max(self.all_pwrs)
+
     def get_reward(self, net): # dummy cost function
         dev = (net.res_bus.loc[self.bus]['vm_pu']-1)
         pwr = (self.current_gross_electricity_demand - self.current_gross_generation)**2
@@ -357,6 +360,8 @@ class Building:
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
         self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
+        self.tracker = (self.tracker + 1) % 8760
+        # self.time_step = self.start_time + self.tracker
         self.time_step = (self.time_step + 1) % len(self.sim_results['t_in'])
         return
 
@@ -600,7 +605,7 @@ class Building:
         self.solar_power = (1 - c) * self.sim_results['solar_gen'][self.time_step]
         return self.solar_power
 
-    def set_phase_lag(self,phi=-1):
+    def set_phase_lag(self, phi=-1):
         # mapping to that -1 is 0 and 1 in np.pi/2
         phi = (phi+1)*np.pi/4
         self.v_lag = phi

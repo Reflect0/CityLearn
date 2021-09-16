@@ -16,24 +16,25 @@ import numpy as np
 import multiprocessing
 import sys
 import supersuit as ss
-
 import time
 import os
 import random
 random.seed(12)
 np.random.seed(12)
 
+model_name = "default_baseline"
+
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 
 config = {
-    "model_name":"v8b_baseline",
+    "model_name":model_name,
     "data_path":data_path,
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.9,
+    "percent_rl":0.5,
     # "percent_rl":1,
     "nclusters":1,
     "max_num_houses":None

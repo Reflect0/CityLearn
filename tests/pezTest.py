@@ -17,7 +17,7 @@ import time
 random.seed(12)
 np.random.seed(12)
 
-model_name = "scrap"
+model_name = "agent_ind_v1"
 
 tic = time.time()
 
@@ -31,7 +31,7 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.9,
+    "percent_rl":0.5,
     "nclusters":1,
     "max_num_houses":None
 }
@@ -45,7 +45,9 @@ envs = [MyEnv(grid) for _ in range(config['nclusters'])]
 # envs = [ss.pad_observations_v0(env) for env in envs]
 
 print('creating pettingzoo env...')
+envs = [ss.agent_indicator_v0(env) for env in envs]
 envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
+
 
 print('stacking vec env...')
 nenvs = 2
@@ -58,10 +60,12 @@ grids += [deepcopy(grid) for _ in range(nenvs-1)]
 print('setting the grid...')
 for env in envs:
     for n in range(nenvs):
-        env.venv.vec_envs[n].par_env.grid = grids[n]
-        env.venv.vec_envs[n].par_env.initialize_rbc_agents()
+        env.venv.vec_envs[n].par_env.aec_env.env.env.env.grid = grids[n]
+        # env.venv.vec_envs[n].par_env.grid = grids[n]
+        env.venv.vec_envs[n].par_env.aec_env.env.env.env.initialize_rbc_agents()
+        # env.venv.vec_envs[n].par_env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, verbose=0, gamma=0.999, batch_size=512, n_steps=100, ent_coef=0.00001, learning_rate=0.0005, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
+models = [PPO(MlpPolicy, env, ent_coef=0.1, learning_rate=0.001) for env in envs]
 
 nloops=1
 for loop in range(nloops):

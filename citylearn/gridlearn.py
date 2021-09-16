@@ -64,7 +64,7 @@ class GridLearn: # not a super class of the CityLearn environment
 
     def normalize_reward(self):
         file = f'models/{self.model_name}/norm_values.json'
-        if not os.path.isfile(file):
+        if True:#not os.path.isfile(file):
             timesteps = 4*24*7
             for timestep in range(timesteps):
                 action = {k:v.sample() for k,v in self.action_spaces.items()}
@@ -74,7 +74,7 @@ class GridLearn: # not a super class of the CityLearn environment
                 self.buildings[k].normalize()
                 all_values[k] = self.buildings[k].max_pwr
             with open(file,'w') as f:
-                json.dump(all_values, file)
+                json.dump(all_values, f)
         else:
             for k in self.rl_agents:
                 self.buildings[k].normalize(file)
