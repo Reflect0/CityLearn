@@ -94,8 +94,6 @@ class Building:
 
         self.set_state_space()
         self.set_action_space()
-        # reset/initialize the home to timestep = 0
-        # self.grid = self.add_grid(grid)
         self.ts = 0
         self.time_step = self.start_time
         self.current_gross_electricity_demand = 0
@@ -229,14 +227,19 @@ class Building:
             self.normalize()
 
     def normalize(self, file=None):
-        self.max_dev = max(self.all_devs)
-        self.max_pwr = max(self.all_pwrs)
+
         if file:
-            if os.path.isfile(file):
-                with open(file) as f:
-                    data = json.load(f)
-                self.max_pwr = data[self.buildingId]
-    
+            try:
+                if os.path.isfile(file):
+                    with open(file) as f:
+                        data = json.load(f)
+                    self.max_pwr = data[self.buildingId]
+            except:
+                file = None
+        if not file:
+            self.max_dev = max(self.all_devs)
+            self.max_pwr = max(self.all_pwrs)
+
     def get_reward(self, net): # dummy cost function
         dev = (net.res_bus.loc[self.bus]['vm_pu']-1)
         pwr = (self.current_gross_electricity_demand - self.current_gross_generation)**2
@@ -600,7 +603,7 @@ class Building:
         self.solar_power = (1 - c) * self.sim_results['solar_gen'][self.time_step]
         return self.solar_power
 
-    def set_phase_lag(self,phi=-1):
+    def set_phase_lag(self, phi=-1):
         # mapping to that -1 is 0 and 1 in np.pi/2
         phi = (phi+1)*np.pi/4
         self.v_lag = phi
