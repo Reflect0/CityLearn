@@ -17,7 +17,7 @@ import time
 random.seed(12)
 np.random.seed(12)
 
-model_name = "scrap"
+model_name = "p10"
 
 tic = time.time()
 
@@ -31,7 +31,7 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":0.9,
+    "percent_rl":float(model_name[1])*0.1,
     "nclusters":1,
     "max_num_houses":None
 }
