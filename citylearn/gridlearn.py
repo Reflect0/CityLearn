@@ -61,7 +61,7 @@ class GridLearn: # not a super class of the CityLearn environment
 
     def normalize_reward(self):
         file = f'models/{self.model_name}/norm_values.json'
-        if not os.path.isfile(file)
+        if not os.path.isfile(file):
             timesteps = 4*24*7
             for timestep in range(timesteps):
                 action = {k:v.sample() for k,v in self.action_spaces.items()}
