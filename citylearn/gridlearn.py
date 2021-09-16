@@ -18,6 +18,8 @@ import json
 class GridLearn: # not a super class of the CityLearn environment
     def __init__(self, model_name, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, save_memory = True, building_ids=None, nclusters=2, randomseed=2, max_num_houses=None, percent_rl=1):
         self.model_name = model_name
+        if not os.path.isdir(f'models/{self.model_name}'):
+            os.mkdir(f'models/{self.model_name}')
         self.max_num_houses = max_num_houses
         self.nclusters = nclusters
         self.percent_rl = percent_rl
@@ -28,6 +30,7 @@ class GridLearn: # not a super class of the CityLearn environment
         self.hourly_timesteps = hourly_timesteps
         self.save_memory = save_memory
         self.building_ids = building_ids
+
         # random.seed(randomseed)
         # np.random.seed(randomseed)
 
@@ -321,8 +324,7 @@ class GridLearn: # not a super class of the CityLearn environment
             ax[i].set_title(f'Bus {rl_buses[i]}')
             ax[i].set_ylabel('Voltage (p.u.)')
             ax[i].set_xlabel('Time (Days)')
-        if not os.path.isdir(f'models/{self.model_name}'):
-            os.mkdir(f'models/{self.model_name}')
+
         plt.savefig(f'models/{self.model_name}/voltage')
         np.savetxt(f'models/{self.model_name}/voltage.csv', np.array(self.voltage_data), delimiter=",")
         np.savetxt(f'models/{self.model_name}/load.csv', np.array(self.load_data), delimiter=",")
