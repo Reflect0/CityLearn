@@ -1,4 +1,3 @@
-model_name = "p10"
 import multiprocessing
 import sys
 from pettingzoo.test import parallel_api_test
@@ -24,7 +23,7 @@ random.seed(12)
 np.random.seed(12)
 # multiprocessing.set_start_method("fork")
 
-
+model_name = "default"
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'

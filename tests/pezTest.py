@@ -1,4 +1,3 @@
-model_name = "p10"
 import multiprocessing
 import sys
 from pettingzoo.test import parallel_api_test
@@ -18,6 +17,8 @@ import time
 random.seed(12)
 np.random.seed(12)
 
+model_name = "default"
+
 tic = time.time()
 
 climate_zone = 1
@@ -30,7 +31,7 @@ config = {
     "climate_zone":climate_zone,
     "buildings_states_actions_file":buildings_states_actions,
     "hourly_timesteps":4,
-    "percent_rl":float(model_name[1])*0.1,
+    "percent_rl":0.5,
     "nclusters":1,
     "max_num_houses":None
 }
@@ -60,7 +61,7 @@ for env in envs:
         env.venv.vec_envs[n].par_env.grid = grids[n]
         env.venv.vec_envs[n].par_env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, verbose=0, gamma=0.999, batch_size=512, n_steps=100, ent_coef=0.00001, learning_rate=0.0005, vf_coef=0.5, max_grad_norm=0.5, gae_lambda=0.95) for env in envs]
+models = [PPO(MlpPolicy, env) for env in envs]
 
 nloops=1
 for loop in range(nloops):

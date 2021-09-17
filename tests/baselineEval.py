@@ -1,5 +1,3 @@
-model_name = "p10_baseline"
-
 import multiprocessing
 import sys
 from pettingzoo.test import parallel_api_test
@@ -23,6 +21,8 @@ import os
 import random
 random.seed(12)
 np.random.seed(12)
+
+model_name = "default_baseline"
 
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
