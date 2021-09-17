@@ -17,7 +17,7 @@ import time
 random.seed(12)
 np.random.seed(12)
 
-model_name = "default"
+model_name = "high_lr"
 
 tic = time.time()
 
@@ -61,7 +61,7 @@ for env in envs:
         env.venv.vec_envs[n].par_env.grid = grids[n]
         env.venv.vec_envs[n].par_env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env) for env in envs]
+models = [PPO(MlpPolicy, env, ent_coef=0.1, learning_rate=0.001) for env in envs]
 
 nloops=1
 for loop in range(nloops):
