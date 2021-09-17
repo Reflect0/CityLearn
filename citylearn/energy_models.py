@@ -49,7 +49,8 @@ class Building:
             dhw_heating_device (ElectricHeater or HeatPump)
             cooling_device (HeatPump)
         """
-        self.start_time=0
+        self.start_time=6*30*4*24
+        self.tracker = 0
         weather_file = os.path.join(data_path, "weather_data.csv")
         solar_file = os.path.join(data_path, "solar_generation_1kW.csv")
         self.hourly_timesteps = hourly_timesteps
@@ -227,7 +228,6 @@ class Building:
             self.normalize()
 
     def normalize(self, file=None):
-
         if file:
             try:
                 if os.path.isfile(file):
@@ -360,7 +360,9 @@ class Building:
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
         self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
-        self.time_step = (self.time_step + 1) % len(self.sim_results['t_in'])
+        self.tracker = (self.tracker + 1) % 8760
+        self.time_step = self.start_time + self.tracker
+        # self.time_step = (self.time_step + 1) % len(self.sim_results['t_in'])
         return
 
     def set_dhw_draws(self):

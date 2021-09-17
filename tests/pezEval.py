@@ -23,7 +23,7 @@ random.seed(12)
 np.random.seed(12)
 # multiprocessing.set_start_method("fork")
 
-model_name = "random"
+model_name = "summer"
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
