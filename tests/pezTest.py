@@ -60,8 +60,10 @@ grids += [deepcopy(grid) for _ in range(nenvs-1)]
 print('setting the grid...')
 for env in envs:
     for n in range(nenvs):
-        env.venv.vec_envs[n].par_env.grid = grids[n]
-        env.venv.vec_envs[n].par_env.initialize_rbc_agents()
+        env.venv.vec_envs[n].par_env.aec_env.env.env.env.grid = grids[n]
+        # env.venv.vec_envs[n].par_env.grid = grids[n]
+        env.venv.vec_envs[n].par_env.aec_env.env.env.env.initialize_rbc_agents()
+        # env.venv.vec_envs[n].par_env.initialize_rbc_agents()
 
 models = [PPO(MlpPolicy, env, ent_coef=0.1, learning_rate=0.001) for env in envs]
 
