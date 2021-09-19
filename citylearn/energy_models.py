@@ -257,7 +257,7 @@ class Building:
 
     def get_obs(self, net):
         s = 32*[0]
-        s[self.bus] = 1
+        s[self.bus-1] = 1
         for state_name, value in self.enabled_states.items():
             if value == True:
                 if state_name == "net_electricity_consumption":
