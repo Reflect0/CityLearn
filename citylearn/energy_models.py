@@ -49,7 +49,7 @@ class Building:
             dhw_heating_device (ElectricHeater or HeatPump)
             cooling_device (HeatPump)
         """
-        # self.start_time=0
+        self.start_time=0
         self.tracker = 0
         weather_file = os.path.join(data_path, "weather_data.csv")
         solar_file = os.path.join(data_path, "solar_generation_1kW.csv")
