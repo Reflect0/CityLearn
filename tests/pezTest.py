@@ -45,8 +45,9 @@ envs = [MyEnv(grid) for _ in range(config['nclusters'])]
 # envs = [ss.pad_observations_v0(env) for env in envs]
 
 print('creating pettingzoo env...')
-envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
 envs = [ss.agent_indicator_v0(env) for env in envs]
+envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
+
 
 print('stacking vec env...')
 nenvs = 2
