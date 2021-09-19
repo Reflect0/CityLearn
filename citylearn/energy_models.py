@@ -437,7 +437,7 @@ class Building:
         self.normalization_range = np.array(s_high) - np.array(s_low)
         self.normalization_mid = np.array(s_low) + 0.5 * self.normalization_range
 
-        num_states = sum(self.enabled_states.values())
+        num_states = len(s)
         low = -1 * np.ones(num_states)
         high = np.ones(num_states)
 
