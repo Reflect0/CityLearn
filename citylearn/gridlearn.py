@@ -3,7 +3,7 @@ from pandapower import runpp
 from pandapower.plotting import simple_plotly, pf_res_plotly
 import pandapower.networks as networks
 from citylearn import CityLearn
-from citylearn import Building
+from citylearn import Building, Weather
 from citylearn import RBC_Agent, RBC_Agent_v2
 import numpy as np
 import pandas as pd
@@ -26,6 +26,9 @@ class GridLearn: # not a super class of the CityLearn environment
 
         self.data_path = data_path
         self.climate_zone = climate_zone
+        self.weather_file = os.path.join(self.data_path, "weather_data.csv")
+        self.solar_file = os.path.join(self.data_path, "solar_generation_1kW.csv")
+        self.weather = Weather(self.weather_file, self.solar_file, hourly_timesteps)
         self.buildings_states_actions_file = buildings_states_actions_file
         self.hourly_timesteps = hourly_timesteps
         self.save_memory = save_memory
@@ -164,7 +167,7 @@ class GridLearn: # not a super class of the CityLearn environment
                 prob = prob / sum(prob)
                 uid = np.random.choice(self.building_ids, p=prob)
                 # print(uid)
-                bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, uid, save_memory=self.save_memory)
+                bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, uid, self.weather, save_memory=self.save_memory)
                 bldg.assign_bus(existing_node)
                 bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
                 if np.random.uniform() <= 2:

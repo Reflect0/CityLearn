@@ -23,7 +23,7 @@ random.seed(12)
 np.random.seed(12)
 # multiprocessing.set_start_method("fork")
 
-model_name = "agent_ind_v1"
+model_name = "null_batt"
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
@@ -50,7 +50,7 @@ envs = [MyEnv(grid) for _ in range(config['nclusters'])]
 # envs = [ss.pad_observations_v0(env) for env in envs]
 
 print('creating pettingzoo env...')
-envs = [ss.agent_indicator_v0(env) for env in envs]
+# envs = [ss.agent_indicator_v0(env) for env in envs]
 envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
 
 
@@ -65,10 +65,10 @@ grids += [deepcopy(grid) for _ in range(nenvs-1)]
 print('setting the grid...')
 for env in envs:
     for n in range(nenvs):
-        env.venv.vec_envs[n].par_env.aec_env.env.env.env.grid = grids[n]
-        # env.venv.vec_envs[n].par_env.grid = grids[n]
-        env.venv.vec_envs[n].par_env.aec_env.env.env.env.initialize_rbc_agents()
-        # env.venv.vec_envs[n].par_env.initialize_rbc_agents()
+        # env.venv.vec_envs[n].par_env.aec_env.env.env.env.grid = grids[n]
+        env.venv.vec_envs[n].par_env.grid = grids[n]
+        # env.venv.vec_envs[n].par_env.aec_env.env.env.env.initialize_rbc_agents()
+        env.venv.vec_envs[n].par_env.initialize_rbc_agents()
 
 models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
 

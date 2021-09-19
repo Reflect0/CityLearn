@@ -5,12 +5,11 @@ import pandas as pd
 import json
 import random, string
 from gym import spaces
-from citylearn.energy_models import HeatPump, ElectricHeater, EnergyStorage, Building
-from citylearn.reward_function import reward_function_sa, reward_function_ma
+from citylearn.energy_models import *
+# from citylearn.reward_function import reward_function_sa, reward_function_ma
 from pathlib import Path
 from citylearn.agent import RBC_Agent
 gym.logger.set_level(40)
-
 
 # def auto_size(buildings): # DEPRICATED
 #     for building in buildings.values():
