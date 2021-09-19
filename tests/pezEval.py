@@ -23,7 +23,7 @@ random.seed(12)
 np.random.seed(12)
 # multiprocessing.set_start_method("fork")
 
-model_name = "summer"
+model_name = "agent_ind_v1"
 climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
@@ -51,6 +51,7 @@ envs = [MyEnv(grid) for _ in range(config['nclusters'])]
 
 print('creating pettingzoo env...')
 envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
+envs = [ss.agent_indicator_v0(env) for env in envs]
 
 print('stacking vec env...')
 nenvs = 2

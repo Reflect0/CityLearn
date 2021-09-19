@@ -17,7 +17,7 @@ import time
 random.seed(12)
 np.random.seed(12)
 
-model_name = "summer"
+model_name = "agent_ind_v1"
 
 tic = time.time()
 
@@ -46,6 +46,7 @@ envs = [MyEnv(grid) for _ in range(config['nclusters'])]
 
 print('creating pettingzoo env...')
 envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
+envs = [ss.agent_indicator_v0(env) for env in envs]
 
 print('stacking vec env...')
 nenvs = 2

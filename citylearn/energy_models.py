@@ -49,7 +49,7 @@ class Building:
             dhw_heating_device (ElectricHeater or HeatPump)
             cooling_device (HeatPump)
         """
-        self.start_time=6*30*4*24
+        # self.start_time=0
         self.tracker = 0
         weather_file = os.path.join(data_path, "weather_data.csv")
         solar_file = os.path.join(data_path, "solar_generation_1kW.csv")
@@ -361,8 +361,8 @@ class Building:
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
         self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
         self.tracker = (self.tracker + 1) % 8760
-        self.time_step = self.start_time + self.tracker
-        # self.time_step = (self.time_step + 1) % len(self.sim_results['t_in'])
+        # self.time_step = self.start_time + self.tracker
+        self.time_step = (self.time_step + 1) % len(self.sim_results['t_in'])
         return
 
     def set_dhw_draws(self):
