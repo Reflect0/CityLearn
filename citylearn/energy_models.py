@@ -256,8 +256,8 @@ class Building:
         return reward
 
     def get_obs(self, net):
-        s = []
-        all_states = []
+        s = 32*[0]
+        s[self.bus] = 1
         for state_name, value in self.enabled_states.items():
             if value == True:
                 if state_name == "net_electricity_consumption":
@@ -399,7 +399,7 @@ class Building:
 
     def set_state_space(self):
         # Finding the max and min possible values of all the states, which can then be used by the RL agent to scale the states and train any function approximators more effectively
-        s_low, s_high = [], []
+        s_low, s_high = [0]*32, [1]*32
         for state_name, value in self.enabled_states.items():
             if value == True:
                 if state_name == "net_electricity_consumption":
