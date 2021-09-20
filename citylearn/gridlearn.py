@@ -284,6 +284,8 @@ class GridLearn: # not a super class of the CityLearn environment
             self.buildings[agent].step(action_dict[agent])
 
         self.ts += 1
+        if (self.ts % 100) == 0:
+            print('here')
         self.tester = np.random.uniform(1,5,(5,))
         # update the grid based on updated buildings
         self.update_grid()
@@ -291,10 +293,11 @@ class GridLearn: # not a super class of the CityLearn environment
         # run the grid power flow
         try:
             runpp(self.net, enforce_q_lims=True)
-            print(self.net.res_bus.p_mw.tolist())
+            # print(self.net.res_bus.p_mw.tolist())
         except:
             pp.diagnostic(self.net)
             quit()
+            print("QUITTING!!!!")
         rl_agent_keys = list(action_dict.keys())
         rl_agent_keys = [agent for agent in rl_agent_keys if agent in self.rl_agents ]
         obs = self.state(rl_agent_keys)
@@ -319,11 +322,11 @@ class GridLearn: # not a super class of the CityLearn environment
         rl_buses = list(set(self.net.load.loc[filtered].bus))
         fig, ax = plt.subplots(len(rl_buses), figsize=(20, 8*len(rl_buses)))
         x = np.arange(self.ts) / self.hourly_timesteps / 24 / self.nclusters
-        print(len(x))
+        # print(len(x))
         for i in range(len(rl_buses)):
             data = np.array(self.voltage_data)[:,rl_buses[i]]
             ax[i].scatter(x, data)
-            print(data)
+            # print(data)
             ax[i].set_title(f'Bus {rl_buses[i]}')
             ax[i].set_ylabel('Voltage (p.u.)')
             ax[i].set_xlabel('Time (Days)')

@@ -17,7 +17,7 @@ import time
 random.seed(12)
 np.random.seed(12)
 
-model_name = "null_batt"
+model_name = "test"
 
 tic = time.time()
 
@@ -40,12 +40,7 @@ grid = GridLearn(**config)
 
 envs = [MyEnv(grid) for _ in range(config['nclusters'])]
 
-# print('padding action/observation spaces...')
-# envs = [ss.pad_action_space_v0(env) for env in envs]
-# envs = [ss.pad_observations_v0(env) for env in envs]
-
 print('creating pettingzoo env...')
-# envs = [ss.agent_indicator_v0(env) for env in envs]
 envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
 
 
