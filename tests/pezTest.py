@@ -65,7 +65,7 @@ for env in envs:
         # env.venv.vec_envs[n].par_env.aec_env.env.env.env.initialize_rbc_agents()
         env.venv.vec_envs[n].par_env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, ent_coef=0.1, learning_rate=0.001, n_epochs=100) for env in envs]
+models = [PPO(MlpPolicy, env, ent_coef=0.1, learning_rate=0.001, n_epochs=30) for env in envs]
 
 nloops=1
 for loop in range(nloops):

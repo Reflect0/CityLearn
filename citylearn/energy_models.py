@@ -38,8 +38,44 @@ def subhourly_randomdraw_interp(hourly_data, subhourly_steps, dhw_pwr):
                 data += [0]
     return list(data)
 
+class Weather:
+    def __init__(self, weather_file, solar_file, hourly_timesteps):
+        self.file = weather_file
+        self.hourly_timesteps = hourly_timesteps
+
+        with open(weather_file) as csv_file:
+            weather_data = pd.read_csv(csv_file)
+
+        mapping_dict = {'t_out':'Outdoor Drybulb Temperature [C]',
+                        'rh_out':'Outdoor Relative Humidity [%]',
+                        'diffuse_solar_rad':'Diffuse Solar Radiation [W/m2]',
+                        'direct_solar_rad':'Direct Solar Radiation [W/m2]',
+                        't_out_pred_6h':'6h Prediction Outdoor Drybulb Temperature [C]',
+                        't_out_pred_12h':'12h Prediction Outdoor Drybulb Temperature [C]',
+                        't_out_pred_24h':'24h Prediction Outdoor Drybulb Temperature [C]',
+                        'rh_out_pred_6h':'6h Prediction Outdoor Relative Humidity [%]',
+                        'rh_out_pred_12h':'12h Prediction Outdoor Relative Humidity [%]',
+                        'rh_out_pred_24h':'24h Prediction Outdoor Relative Humidity [%]',
+                        'diffuse_solar_rad_pred_6h':'6h Prediction Diffuse Solar Radiation [W/m2]',
+                        'diffuse_solar_rad_pred_12h':'12h Prediction Direct Solar Radiation [W/m2]',
+                        'diffuse_solar_rad_pred_24h':'24h Prediction Direct Solar Radiation [W/m2]',
+                        'direct_solar_rad_pred_6h':'6h Prediction Diffuse Solar Radiation [W/m2]',
+                        'direct_solar_rad_pred_12h':'12h Prediction Diffuse Solar Radiation [W/m2]',
+                        'direct_solar_rad_pred_24h':'24h Prediction Diffuse Solar Radiation [W/m2]'}
+        res = {}
+        for k,v in mapping_dict.items():
+            if k in ['direct_solar_rad','t_out','t_out_pred_6h']:#self.enabled_states[k]:
+                res[k] = subhourly_lin_interp(weather_data[v], self.hourly_timesteps)
+
+        with open(solar_file) as csv_file:
+            data = pd.read_csv(csv_file)
+
+        res['solar_gen'] = subhourly_lin_interp(data['Hourly Data: AC inverter power (W)']/1000, self.hourly_timesteps)
+
+        self.data = res
+
 class Building:
-    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, uid, save_memory = True):
+    def __init__(self, data_path, climate_zone, buildings_states_actions_file, hourly_timesteps, uid, weather, save_memory = True):
         """
         Args:
             buildingId (int)
@@ -51,8 +87,9 @@ class Building:
         """
         self.start_time=0
         self.tracker = 0
-        weather_file = os.path.join(data_path, "weather_data.csv")
-        solar_file = os.path.join(data_path, "solar_generation_1kW.csv")
+        self.weather = weather
+        # weather_file = os.path.join(data_path, "weather_data.csv")
+        # solar_file = os.path.join(data_path, "solar_generation_1kW.csv")
         self.hourly_timesteps = hourly_timesteps
 
         # create a Unique Building ID
@@ -67,9 +104,8 @@ class Building:
         # create all the systems that go in the house
         attributes_file = os.path.join(data_path, "building_attributes.json")
         attributes = self.set_attributes(attributes_file)
-        save_memory = True
+        self.pv_installed = attributes["Solar_Power_Installed(kW)"]
 
-        # not sure i need these...
         self.save_memory = save_memory
         self.create_systems(attributes)
 
@@ -82,11 +118,11 @@ class Building:
         sim_file = os.path.join(data_path, f"Building_{self.building_type}.csv")
         self.sim_results = self.load_sim_results(sim_file)
 
-        weather_res = self.load_weather_results(weather_file)
-        self.sim_results.update(weather_res)
-
-        solar_res = self.load_solar_results(solar_file, attributes)
-        self.sim_results.update(solar_res)
+        # weather_res = self.load_weather_results(weather_file)
+        # self.sim_results.update(weather_res)
+        #
+        # solar_res = self.load_solar_results(solar_file, attributes)
+        # self.sim_results.update(solar_res)
 
         self.set_dhw_cop()
         self.set_cooling_cop()
@@ -114,6 +150,7 @@ class Building:
         self.pv = []
         self.max_dev = None
         self.max_pwr = None
+
     def assign_bus(self, bus):
         self.bus = bus
         self.buildingId += f'{bus:03}'
@@ -176,39 +213,39 @@ class Building:
         res['rh_in'] = subhourly_lin_interp(data['Indoor Relative Humidity [%]'], self.hourly_timesteps)
         return res
 
-    def load_weather_results(self, weather_file):
-        with open(weather_file) as csv_file:
-            weather_data = pd.read_csv(csv_file)
+    # def load_weather_results(self, weather_file):
+    #     with open(weather_file) as csv_file:
+    #         weather_data = pd.read_csv(csv_file)
+    #
+    #     mapping_dict = {'t_out':'Outdoor Drybulb Temperature [C]',
+    #                     'rh_out':'Outdoor Relative Humidity [%]',
+    #                     'diffuse_solar_rad':'Diffuse Solar Radiation [W/m2]',
+    #                     'direct_solar_rad':'Direct Solar Radiation [W/m2]',
+    #                     't_out_pred_6h':'6h Prediction Outdoor Drybulb Temperature [C]',
+    #                     't_out_pred_12h':'12h Prediction Outdoor Drybulb Temperature [C]',
+    #                     't_out_pred_24h':'24h Prediction Outdoor Drybulb Temperature [C]',
+    #                     'rh_out_pred_6h':'6h Prediction Outdoor Relative Humidity [%]',
+    #                     'rh_out_pred_12h':'12h Prediction Outdoor Relative Humidity [%]',
+    #                     'rh_out_pred_24h':'24h Prediction Outdoor Relative Humidity [%]',
+    #                     'diffuse_solar_rad_pred_6h':'6h Prediction Diffuse Solar Radiation [W/m2]',
+    #                     'diffuse_solar_rad_pred_12h':'12h Prediction Direct Solar Radiation [W/m2]',
+    #                     'diffuse_solar_rad_pred_24h':'24h Prediction Direct Solar Radiation [W/m2]',
+    #                     'direct_solar_rad_pred_6h':'6h Prediction Diffuse Solar Radiation [W/m2]',
+    #                     'direct_solar_rad_pred_12h':'12h Prediction Diffuse Solar Radiation [W/m2]',
+    #                     'direct_solar_rad_pred_24h':'24h Prediction Diffuse Solar Radiation [W/m2]'}
+    #     res = {}
+    #     for k,v in mapping_dict.items():
+    #         if self.enabled_states[k]:
+    #             res[k] = subhourly_lin_interp(weather_data[v], self.hourly_timesteps)
+    #     return res
 
-        mapping_dict = {'t_out':'Outdoor Drybulb Temperature [C]',
-                        'rh_out':'Outdoor Relative Humidity [%]',
-                        'diffuse_solar_rad':'Diffuse Solar Radiation [W/m2]',
-                        'direct_solar_rad':'Direct Solar Radiation [W/m2]',
-                        't_out_pred_6h':'6h Prediction Outdoor Drybulb Temperature [C]',
-                        't_out_pred_12h':'12h Prediction Outdoor Drybulb Temperature [C]',
-                        't_out_pred_24h':'24h Prediction Outdoor Drybulb Temperature [C]',
-                        'rh_out_pred_6h':'6h Prediction Outdoor Relative Humidity [%]',
-                        'rh_out_pred_12h':'12h Prediction Outdoor Relative Humidity [%]',
-                        'rh_out_pred_24h':'24h Prediction Outdoor Relative Humidity [%]',
-                        'diffuse_solar_rad_pred_6h':'6h Prediction Diffuse Solar Radiation [W/m2]',
-                        'diffuse_solar_rad_pred_12h':'12h Prediction Direct Solar Radiation [W/m2]',
-                        'diffuse_solar_rad_pred_24h':'24h Prediction Direct Solar Radiation [W/m2]',
-                        'direct_solar_rad_pred_6h':'6h Prediction Diffuse Solar Radiation [W/m2]',
-                        'direct_solar_rad_pred_12h':'12h Prediction Diffuse Solar Radiation [W/m2]',
-                        'direct_solar_rad_pred_24h':'24h Prediction Diffuse Solar Radiation [W/m2]'}
-        res = {}
-        for k,v in mapping_dict.items():
-            if self.enabled_states[k]:
-                res[k] = subhourly_lin_interp(weather_data[v], self.hourly_timesteps)
-        return res
-
-    def load_solar_results(self, solar_file, attributes):
-        with open(solar_file) as csv_file:
-            data = pd.read_csv(csv_file)
-
-        res = {}
-        res['solar_gen'] = subhourly_lin_interp(attributes['Solar_Power_Installed(kW)']*data['Hourly Data: AC inverter power (W)']/1000, self.hourly_timesteps)
-        return res
+    # def load_solar_results(self, solar_file, attributes):
+    #     with open(solar_file) as csv_file:
+    #         data = pd.read_csv(csv_file)
+    #
+    #     res = {}
+    #     res['solar_gen'] = subhourly_lin_interp(attributes['Solar_Power_Installed(kW)']*data['Hourly Data: AC inverter power (W)']/1000, self.hourly_timesteps)
+    #     return res
 
     def assign_neighbors(self, net):
         my_x = net.bus_geodata.loc[self.bus]['x']
@@ -288,19 +325,22 @@ class Building:
                             voltage_spread += abs(net.res_bus.loc[line.to_bus].vm_pu - net.res_bus.loc[line.from_bus].vm_pu)
                         s.append(voltage_spread)
 
-                elif state_name != 'cooling_storage_soc' and state_name != 'dhw_storage_soc' and state_name != 'electrical_storage_soc' and state_name != 'solar_gen':
+                elif state_name == 'cooling_storage_soc':
+                    s.append(self.cooling_storage._soc/self.cooling_storage.capacity)
+                elif state_name == 'dhw_storage_soc':
+                    s.append(self.dhw_storage._soc/self.dhw_storage.capacity)
+                elif state_name == 'electrical_storage_soc':
+                    s.append(self.electrical_storage._soc/self.electrical_storage.capacity)
+
+                elif state_name in self.weather.data.keys():
+                    if state_name == 'solar_gen':
+                        s.append(self.pv_installed*self.weather.data[state_name][self.time_step])
+                    else:
+                        s.append(self.weather.data[state_name][self.time_step])
+                else:
                     s.append(self.sim_results[state_name][self.time_step])
 
-                else: # if state_name = cooling_storage_soc,
-                    if state_name == 'solar_gen':
-                        s.append(self.solar_generation)
-                    if state_name == 'cooling_storage_soc':
-                        s.append(self.cooling_storage._soc/self.cooling_storage.capacity)
-                    elif state_name == 'dhw_storage_soc':
-                        s.append(self.dhw_storage._soc/self.dhw_storage.capacity)
-                    elif state_name == 'electrical_storage_soc':
-                        s.append(self.electrical_storage._soc/self.electrical_storage.capacity)
-        return (np.array(s) - self.normalization_mid) / self.normalization_range
+        return np.divide(np.subtract(s, self.normalization_mid),self.normalization_range)#(np.array(s) - self.normalization_mid) / self.normalization_range
 
     def close(self, folderName, write=False):
         if write:
@@ -404,7 +444,7 @@ class Building:
             if value == True:
                 if state_name == "net_electricity_consumption":
                     # lower and upper bounds of net electricity consumption are rough estimates and may not be completely accurate. Scaling this state-variable using these bounds may result in normalized values above 1 or below 0.
-                    self._net_elec_cons_upper_bound = max(np.array(self.sim_results['non_shiftable_load']) - np.array(self.sim_results['solar_gen']) + np.array(self.sim_results['dhw_demand'])/.8 + np.array(self.sim_results['cooling_demand']) + self.dhw_storage.capacity/.8 + self.cooling_storage.capacity/2)
+                    self._net_elec_cons_upper_bound = max(np.array(self.sim_results['non_shiftable_load']) - np.array(self.pv_installed*self.weather.data['solar_gen']) + np.array(self.sim_results['dhw_demand'])/.8 + np.array(self.sim_results['cooling_demand']) + self.dhw_storage.capacity/.8 + self.cooling_storage.capacity/2)
                     s_low.append(self.solar_power_capacity)
                     s_high.append(self._net_elec_cons_upper_bound)
                     self.net_elec_cons_range = self._net_elec_cons_upper_bound
@@ -429,6 +469,10 @@ class Building:
                 elif state_name in ['cooling_storage_soc','dhw_storage_soc','electrical_storage_soc']:
                     s_low.append(0.0)
                     s_high.append(1.0)
+
+                elif state_name in self.weather.data.keys():
+                    s_low.append(min(self.weather.data[state_name]))
+                    s_high.append(max(self.weather.data[state_name]))
 
                 else:
                     s_low.append(min(self.sim_results[state_name]))
@@ -602,7 +646,7 @@ class Building:
 
     def get_solar_power(self, curtailment=1):
         c = 0.5 - 0.5 * curtailment # maps curtailment -1 to 100% reduction and 1 to no curtailment
-        self.solar_power = (1 - c) * self.sim_results['solar_gen'][self.time_step]
+        self.solar_power = (1 - c) * self.pv_installed*self.weather.data['solar_gen'][self.time_step]
         return self.solar_power
 
     def set_phase_lag(self, phi=-1):
@@ -615,7 +659,7 @@ class Building:
         # If the DHW device is a HeatPump
         if isinstance(self.dhw_heating_device, HeatPump):
             # Calculating COPs of the heat pumps for every hour
-            self.dhw_heating_device.cop_heating = self.dhw_heating_device.eta_tech*(self.dhw_heating_device.t_target_heating + 273.15)/np.clip(self.dhw_heating_device.t_target_heating - self.sim_results['t_out'],a_min=0.1*np.ones(len(self.sim_results['t_out'])), a_max=None)
+            self.dhw_heating_device.cop_heating = self.dhw_heating_device.eta_tech*(self.dhw_heating_device.t_target_heating + 273.15)/np.clip(self.dhw_heating_device.t_target_heating - self.weather.data['t_out'],a_min=0.1*np.ones(len(self.weather.data['t_out'])), a_max=None)
             self.dhw_heating_device.cop_heating[self.dhw_heating_device.cop_heating < 0] = 20.0
             self.dhw_heating_device.cop_heating[self.dhw_heating_device.cop_heating > 20] = 20.0
             self.dhw_heating_device.cop_heating = self.dhw_heating_device.cop_heating.to_numpy()
@@ -624,7 +668,7 @@ class Building:
         return self.dhw_heating_device._electrical_consumption_heating
 
     def set_cooling_cop(self):
-        self.cooling_device.cop_cooling = self.cooling_device.eta_tech*(np.add(self.cooling_device.t_target_cooling,273.15))/np.clip(np.subtract(self.sim_results['t_out'],self.cooling_device.t_target_cooling),a_min=0.1*np.ones(len(self.sim_results['t_out'])), a_max=None)
+        self.cooling_device.cop_cooling = self.cooling_device.eta_tech*(np.add(self.cooling_device.t_target_cooling,273.15))/np.clip(np.subtract(self.weather.data['t_out'],self.cooling_device.t_target_cooling),a_min=0.1*np.ones(len(self.weather.data['t_out'])), a_max=None)
         self.cooling_device.cop_cooling[self.cooling_device.cop_cooling < 0] = 20.0
         self.cooling_device.cop_cooling[self.cooling_device.cop_cooling > 20] = 20.0
 
@@ -638,7 +682,7 @@ class Building:
     def reset(self, net, reset_logs):
 
         self.current_gross_electricity_demand = self.sim_results['non_shiftable_load'][self.time_step]
-        self.current_gross_generation = self.sim_results['solar_gen'][self.time_step]
+        self.current_gross_generation = self.pv_installed * self.weather.data['solar_gen'][self.time_step]
 
         if self.dhw_storage is not None:
             self.dhw_storage.reset()
@@ -712,7 +756,7 @@ class Building:
             self.cooling_demand_building = np.array(self.sim_results['cooling_demand'][:self.time_step])
             self.dhw_demand_building = np.array(self.sim_results['dhw_demand'][:self.time_step])
             self.electric_consumption_appliances = np.array(self.sim_results['non_shiftable_load'][:self.time_step])
-            self.electric_generation = np.array(self.sim_results['solar_gen'][:self.time_step])
+            self.electric_generation = np.array(self.pv_installed*self.weather.data['solar_gen'][:self.time_step])
 
             elec_consumption_dhw = 0
             elec_consumption_dhw_storage = 0
