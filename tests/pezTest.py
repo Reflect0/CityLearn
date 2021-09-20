@@ -17,7 +17,7 @@ import time
 random.seed(12)
 np.random.seed(12)
 
-model_name = "agent_ind_v1"
+model_name = "agent_ind_v2"
 
 tic = time.time()
 
@@ -65,7 +65,7 @@ for env in envs:
         # env.venv.vec_envs[n].par_env.aec_env.env.env.env.initialize_rbc_agents()
         env.venv.vec_envs[n].par_env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, ent_coef=0.1, learning_rate=0.001) for env in envs]
+models = [PPO(MlpPolicy, env, ent_coef=0.1, learning_rate=0.001, n_epochs=100) for env in envs]
 
 nloops=1
 for loop in range(nloops):
@@ -73,10 +73,6 @@ for loop in range(nloops):
     [env.reset() for env in envs]
     print('==============')
     models[0].learn(4*4*8759)
-    # for ts in range(4*8759):
-    #     for model in models:
-    #         # print("CALL LEARN")
-    #         model.learn(1, reset_num_timesteps=False)
     if not os.path.exists(f'models/{model_name}'):
         os.makedirs(f'models/{model_name}')
     os.chdir(f'models/{model_name}')
