@@ -279,13 +279,12 @@ class GridLearn: # not a super class of the CityLearn environment
         return actionspace, obsspace
 
     def step(self, action_dict):
-        # print(f"CALL STEP, {action_dict.keys()}")
         for agent in action_dict:
             self.buildings[agent].step(action_dict[agent])
 
         self.ts += 1
-        if (self.ts % 100) == 0:
-            print('here')
+        if (self.ts % 1000) == 0:
+            print('here', self.ts)
         self.tester = np.random.uniform(1,5,(5,))
         # update the grid based on updated buildings
         self.update_grid()

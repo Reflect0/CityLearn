@@ -38,42 +38,42 @@ config = {
 
 grid = GridLearn(**config)
 
-envs = [MyEnv(grid) for _ in range(config['nclusters'])]
+env = MyEnv(grid) #for _ in range(config['nclusters'])
+env.grid = grid
+env.initialize_rbc_agents()
 
 print('creating pettingzoo env...')
-envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
-
+env = ss.pettingzoo_env_to_vec_env_v0(env)
 
 print('stacking vec env...')
-nenvs = 2
-envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
+# nenvs = 2
+env = ss.concat_vec_envs_v0(env, 1, num_cpus=1, base_class='stable_baselines3')
 
 grid.normalize_reward()
-grids = [grid]
-grids += [deepcopy(grid) for _ in range(nenvs-1)]
 
-print('setting the grid...')
-for env in envs:
-    for n in range(nenvs):
-        # env.venv.vec_envs[n].par_env.aec_env.env.env.env.grid = grids[n]
-        env.venv.vec_envs[n].par_env.grid = grids[n]
-        # env.venv.vec_envs[n].par_env.aec_env.env.env.env.initialize_rbc_agents()
-        env.venv.vec_envs[n].par_env.initialize_rbc_agents()
+# print('setting the grid...')
+# for env in envs:
+#     for n in range(nenvs):
+#         # env.venv.vec_envs[n].par_env.aec_env.env.env.env.grid = grids[n]
+#         env.venv.vec_envs[n].par_env.grid = grids[n]
+#         # env.venv.vec_envs[n].par_env.aec_env.env.env.env.initialize_rbc_agents()
+#         env.venv.vec_envs[n].par_env.initialize_rbc_agents()
 
-models = [PPO(MlpPolicy, env, ent_coef=0.1, learning_rate=0.001, n_epochs=30) for env in envs]
+model = PPO(MlpPolicy, env, ent_coef=0.1, learning_rate=0.001, n_epochs=30)
 
-nloops=1
-for loop in range(nloops):
-    print('loop', loop)
-    [env.reset() for env in envs]
-    print('==============')
-    models[0].learn(4*4*8759)
-    if not os.path.exists(f'models/{model_name}'):
-        os.makedirs(f'models/{model_name}')
-    os.chdir(f'models/{model_name}')
-    for m in range(len(models)):
-        models[m].save(f"model_{m}")
-    os.chdir('../..')
+# nloops=1
+# for loop in range(nloops):
+env.reset()
+print('==============')
+model.learn(4*4*8759, verbose=2)
+print('==============')
+if not os.path.exists(f'models/{model_name}'):
+    os.makedirs(f'models/{model_name}')
+os.chdir(f'models/{model_name}')
+# for m in range(len(models)):
+#     print('saving trained model')
+model.save(f"model")
+os.chdir('../..')
 
 toc = time.time()
 print(toc-tic)

@@ -43,39 +43,33 @@ config = {
 
 grid = GridLearn(**config)
 
-envs = [MyEnv(grid) for _ in range(config['nclusters'])]
-
-# print('padding action/observation spaces...')
-# envs = [ss.pad_action_space_v0(env) for env in envs]
-# envs = [ss.pad_observations_v0(env) for env in envs]
+env = MyEnv(grid) #for _ in range(config['nclusters'])
+env.grid = grid
+env.initialize_rbc_agents()
 
 print('creating pettingzoo env...')
-# envs = [ss.agent_indicator_v0(env) for env in envs]
-envs = [ss.pettingzoo_env_to_vec_env_v0(env) for env in envs]
-
+env = ss.pettingzoo_env_to_vec_env_v0(env)
 
 print('stacking vec env...')
-nenvs = 2
-envs = [ss.concat_vec_envs_v0(env, nenvs, num_cpus=1, base_class='stable_baselines3') for env in envs]
+# nenvs = 2
+env = ss.concat_vec_envs_v0(env, 1, num_cpus=1, base_class='stable_baselines3')
 
 grid.normalize_reward()
-grids = [grid]
-grids += [deepcopy(grid) for _ in range(nenvs-1)]
+# print('setting the grid...')
+# for env in envs:
+#     for n in range(nenvs):
+#         # env.venv.vec_envs[n].par_env.aec_env.env.env.env.grid = grids[n]
+#         env.venv.vec_envs[n].par_env.grid = grids[n]
+#         # env.venv.vec_envs[n].par_env.aec_env.env.env.env.initialize_rbc_agents()
+#         env.venv.vec_envs[n].par_env.initialize_rbc_agents()
 
-print('setting the grid...')
-for env in envs:
-    for n in range(nenvs):
-        # env.venv.vec_envs[n].par_env.aec_env.env.env.env.grid = grids[n]
-        env.venv.vec_envs[n].par_env.grid = grids[n]
-        # env.venv.vec_envs[n].par_env.aec_env.env.env.env.initialize_rbc_agents()
-        env.venv.vec_envs[n].par_env.initialize_rbc_agents()
-
-models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
+# models = [PPO.load(f"models/{model_name}/model_{m}") for m in range(len(envs))]
+model = PPO.load(f"models/{model_name}/model")
 
 sum_reward = 0
-obss = [env.reset() for env in envs]
+obss env.reset() #for env in envs]
 for ts in range(365*24*4): # test on 5 timesteps
-    for m in range(len(models)): # again, alternate through models
+    # for m in range(len(models)): # again, alternate through models
         # # get the current observation from the perspective of the active team
         # # this can probably be cleaned up
         # foo = []
@@ -88,7 +82,9 @@ for ts in range(365*24*4): # test on 5 timesteps
         #
         # obss[m] = np.vstack(foo)
 
-        action = models[m].predict(obss[m], deterministic=True)[0] # send it to the SB model to select an action
-        obss[m], reward, done, info = envs[m].step(action) # update environment
+    action = model.predict(obss, deterministic=True)[0] # send it to the SB model to select an action
+    print(action)
+    print(grid.ts)
+    obss, reward, done, info = env.step(action) # update environment
 
-grid.plot_all()
+env.venv.vec_envs[0].par_env.grid.plot_all()
