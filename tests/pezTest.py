@@ -17,11 +17,11 @@ import time
 random.seed(12)
 np.random.seed(12)
 
-model_name = "climate_5"
+model_name = "null_batt"
 
 tic = time.time()
 
-climate_zone = 5
+climate_zone = 1
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 

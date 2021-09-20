@@ -99,7 +99,7 @@ class RBC_Agent:
             actions += [-1.0]
 
         if self.env.enabled_actions['electrical_storage']:
-            actions += [tou_storage]
+            actions += [0]#[tou_storage]
 
         return actions # casting this as a list of list matches the predict function in Stable Baselines.
 
@@ -147,6 +147,6 @@ class RBC_Agent_v2:
             actions += [-1.0]
 
         if self.env.enabled_actions['electrical_storage']:
-            actions += [tou_storage]
+            actions += [0]#[tou_storage]
 
         return actions
