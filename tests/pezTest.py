@@ -17,11 +17,11 @@ import time
 random.seed(12)
 np.random.seed(12)
 
-model_name = "agent_ind_v2"
+model_name = "climate_5"
 
 tic = time.time()
 
-climate_zone = 1
+climate_zone = 5
 data_path = Path("../citylearn/data/Climate_Zone_"+str(climate_zone))
 buildings_states_actions = '../citylearn/buildings_state_action_space.json'
 
