@@ -213,40 +213,6 @@ class Building:
         res['rh_in'] = subhourly_lin_interp(data['Indoor Relative Humidity [%]'], self.hourly_timesteps)
         return res
 
-    # def load_weather_results(self, weather_file):
-    #     with open(weather_file) as csv_file:
-    #         weather_data = pd.read_csv(csv_file)
-    #
-    #     mapping_dict = {'t_out':'Outdoor Drybulb Temperature [C]',
-    #                     'rh_out':'Outdoor Relative Humidity [%]',
-    #                     'diffuse_solar_rad':'Diffuse Solar Radiation [W/m2]',
-    #                     'direct_solar_rad':'Direct Solar Radiation [W/m2]',
-    #                     't_out_pred_6h':'6h Prediction Outdoor Drybulb Temperature [C]',
-    #                     't_out_pred_12h':'12h Prediction Outdoor Drybulb Temperature [C]',
-    #                     't_out_pred_24h':'24h Prediction Outdoor Drybulb Temperature [C]',
-    #                     'rh_out_pred_6h':'6h Prediction Outdoor Relative Humidity [%]',
-    #                     'rh_out_pred_12h':'12h Prediction Outdoor Relative Humidity [%]',
-    #                     'rh_out_pred_24h':'24h Prediction Outdoor Relative Humidity [%]',
-    #                     'diffuse_solar_rad_pred_6h':'6h Prediction Diffuse Solar Radiation [W/m2]',
-    #                     'diffuse_solar_rad_pred_12h':'12h Prediction Direct Solar Radiation [W/m2]',
-    #                     'diffuse_solar_rad_pred_24h':'24h Prediction Direct Solar Radiation [W/m2]',
-    #                     'direct_solar_rad_pred_6h':'6h Prediction Diffuse Solar Radiation [W/m2]',
-    #                     'direct_solar_rad_pred_12h':'12h Prediction Diffuse Solar Radiation [W/m2]',
-    #                     'direct_solar_rad_pred_24h':'24h Prediction Diffuse Solar Radiation [W/m2]'}
-    #     res = {}
-    #     for k,v in mapping_dict.items():
-    #         if self.enabled_states[k]:
-    #             res[k] = subhourly_lin_interp(weather_data[v], self.hourly_timesteps)
-    #     return res
-
-    # def load_solar_results(self, solar_file, attributes):
-    #     with open(solar_file) as csv_file:
-    #         data = pd.read_csv(csv_file)
-    #
-    #     res = {}
-    #     res['solar_gen'] = subhourly_lin_interp(attributes['Solar_Power_Installed(kW)']*data['Hourly Data: AC inverter power (W)']/1000, self.hourly_timesteps)
-    #     return res
-
     def assign_neighbors(self, net):
         my_x = net.bus_geodata.loc[self.bus]['x']
         my_y = net.bus_geodata.loc[self.bus]['y']
@@ -288,7 +254,8 @@ class Building:
         else:
             self.all_devs += [dev]
             self.all_pwrs += [pwr]
-            reward = -a*(10*dev)**2# - b*(pwr/(self.dhw_heating_device.nominal_power+self.cooling_device.nominal_power))**2
+#            reward = -a*(10*dev)**2# -
+            reward = (1/b*(pwr/(self.dhw_heating_device.nominal_power+self.cooling_device.nominal_power)))**2
         reward += 1
         return reward
 
