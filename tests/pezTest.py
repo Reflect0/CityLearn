@@ -65,14 +65,14 @@ model = PPO(MlpPolicy, env, ent_coef=0.1, learning_rate=0.001, n_epochs=30)
 # for loop in range(nloops):
 env.reset()
 print('==============')
-models[0].learn(4*4*8759, verbose=1)
+model.learn(4*4*8759, verbose=2)
 print('==============')
 if not os.path.exists(f'models/{model_name}'):
     os.makedirs(f'models/{model_name}')
 os.chdir(f'models/{model_name}')
-for m in range(len(models)):
-    print('saving trained model')
-    models[m].save(f"model_{m}")
+# for m in range(len(models)):
+#     print('saving trained model')
+model.save(f"model")
 os.chdir('../..')
 
 toc = time.time()
