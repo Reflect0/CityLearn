@@ -82,7 +82,9 @@ for ts in range(365*24*4): # test on 5 timesteps
         #
         # obss[m] = np.vstack(foo)
 
-    action = models.predict(obss, deterministic=True)[0] # send it to the SB model to select an action
+    action = model.predict(obss, deterministic=True)[0] # send it to the SB model to select an action
+    print(action)
+    print(grid.ts)
     obss, reward, done, info = env.step(action) # update environment
 
-grid.plot_all()
+env.venv.vec_envs[0].par_env.grid.plot_all()
