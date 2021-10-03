@@ -170,7 +170,7 @@ class GridLearn: # not a super class of the CityLearn environment
                 bldg = Building(self.data_path, self.climate_zone, self.buildings_states_actions_file, self.hourly_timesteps, uid, self.weather, save_memory=self.save_memory)
                 bldg.assign_bus(existing_node)
                 bldg.load_index = pp.create_load(self.net, bldg.bus, 0, name=bldg.buildingId) # create a load at the existing bus
-                if np.random.uniform() <= 2:
+                if np.random.uniform() <= 2: # equivalent to 100% PV penetration
                     bldg.gen_index = pp.create_sgen(self.net, bldg.bus, 0, name=bldg.buildingId) # create a generator at the existing bus
                 else:
                     bldg.gen_index = -1
@@ -279,12 +279,21 @@ class GridLearn: # not a super class of the CityLearn environment
         return actionspace, obsspace
 
     def step(self, action_dict):
+        year_ts = self.ts % (8759*96)
+        if year_ts > 90*96 and year_ts < 275*96:
+            self.net.shunt.at[0,'q_mvar'] = -1.8
+            self.net.shunt.at[1,'q_mvar'] = -0.6
+            self.net.shunt.at[2,'q_mvar'] = -1.2
+        else:
+            self.net.shunt.at[0,'q_mvar'] = -1.2
+            self.net.shunt.at[1,'q_mvar'] = -0.01
+            self.net.shunt.at[2,'q_mvar'] = -0.01
         for agent in action_dict:
             self.buildings[agent].step(action_dict[agent])
 
         self.ts += 1
-        if (self.ts % 1000) == 0:
-            print('here', self.ts)
+#        if (self.ts % 1000) == 0:
+#            print('here', self.ts)
         self.tester = np.random.uniform(1,5,(5,))
         # update the grid based on updated buildings
         self.update_grid()

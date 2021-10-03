@@ -85,7 +85,7 @@ class Building:
             dhw_heating_device (ElectricHeater or HeatPump)
             cooling_device (HeatPump)
         """
-        self.start_time=0
+        self.start_time=0#35040#0
         self.tracker = 0
         self.weather = weather
         # weather_file = os.path.join(data_path, "weather_data.csv")
@@ -136,6 +136,7 @@ class Building:
         self.current_gross_electricity_demand = 0
         self.current_gross_generation = 0
         self.phi = 0
+        self.year = 0
         self.rbc = False
         self.solar_generation = 0
         self.battery_action = 0
@@ -231,35 +232,24 @@ class Building:
             self.normalize()
 
     def normalize(self, file=None):
-        if file:
-            try:
-                if os.path.isfile(file):
-                    with open(file) as f:
-                        data = json.load(f)
-                    self.max_pwr = data[self.buildingId]
-            except:
-                file = None
-        if not file:
-            self.max_dev = max(self.all_devs)
-            self.max_pwr = max(self.all_pwrs)
+        self.max_dev = max(self.all_devs)
+        return
 
     def get_reward(self, net): # dummy cost function
         dev = (net.res_bus.loc[self.bus]['vm_pu']-1)
         pwr = (self.current_gross_electricity_demand - self.current_gross_generation)**2
-
-        a = 1
-        b = 0.001
+        loss = sum(net.res_bus['p_mw'].iloc[1:]) - net.res_ext_grid['p_mw'][0]
+        loss_reward = 4*loss + 1
         if self.max_dev and self.max_pwr:
-            reward = -a*(dev/self.max_dev)**2# - b*(pwr/self.max_pwr)**2
+            reward = -1*(dev/self.max_dev)**2
         else:
             self.all_devs += [dev]
-            self.all_pwrs += [pwr]
-#            reward = -a*(10*dev)**2# -
-            reward = (1/b*(pwr/(self.dhw_heating_device.nominal_power+self.cooling_device.nominal_power)))**2
+            reward = -1*(10*dev)**2
         reward += 1
-        return reward
+        return loss_reward
 
     def get_obs(self, net):
+#        s = []
         s = 32*[0]
         s[self.bus-1] = 1
         for state_name, value in self.enabled_states.items():
@@ -305,7 +295,10 @@ class Building:
                     else:
                         s.append(self.weather.data[state_name][self.time_step])
                 else:
-                    s.append(self.sim_results[state_name][self.time_step])
+                    if state_name == 'month':
+                        s.append(self.sim_results[state_name][self.time_step%35040])
+                    else:
+                        s.append(self.sim_results[state_name][self.time_step])
 
         return np.divide(np.subtract(s, self.normalization_mid),self.normalization_range)#(np.array(s) - self.normalization_mid) / self.normalization_range
 
@@ -317,6 +310,10 @@ class Building:
             np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_hvacsoc.csv', np.array(self.hvac_soc), delimiter=',', fmt='%s')
             np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_dhwsoc.csv', np.array(self.dhw_soc), delimiter=',', fmt='%s')
             np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_pv.csv', np.array(self.pv), delimiter=',', fmt='%s')
+            try:
+                os.mknod(f'day{self.time_step/96}')
+            except:
+                pass
         return
 
     def step(self, a):
@@ -349,12 +346,11 @@ class Building:
             self.phi = self.set_phase_lag()
 
         if self.enabled_actions['electrical_storage']:
-            self.battery_action
-            _batt_power = self.set_storage_electrical(a[0]) # batt power is negative for discharge
-            self.batt_power = _batt_power / self.electrical_storage.nominal_power
+            self.batt_power = self.set_storage_electrical(a[0])
+#            self.batt_power = self.set_storage_electrical(a[0]/2.5-1) # batt power is negative for discharge
             a = a[1:]
         else:
-            _batt_power = self.set_storage_electrical()
+            self.batt_power = self.set_storage_electrical()
 
         # Track soc of all energy storage devices
         self.hvac_soc += [self.cooling_storage._soc/self.cooling_storage.capacity]
@@ -365,11 +361,28 @@ class Building:
         _non_shiftable_load = self.get_non_shiftable_load()
 
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
-        self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(_batt_power, 0), 4)
-        self.current_gross_generation = round(-1*self.solar_generation + min(0, _batt_power), 4)
+        self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(self.batt_power, 0), 4)
+        self.current_gross_generation = round(-1*self.solar_generation + min(0, self.batt_power), 4)
         self.tracker = (self.tracker + 1) % 8760
         # self.time_step = self.start_time + self.tracker
-        self.time_step = (self.time_step + 1) % len(self.sim_results['t_in'])
+#        if self.time_step % 10000 == 0:
+#            print(self.time_step)
+
+        if self.time_step == 4*35030:
+            self.time_step = 0
+            self.year += 1
+            try:
+                os.mknod(f"year{self.year}.txt")
+            except:
+                pass
+        else:
+            self.time_step += 1
+     
+#            if self.time_step == 8640:
+#                self.time_step = 26400
+#            else:
+#                self.time_step += 1
+#        self.time_step = (self.time_step + 1) % 35030#len(self.sim_results['t_in'])
         return
 
     def set_dhw_draws(self):
@@ -406,6 +419,7 @@ class Building:
 
     def set_state_space(self):
         # Finding the max and min possible values of all the states, which can then be used by the RL agent to scale the states and train any function approximators more effectively
+#        s_low,s_high = [],[]
         s_low, s_high = [0]*32, [1]*32
         for state_name, value in self.enabled_states.items():
             if value == True:
@@ -496,6 +510,7 @@ class Building:
                     a_low.append(-1.0)
                     a_high.append(1.0)
 
+#        self.action_space = spaces.Tuple((spaces.Box(low=-1,high=1,shape=(3,)),spaces.Discrete(5)))
         self.action_space = spaces.Box(low=np.array(a_low), high=np.array(a_high), dtype=np.float32)
         return
 
