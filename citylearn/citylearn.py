@@ -8,7 +8,7 @@ from gym import spaces
 from citylearn.energy_models import *
 # from citylearn.reward_function import reward_function_sa, reward_function_ma
 from pathlib import Path
-from citylearn.agent import RBC_Agent
+from agents import RBC_Agent
 gym.logger.set_level(40)
 
 # def auto_size(buildings): # DEPRICATED
