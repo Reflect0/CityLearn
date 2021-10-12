@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1'
+VERSION = '0.1.0'
 DESCRIPTION = 'A grid integrated version of the CityLearn project'
 LONG_DESCRIPTION = 'A grid integrated version of the CityLearn project'
 
 # Setting up
 setup(
-        name="citylearn",
+        name="gridlearn",
         version=VERSION,
         author="Jose Vazquez Canteli edited by Aisling Pigott",
         author_email="aisling.pigott@colorado.edu",
