@@ -4,7 +4,7 @@ from pandapower.plotting import simple_plotly, pf_res_plotly
 import pandapower.networks as networks
 from citylearn import CityLearn
 from citylearn import Building, Weather
-from citylearn import RBC_Agent, RBC_Agent_v2
+from agents import RBC_Agent, RBC_Agent_v2
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -33,10 +33,7 @@ class GridLearn: # not a super class of the CityLearn environment
         self.hourly_timesteps = hourly_timesteps
         self.save_memory = save_memory
         self.building_ids = building_ids
-
-        # random.seed(randomseed)
-        # np.random.seed(randomseed)
-
+        
         self.net = self.make_grid()
 
         self.buildings = self.add_houses(6,1)
