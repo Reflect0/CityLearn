@@ -85,11 +85,8 @@ class Building:
             dhw_heating_device (ElectricHeater or HeatPump)
             cooling_device (HeatPump)
         """
-        self.start_time=0#35040#0
-        self.tracker = 0
+        self.start_time=0
         self.weather = weather
-        # weather_file = os.path.join(data_path, "weather_data.csv")
-        # solar_file = os.path.join(data_path, "solar_generation_1kW.csv")
         self.hourly_timesteps = hourly_timesteps
 
         # create a Unique Building ID
@@ -97,7 +94,6 @@ class Building:
 
         with open(buildings_states_actions_file) as json_file:
             buildings_states_actions = json.load(json_file, object_pairs_hook=OrderedDict)
-        # print('keys', buildings_states_actions.keys())
 
         self.uid = uid
 
@@ -117,12 +113,6 @@ class Building:
         # get e-plus load calcs
         sim_file = os.path.join(data_path, f"Building_{self.building_type}.csv")
         self.sim_results = self.load_sim_results(sim_file)
-
-        # weather_res = self.load_weather_results(weather_file)
-        # self.sim_results.update(weather_res)
-        #
-        # solar_res = self.load_solar_results(solar_file, attributes)
-        # self.sim_results.update(solar_res)
 
         self.set_dhw_cop()
         self.set_cooling_cop()
@@ -144,7 +134,6 @@ class Building:
         self.batt_soc = []
         self.hvac_soc = []
         self.dhw_soc = []
-        self.night, self.morning = np.random.randint(20,22), np.random.randint(4,10)
         self.all_rewards = []
         self.all_devs = []
         self.all_pwrs = []
@@ -205,7 +194,7 @@ class Building:
         res['cooling_demand'] = subhourly_lin_interp(data['Cooling Load [kWh]'], self.hourly_timesteps)
         res['dhw_demand'] = list(data['DHW Heating [kWh]'])
         res['non_shiftable_load'] = subhourly_noisy_interp(data['Equipment Electric Power [kWh]'], self.hourly_timesteps)
-        res['month'] = list(np.linspace(0,1,8760*self.hourly_timesteps))#list(np.repeat(data['Month'], self.hourly_timesteps))
+        res['month'] = list(np.repeat(data['Month'], self.hourly_timesteps))
         res['day'] = list(np.repeat(data['Day Type'], self.hourly_timesteps))
         res['hour'] = list(np.repeat(data['Hour'], self.hourly_timesteps))
         res['daylight_savings_status'] = list(np.repeat(data['Daylight Savings Status'], self.hourly_timesteps))
@@ -220,16 +209,6 @@ class Building:
         net.bus_geodata['distance'] = (net.bus_geodata['x']-my_x)**2 + (net.bus_geodata['y']-my_y)**2
         self.neighbors = net.bus_geodata.sort_values('distance').drop(index=0).index[1:4]
         return
-
-    def load_normalize_values(self, model_name):
-        file = f'models/{self.buildingId}/norm_values.json'
-        if os.path.isfile(file):
-            with open(file, 'r') as f:
-                data = json.load(f)
-            self.max_dev = data['max_dev']
-            self.max_pwr = data['max_pwr']
-        else:
-            self.normalize()
 
     def normalize(self, file=None):
         self.max_dev = max(self.all_devs)
@@ -246,10 +225,9 @@ class Building:
             self.all_devs += [dev]
             reward = -1*(10*dev)**2
         reward += 1
-        return loss_reward
+        return reward
 
     def get_obs(self, net):
-#        s = []
         s = 32*[0]
         s[self.bus-1] = 1
         for state_name, value in self.enabled_states.items():
@@ -260,11 +238,9 @@ class Building:
                 elif state_name == "absolute_voltage":
                     if self.time_step <= 1:
                         s.append(1.0)
-                        # s.append(1.0)
                     else:
                         v = float(net.res_bus['vm_pu'][net.load.loc[net.load['name']==self.buildingId].bus])
                         s.append(v)
-                        # s.append(-1*v)
 
                 elif state_name == "relative_voltage":
                     if self.time_step <= 1:
@@ -296,11 +272,15 @@ class Building:
                         s.append(self.weather.data[state_name][self.time_step])
                 else:
                     if state_name == 'month':
-                        s.append(self.sim_results[state_name][self.time_step%35040])
+                        s.append(np.sin(self.sim_results[state_name][self.time_step]/12*6.28))
+                    elif state_name == 'day':
+                        s.append(np.sin(self.sim_results[state_name][self.time_step]/7*6.28))
+                    elif state_name == 'hour':
+                        s.append(np.sin(self.sim_results[state_name][self.time_step]/24*6.28))
                     else:
                         s.append(self.sim_results[state_name][self.time_step])
 
-        return np.divide(np.subtract(s, self.normalization_mid),self.normalization_range)#(np.array(s) - self.normalization_mid) / self.normalization_range
+        return np.divide(np.subtract(s, self.normalization_mid),self.normalization_range)
 
     def close(self, folderName, write=False):
         if write:
@@ -310,10 +290,6 @@ class Building:
             np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_hvacsoc.csv', np.array(self.hvac_soc), delimiter=',', fmt='%s')
             np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_dhwsoc.csv', np.array(self.dhw_soc), delimiter=',', fmt='%s')
             np.savetxt(f'models/{folderName}/homes/{self.buildingId}{self.buildingCluster}_pv.csv', np.array(self.pv), delimiter=',', fmt='%s')
-            try:
-                os.mknod(f'day{self.time_step/96}')
-            except:
-                pass
         return
 
     def step(self, a):
@@ -340,7 +316,6 @@ class Building:
 
         if self.enabled_actions['pv_phi']:
             self.phi = self.set_phase_lag(a[0])
-            self.action_angle = a[0]
             a = a[1:]
         else:
             self.phi = self.set_phase_lag()
@@ -363,26 +338,11 @@ class Building:
         # Adding loads from appliances and subtracting solar generation to the net electrical load of each building
         self.current_gross_electricity_demand = round(_electric_demand_cooling + _electric_demand_dhw + _non_shiftable_load + max(self.batt_power, 0), 4)
         self.current_gross_generation = round(-1*self.solar_generation + min(0, self.batt_power), 4)
-        self.tracker = (self.tracker + 1) % 8760
-        # self.time_step = self.start_time + self.tracker
-#        if self.time_step % 10000 == 0:
-#            print(self.time_step)
 
-        if self.time_step == 4*35030:
+        if self.time_step == self.hourly_timesteps*8760:
             self.time_step = 0
-            self.year += 1
-            try:
-                os.mknod(f"year{self.year}.txt")
-            except:
-                pass
         else:
             self.time_step += 1
-     
-#            if self.time_step == 8640:
-#                self.time_step = 26400
-#            else:
-#                self.time_step += 1
-#        self.time_step = (self.time_step + 1) % 35030#len(self.sim_results['t_in'])
         return
 
     def set_dhw_draws(self):
@@ -434,16 +394,13 @@ class Building:
                 elif state_name == "absolute_voltage":
                     s_low.append(0.90)
                     s_high.append(1.10)
-                    # s_low.append(0.90)
-                    # s_high.append(1.10)
 
                 elif state_name == "relative_voltage":
-                    # @akp, added relative voltage to give homes their voltage ranked against the community max/min
+                    # added relative voltage to give homes their voltage ranked against the community max/min
                     s_low.append(0.) # the house is the lowest voltage in the community
                     s_high.append(1.)
 
                 elif state_name == "total_voltage_spread":
-                    # @akp, added total voltage spread to give a sense of the total loss incurred by the community. without the total voltage spread state "relative_voltage" is more or less meaningless. (total_voltage_spread = how much the community is penaltized, relative_voltage = what that house can do to fix the issue)
                     s_low.append(0.)
                     s_high.append(0.2)
 
@@ -456,8 +413,12 @@ class Building:
                     s_high.append(max(self.weather.data[state_name]))
 
                 else:
-                    s_low.append(min(self.sim_results[state_name]))
-                    s_high.append(max(self.sim_results[state_name]))
+                    if state_name in ['month', 'day', 'hour']:
+                        s_low.append(-1)
+                        s_high.append(1)
+                    else:
+                        s_low.append(min(self.sim_results[state_name]))
+                        s_high.append(max(self.sim_results[state_name]))
 
         self.normalization_range = np.array(s_high) - np.array(s_low)
         self.normalization_mid = np.array(s_low) + 0.5 * self.normalization_range
@@ -478,23 +439,10 @@ class Building:
                 if action_name =='cooling_storage':
                     a_low.append(-1.0)
                     a_high.append(1.0)
-                    # Avoid division by 0
-                    # if self.cooling_storage.capacity > 0.000001:
-                    #     a_low.append(max(-1.0/self.cooling_storage.capacity, -1.0))
-                    #     a_high.append(min(1.0/self.cooling_storage.capacity, 1.0))
-                    # else:
-                    #     a_low.append(-1.0)
-                    #     a_high.append(1.0)
 
                 elif action_name == 'dhw_storage':
                     a_low.append(-1.0)
                     a_high.append(1.0)
-                    # if self.dhw_storage.capacity > 0.000001:
-                    #     a_low.append(max(-1.0/self.dhw_storage.capacity, -1.0))
-                    #     a_high.append(min(1.0/self.dhw_storage.capacity, 1.0))
-                    # else:
-                    #     a_low.append(-1.0)
-                    #     a_high.append(1.0)
 
                 elif action_name == 'pv_curtail':
                     # pv curtailment of apparent power, S
@@ -502,7 +450,6 @@ class Building:
                     a_high.append(1.0)
 
                 elif action_name == 'pv_phi':
-                    # smart inverter voltage control @constance?
                     a_low.append(-1.0)
                     a_high.append(1.0)
 
@@ -510,7 +457,6 @@ class Building:
                     a_low.append(-1.0)
                     a_high.append(1.0)
 
-#        self.action_space = spaces.Tuple((spaces.Box(low=-1,high=1,shape=(3,)),spaces.Discrete(5)))
         self.action_space = spaces.Box(low=np.array(a_low), high=np.array(a_high), dtype=np.float32)
         return
 
@@ -597,7 +543,7 @@ class Building:
 
         # The storage device is charged (action > 0) or discharged (action < 0) taking into account the max power available and that the storage device cannot be discharged by an amount of energy greater than the energy demand of the building.
         charge_arg = max(-self.sim_results['cooling_demand'][self.time_step], min(cooling_power_avail, action*self.cooling_storage.capacity))
-        cooling_energy_balance = self.cooling_storage.charge(charge_arg/self.hourly_timesteps) # @AKP FIX THIS -- make less janky!!!
+        cooling_energy_balance = self.cooling_storage.charge(charge_arg/self.hourly_timesteps)
 
         if self.save_memory == False:
             self.cooling_storage_action.append(action)
