@@ -1,7 +1,10 @@
 # GridLearn
 GridLearn is a spin off of the open source OpenAI Gym environment CityLearn. Like CityLearn, GridLearn is a testbed for the implementation of Multi-Agent Reinforcement Learning (MARL) in building energy coordination and demand response in cities. GridLearn builds off of CityLearn by implementing power flow simulations in addition to aggregating the district's demand profiles. The current release of GridLearn implements all actions in parallel (Fig 1) -- future releases will consider alternate action selection (Fig 2).
-![single-cluser](https://github.com/apigott/CityLearn/blob/master/images/single_cluster.png){:height="50%" width="50%"}
-![multiple-cluser](https://github.com/apigott/CityLearn/blob/master/images/multiple_clusters.png){:height="50%" width="50%"}
+<img width="200" alt="single_cluster" src="https://github.com/apigott/CityLearn/blob/master/images/single_cluster.png">
+<img width="200" alt="multiple_clusters" src="https://github.com/apigott/CityLearn/blob/master/images/multiple_clusters.png">
+
+<!-- ![single-cluser](https://github.com/apigott/CityLearn/blob/master/images/single_cluster.png) -->
+<!-- ![multiple-cluser](https://github.com/apigott/CityLearn/blob/master/images/multiple_clusters.png) -->
 
 ## Description
 Due to aging infrastructure and increasing penetration of PV, distribution networks are now facing voltage issues (both under- and overvoltages). To overcome voltage regulation issues grid operators have historically used capacitor banks to increase the voltage at different points of the feeder. However, as PV penetration rates rise and overvoltages become more prevelant this is not a viable solution. To that end many studies have been done on the efficacy of smart inverters and demand response to help perform voltage regulation.
