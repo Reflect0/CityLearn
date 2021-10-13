@@ -39,7 +39,7 @@ GridLearn may still work with some earlier versions of these libraries, but we h
     - EnergyStorage
   - RBC Agent (optional)
   - RL Agent (optional)
-![Demand-response](https://github.com/intelligent-environments-lab/CityLearn/blob/master/images/citylearn_diagram.png)
+<img width="200" alt="building_subsystems" src="https://github.com/intelligent-environments-lab/CityLearn/blob/master/images/citylearn_diagram.png">
 
 ### Building
 The Building class is the main building block of the GridLearn environment.
@@ -138,7 +138,6 @@ This class of type OpenAI Gym Environment contains all the buildings and their s
 Its efficiency is given by the coefficient of performance (COP), which is calculated as a function of the outdoor air temperature and of the following parameters:
 
 -```eta_tech```: technical efficiency of the heat pump
-
 -```T_target```: target temperature. Conceptually, it is  equal to the logarithmic mean of the temperature of the supply water of the storage device and the temperature of the water returning from the building. Here it is assumed to be constant and defined by the user in the [building_attributes.json](/data/building_attributes.json) file.  For cooling, values between 7C and 10C are reasonable.
 Any amount of cooling demand of the building that isn't satisfied by the ```EnergyStorage``` device is automatically supplied by the ```HeatPump``` directly to the ```Building```, guaranteeing that the cooling demand is always satisfied. The ```HeatPump``` is more efficient (has a higher COP) if the outdoor air temperature is lower, and less efficient (lower COP) when the outdoor temperature is higher (typically during the day time). On the other hand, the electricity demand is typically higher during the daytime and lower at night. ```cooling_energy_generated = COP*electricity_consumed, COP > 1```
 #### Attributes
@@ -207,14 +206,14 @@ Note for storage actions that the action of the user-implemented controller can 
 
 The mathematical formulation of the effects of the actions can be found in the methods ```set_storage_heating(action)``` and ```set_storage_cooling(action)``` of the class Building in the file [energy_models.py](/energy_models.py).
 ### Reward function
-The reward function must be defined by the user by changing the ```get_reward()``` method in the file [/citylearn/energy_models.py](/citylearn/energy_models.py?plain=1#L237).
+The reward function must be defined by the user by changing the ```get_reward()``` method in the file [/citylearn/energy_models.py](/citylearn/energy_models.py?plain=1#L217).
 
 By modifying these functions the user changes the reward that the CityLearn environment returns every time the method .step(a) is called.
 
 ### Performance metrics
 These components have been depricated in favor of the ```scrape_data.ipynb``` file which can compare across any previously run data file.
 
-#### With special thanks to original CityLearn authors for their support in this project.
+##### With special thanks to original CityLearn authors for their support in this project.
 [Vázquez-Canteli, J.R., Kämpf, J., Henze, G., and Nagy, Z., "CityLearn v1.0: An OpenAI Gym Environment for Demand Response with Deep Reinforcement Learning", Proceedings of the 6th ACM International Conference, ACM New York p. 356-357, New York, 2019](https://dl.acm.org/citation.cfm?id=3360998)
 
 ## License
