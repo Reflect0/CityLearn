@@ -1,9 +1,8 @@
-# CityLearn
-CityLearn is an open source OpenAI Gym environment for the implementation of Multi-Agent Reinforcement Learning (RL) for building energy coordination and demand response in cities. Its objective is to facilitiate and standardize the evaluation of RL agents such that different algorithms can be easily compared with each other.
+# GridLearn
+GridLearn is a spin off of the open source OpenAI Gym environment CityLearn. Like CityLearn, GridLearn is a testbed for the implementation of Multi-Agent Reinforcement Learning (MARL) in building energy coordination and demand response in cities. GridLearn builds off of CityLearn by implementing power flow simulations in addition to aggregating the district's demand profiles.
 ![Demand-response](https://github.com/intelligent-environments-lab/CityLearn/blob/master/images/dr.jpg)
 ## Description
-Districts and cities have periods of high demand for electricity, which raise electricity prices and the overall cost of the power distribution networks. Flattening, smoothening, and reducing the overall curve of electrical demand helps reduce operational and capital costs of electricity generation, transmission, and distribution networks. Demand response is the coordination of electricity consuming agents (i.e. buildings) in order to reshape the overall curve of electrical demand.
-CityLearn allows the easy implementation of reinforcement learning agents in a multi-agent setting to reshape their aggregated curve of electrical demand by controlling the storage of energy by every agent. Currently, CityLearn allows controlling the storage of domestic hot water (DHW), and chilled water (for sensible cooling and dehumidification). CityLearn also includes models of air-to-water heat pumps, electric heaters, solar photovoltaic arrays, and the pre-computed energy loads of the buildings, which include space cooling, dehumidification, appliances, DHW, and solar generation.
+Due to aging infrastructure and increasing penetration of PV, distribution networks are now facing voltage issues (both under- and overvoltages). To overcome voltage regulation issues grid operators have historically used capacitor banks to increase the voltage at different points of the feeder. However, as PV penetration rates rise and overvoltages become more prevelant this is not a viable solution. To that end many studies have been done on the efficacy of smart inverters and demand response to help perform voltage regulation.
 ## Requirements
 CityLearn requires the installation of the following Python libraries:
 - Pandas 0.24.2 or older
@@ -21,22 +20,14 @@ To run the file example_central_agent.ipynb, you will need:
 CityLearn may still work with some earlier versions of these libraries, but we have tested it with those.
 
 ## Files
-- [main.ipynb](/main.ipynb): jupyter lab file. Example of the implementation of decentralized multi-agent reinforcement learning agents ([MARLISA](https://www.researchgate.net/publication/344502330_MARLISA_Multi-Agent_Reinforcement_Learning_with_Iterative_Sequential_Action_Selection_for_Load_Shaping_of_Grid-Interactive_Connected_Buildings)), which is based on the single-agent RL algorithm [SAC](https://arxiv.org/abs/1812.05905). The agents are implemented for a district with 9 different buildings in ```CityLearn```
-- [main.py](/main.py): Copy of [main.ipynb](/main.ipynb) as a python file.
-- [buildings_state_action_space.json](/buildings_state_action_space.json): json file containing the possible states and actions for every building, from which users can choose.
-- [building_attributes.json](/data/building_attributes.json): json file containing the attributes of the buildings and which users can modify.
-- [citylearn.py](/citylearn.py): Contains the ```CityLearn``` environment and the functions ```building_loader()``` and ```autosize()```
-- [energy_models.py](/energy_models.py): Contains the classes ```Building```, ```HeatPump``` and ```EnergyStorage```, which are called by the ```CityLearn``` class.
-- [agent.py](/agent.py): Implementation of our MARLISA algorithm ([MARLISA](https://dl.acm.org/doi/10.1145/3408308.3427604)) RL algorithm, based on [SAC](https://arxiv.org/abs/1812.05905). This file must be modified with any other RL implementation, which can then be run in the [main.ipynb](/main.ipynb) jupyter lab file or the [main.py](/main.py) file. Checkout our presentation video [here](https://www.youtube.com/watch?v=897ms6DrZjo)!
-- [reward_function.py](/reward_function.py): Contains the reward functions that wrap and modifiy the rewards obtained from ```CityLearn```. This function can be modified by the user in order to minimize the cost function of ```CityLearn```. There are two reward functions, one works for multi-agent systems (decentralized RL agents), and the other works for single-agent systems (centralized RL agent). Setting the attribute central_agent=True in CityLearn will make the environment return the output from sa_reward_function, while central_agent=False (default mode) will make the environment return the output from ma_reward_function.
-- [example_rbc.ipynb](/example_rbc.ipynb): jupyter lab file. Example of the implementation of a manually optimized Rule-based controller (RBC) that can be used for comparison
-- [example_central_agent.ipynb](/example_central_agent.ipynb): jupyter lab file. Example of the implementation of a SAC centralized RL algorithm from Open AI stable baselines, for 1 and 9 buildings.
+- [coming soon]
 ### Classes
-- CityLearn
   - Building
     - HeatPump
     - ElectricHeater
     - EnergyStorage
+  - GridLearn 
+  - RBC Agent
 ![Demand-response](https://github.com/intelligent-environments-lab/CityLearn/blob/master/images/citylearn_diagram.png)
 
 ### CityLearn
@@ -246,7 +237,7 @@ This default reward function should incentivize the agent(s) to flatten the curv
 The control actions are simply the storage or release of energy from the storage devices, and the overall objective is to make the net electrical demand of the district as flat, smooth and low as possible in order to minimize the aforementioned 5 cost metrics. The electricity generation and demand from appliances is already determined and going to happen regardless of the actions you take.
 
 ## License
-The MIT License (MIT) Copyright (c) 2019, The University of Texas at Austin
+The MIT License (MIT) Copyright (c) 2021, University of Colorado Boulder
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
